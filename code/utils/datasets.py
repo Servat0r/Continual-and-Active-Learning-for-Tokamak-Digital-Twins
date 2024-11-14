@@ -50,6 +50,22 @@ class CSVRegressionDataset(Dataset):
             return self.data
 
 
+def _is_not_null(row, output_columns):
+    return any([row[column] != 0.0 for column in output_columns])
+
+
+def make_datasets(src_path, src_filename, dest_path, output_columns):
+    df = pd.read_csv(src_path + '/' + src_filename)
+    df['has_turbulence'] = df.apply(lambda row: _is_not_null(row, output_columns), axis=1)
+    complete_df = df.copy()
+    not_null_df = df[df['has_turbulence'] == True]
+    not_null_df = not_null_df.drop(columns=['has_turbulence'])
+    classification_df = df.drop(columns=output_columns)
+    complete_df.to_csv(path_or_buf=f'{dest_path}/complete_dataset.csv', index=False)
+    not_null_df.to_csv(path_or_buf=f'{dest_path}/not_null_dataset.csv', index=False)
+    classification_df.to_csv(path_or_buf=f'{dest_path}/classification_dataset.csv', index=False)
+
+
 def get_avalanche_csv_regression_datasets(
         csv_file, input_columns: list[str], output_columns: list[str], test_size: float = 0.2, # todo modify later
         transform=None, target_transform=None, filter_by: dict[str, list] = None,
@@ -58,8 +74,9 @@ def get_avalanche_csv_regression_datasets(
         frozen_transform_groups: TransformGroups | None = None, collate_fn: Callable[[list], Any] | None = None
 ):
     data = pd.read_csv(csv_file)
+    print(len(data))
     # Split the data into train and test sets
-    train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
+    train_data, test_data = train_test_split(data, test_size=test_size, random_state=42)
 
     base_train_dataset = CSVRegressionDataset(
         train_data, input_columns=input_columns, output_columns=output_columns, transform=transform,
@@ -69,6 +86,7 @@ def get_avalanche_csv_regression_datasets(
         test_data, input_columns=input_columns, output_columns=output_columns, transform=transform,
         target_transform=target_transform, filter_by=filter_by, float_precision=float_precision, device=device,
     )
+
     train_dataset = AvalancheDataset(
         [base_train_dataset], indices=indices, data_attributes=data_attributes,
         transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
