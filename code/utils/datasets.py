@@ -2,7 +2,6 @@ from typing import Any, Callable
 import pandas as pd
 import torch
 from avalanche.benchmarks import AvalancheDataset
-from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from avalanche.benchmarks.utils import TransformGroups, DataAttribute
 
@@ -67,24 +66,21 @@ def make_datasets(src_path, src_filename, dest_path, output_columns):
 
 
 def get_avalanche_csv_regression_datasets(
-        csv_file, input_columns: list[str], output_columns: list[str], test_size: float = 0.2, # todo modify later
+        train_data, test_data, input_columns: list[str], output_columns: list[str], # todo modify later
         transform=None, target_transform=None, filter_by: dict[str, list] = None,
         float_precision: str = 'float32', device=None, *, indices: list[int] | None = None,
         data_attributes: list[DataAttribute] | None = None, transform_groups: TransformGroups | None = None,
-        frozen_transform_groups: TransformGroups | None = None, collate_fn: Callable[[list], Any] | None = None
+        frozen_transform_groups: TransformGroups | None = None, collate_fn: Callable[[list], Any] | None = None,
 ):
-    data = pd.read_csv(csv_file)
-    print(len(data))
-    # Split the data into train and test sets
-    train_data, test_data = train_test_split(data, test_size=test_size, random_state=42)
-
     base_train_dataset = CSVRegressionDataset(
         train_data, input_columns=input_columns, output_columns=output_columns, transform=transform,
-        target_transform=target_transform, filter_by=filter_by, float_precision=float_precision, device=device,
+        target_transform=target_transform, filter_by=filter_by, float_precision=float_precision,
+        device=device,
     )
     base_test_dataset = CSVRegressionDataset(
         test_data, input_columns=input_columns, output_columns=output_columns, transform=transform,
-        target_transform=target_transform, filter_by=filter_by, float_precision=float_precision, device=device,
+        target_transform=target_transform, filter_by=filter_by, float_precision=float_precision,
+        device=device,
     )
 
     train_dataset = AvalancheDataset(

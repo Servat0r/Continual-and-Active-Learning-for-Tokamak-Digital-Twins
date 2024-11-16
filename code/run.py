@@ -1,7 +1,9 @@
 import json
 import sys
 import os
-from avalanche.logging import InteractiveLogger, CSVLogger
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from avalanche.logging import CSVLogger
 from torch.nn import MSELoss, BCEWithLogitsLoss
 from torch.optim import SGD, Adam
 
@@ -27,20 +29,56 @@ def load_config(filename):
         sys.exit(1)
 
 
+def _build_normalization_transforms(data, columns, dtype, transform=None):
+    mean = torch.tensor(data[columns].mean(axis=0), dtype=dtype)
+    std = torch.tensor(data[columns].std(axis=0), dtype=dtype)
+    print(f"mean = {mean}, std = {std} ...")
+    if transform is not None:
+        transform = transforms.Compose([CustomNormalize(mean, std), transform])
+    else:
+        transform = CustomNormalize(mean, std)
+    return transform, (mean, std)
+
+
 @time_logger
-def make_benchmark(csv_file, train_datasets, test_datasets, task='regression', NUM_CAMPAIGNS=5, dtype='float64'):
+def make_benchmark(
+        csv_file, train_datasets, test_datasets, task='regression', NUM_CAMPAIGNS=5, dtype='float64',
+        test_size=0.2, normalize_inputs=False, normalize_outputs=False, log_folder=None,
+):
+    float_precision = dtype
+    dtype = get_dtype_from_str(dtype)
     OUTPUTS = BASELINE_HIGHPOW_OUTPUTS if task == 'regression' else ['has_turbulence']
+    data = pd.read_csv(csv_file)
+    print(len(data))
+    # Split the data into train and test sets
+    train_data, test_data = train_test_split(data, test_size=test_size, random_state=42)
+    if normalize_inputs:
+        transform, (mean, std) = _build_normalization_transforms(train_data, BASELINE_HIGHPOW_INPUTS, dtype)
+        if log_folder:
+            torch.save(mean, os.path.join(log_folder, "input_mean.pt"))
+            torch.save(std, os.path.join(log_folder, "input_std.pt"))
+    else:
+        transform = None
+    if normalize_outputs:
+        target_transform, (mean, std) = _build_normalization_transforms(train_data, OUTPUTS, dtype)
+        if log_folder:
+            torch.save(mean, os.path.join(log_folder, "output_mean.pt"))
+            torch.save(std, os.path.join(log_folder, "output_std.pt"))
+    else:
+        target_transform = None
     for campaign in range(NUM_CAMPAIGNS):
         print(f"Loading data for campaign {campaign} ...")
         train_dataset, test_dataset = get_avalanche_csv_regression_datasets(
-            csv_file, BASELINE_HIGHPOW_INPUTS, output_columns=OUTPUTS,
-            filter_by={'campaign': [campaign]}, float_precision=dtype,
-            device='cpu',
+            train_data, test_data, BASELINE_HIGHPOW_INPUTS, output_columns=OUTPUTS,
+            filter_by={'campaign': [campaign]}, float_precision=float_precision,
+            device='cpu', transform=transform, target_transform=target_transform,
         )
         X, y = train_dataset[0]
         print(
             f"Input Shape = {X.shape}",
-            f"Output Shape = {y.shape}"
+            f"Output Shape = {y.shape}",
+            f"Length of Train Dataset = {len(train_dataset)}",
+            f"Length of Test Dataset = {len(test_dataset)}"
         )
         train_datasets.append(train_dataset)
         test_datasets.append(test_dataset)
@@ -49,19 +87,21 @@ def make_benchmark(csv_file, train_datasets, test_datasets, task='regression', N
 
 
 @time_logger
-def run(train_stream, test_stream, cl_strategy):
+def run(train_stream, test_stream, cl_strategy, model, log_folder):
     results = []
     for idx, train_exp in enumerate(train_stream):
         print(f"Starting training experience {idx}: ")
         cl_strategy.train(train_exp)
         print(f"Starting testing experience {idx}: ")
         results.append(cl_strategy.eval(test_stream))
+        print(f"Saving model after experience {id}: ")
+        model.eval()
+        torch.save(model, os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
+        model.train()
     return results
 
 
 def main():
-
-    print(os.getcwd())
     # Config
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     # model
@@ -75,6 +115,7 @@ def main():
     lr = 5e-4
     momentum = 0.9
     weight_decay = 2e-4
+    drop_rate = 0.5
     out_channels1 = 16
     out_channels2 = 32
     hidden_size = 128
@@ -88,7 +129,9 @@ def main():
     task = 'regression'
     mem_size = 1000
     strategy = 'Naive'
-    model_type = 'ConvNet'
+    model_type = 'MLP'
+    normalize_inputs = False
+    normalize_outputs = False
     config = {
         'input_size': input_size,
         'output_size': output_size,
@@ -100,6 +143,7 @@ def main():
         'lr': lr,
         'momentum': momentum,
         'weight_decay': weight_decay,
+        'drop_rate': drop_rate,
         'out_channels1': out_channels1,
         'out_channels2': out_channels2,
         'hidden_size': hidden_size,
@@ -114,6 +158,8 @@ def main():
         'mem_size': mem_size,
         'strategy': strategy,
         'model_type': model_type,
+        'normalize_inputs': normalize_inputs,
+        'normalize_outputs': normalize_outputs,
     }
     if len(sys.argv) >= 2:
         config_file = sys.argv[1]
@@ -130,6 +176,7 @@ def main():
     lr = config['lr']
     momentum = config['momentum']
     weight_decay = config['weight_decay']
+    drop_rate = config['drop_rate']
     out_channels1 = config['out_channels1']
     out_channels2 = config['out_channels2']
     hidden_size = config['hidden_size']
@@ -144,6 +191,8 @@ def main():
     mem_size = config['mem_size']
     strategy = config['strategy']
     model_type = config['model_type']
+    normalize_inputs = config['normalize_inputs']
+    normalize_outputs = config['normalize_outputs']
     try:
         print("Configuration Loaded:")
         print(f"  Input size: {input_size}")
@@ -156,6 +205,7 @@ def main():
         print(f"  LR: {lr}")
         print(f"  Momentum: {momentum}")
         print(f"  Weight decay: {weight_decay}")
+        print(f"  Drop rate: {drop_rate}")
         print(f"  Out channels 1: {out_channels1}")
         print(f"  Out channels 2: {out_channels2}")
         print(f"  Hidden size: {hidden_size}")
@@ -170,6 +220,8 @@ def main():
         print(f"  Mem size: {mem_size}")
         print(f"  Strategy: {strategy}")
         print(f"  Model type: {model_type}")
+        print(f"  Normalize inputs: {normalize_inputs}")
+        print(f"  Normalize outputs: {normalize_outputs}")
     except NameError as e:
         print(f"Error: Missing expected configuration key - {e}")
         sys.exit(1)
@@ -184,12 +236,12 @@ def main():
         elif model_type == 'MLP':
             model = SimpleRegressionMLP(
                 output_size=output_size, hidden_size=hidden_size, dtype=dtype,
-                hidden_layers=hidden_layers,
+                hidden_layers=hidden_layers, drop_rate=drop_rate,
             )
     elif task == 'classification':
         model = SimpleClassificationMLP(
             num_classes=1, input_size=input_size, hidden_size=hidden_size,
-            hidden_layers=hidden_layers, dtype=dtype,
+            hidden_layers=hidden_layers, dtype=dtype, drop_rate=drop_rate,
         )
     else:
         raise ValueError(f"Unknown task type '{task}'")
@@ -201,11 +253,17 @@ def main():
         f"\nTotal Parameters = {total}"
     )
 
+    # Prepare folders for experiments
+    folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} ({model_type} {strategy} {pow_type} {cluster_type} {task})"
+    log_folder = os.path.join('logs', folder_name)
+    os.makedirs(os.path.join(log_folder), exist_ok=True)
+
     train_datasets = []
     test_datasets = []
     csv_file = f'data/baseline/cleaned/{pow_type}_cluster/{cluster_type}/{dataset_type}_dataset.csv'
     benchmark = make_benchmark(
-        csv_file, train_datasets, test_datasets, task='regression', NUM_CAMPAIGNS=num_campaigns, dtype=dtype
+        csv_file, train_datasets, test_datasets, task=task, NUM_CAMPAIGNS=num_campaigns, dtype=dtype,
+        normalize_inputs=normalize_inputs, normalize_outputs=normalize_outputs, log_folder=log_folder,
     )
 
     train_stream = benchmark.train_stream
@@ -219,9 +277,6 @@ def main():
     else:
         print(f"Error: Unsupported optimizer type '{optimizer_type}'.")
         sys.exit(1)
-    folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} ({model_type} {strategy} {pow_type} {cluster_type} {task})"
-    log_folder = os.path.join('logs', folder_name)
-    os.makedirs(os.path.join(log_folder), exist_ok=True)
     csv_logger = CSVLogger(log_folder=log_folder)
     with open(os.path.join(log_folder, 'config.json'), 'w') as fp:
         json.dump(config, fp, indent=4)
@@ -260,7 +315,7 @@ def main():
 
     # train and test loop over the stream of experiences
     print("Starting ...")
-    results = run(train_stream, test_stream, cl_strategy)
+    results = run(train_stream, test_stream, cl_strategy, model, log_folder)
     with open(os.path.join(log_folder, 'results.json'), 'w') as fp:
         json.dump(results, fp, indent=4)
 

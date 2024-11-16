@@ -1,4 +1,17 @@
+from torch import float16, float32, float64
 from datetime import datetime
+
+
+def get_dtype_from_str(dtype: str):
+    if dtype == 'float16':
+        dtype = float16
+    elif dtype == 'float32':
+        dtype = float32
+    elif dtype == 'float64':
+        dtype = float64
+    else:
+        raise ValueError(f"Unknown dtype \"{dtype}\"")
+    return dtype
 
 
 def time_logger(func):
@@ -14,4 +27,4 @@ def time_logger(func):
     return wrapper
 
 
-__all__ = ["time_logger"]
+__all__ = ["time_logger", "float16", "float32", "float64", "get_dtype_from_str"]
