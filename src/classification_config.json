@@ -1,0 +1,10 @@
+{
+  "task": "classification",
+  "dataset_type": "complete",
+  "train_epochs": 10,
+  "lr": 5e-4,
+  "num_campaigns": 10,
+  "hidden_size": 32,
+  "hidden_layers": 2,
+  "model_type": "MLP"
+}

@@ -1,5 +1,6 @@
 from .plots import *
 from .misc import *
+from .plugins import *
 from .logging import *
 from .metrics import *
 from .datasets import *

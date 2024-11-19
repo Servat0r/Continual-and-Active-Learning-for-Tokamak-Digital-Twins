@@ -1,0 +1,23 @@
+{
+  "task": "regression",
+  "train_epochs": 50,
+  "lr": 1e-3,
+  "num_campaigns": 10,
+  "kernel_size": 11,
+  "padding": 5,
+  "hidden_size": 512,
+  "hidden_layers": 2,
+  "weight_decay": 1e-4,
+  "alpha": 0.5,
+  "temperature": 2,
+  "lambda": 100.0,
+  "decay_factor": 0.99,
+  "dataset_type": "not_null",
+  "train_mb_size": 512,
+  "model_type": "ConvNet",
+  "strategy": "Replay",
+  "mem_size": 500,
+  "drop_rate": 0.5,
+  "normalize_inputs": true,
+  "normalize_outputs": false
+}

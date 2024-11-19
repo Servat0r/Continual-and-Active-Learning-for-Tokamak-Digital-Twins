@@ -1,0 +1,18 @@
+{
+  "task": "regression",
+  "train_epochs": 30,
+  "lr": 2e-4,
+  "num_campaigns": 10,
+  "hidden_size": 512,
+  "hidden_layers": 2,
+  "weight_decay": 2e-4,
+  "dataset_type": "not_null",
+  "train_mb_size": 512,
+  "model_type": "ConvNet",
+  "out_channels1": 32,
+  "out_channels2": 64,
+  "kernel_size": 3,
+  "padding": 1,
+  "strategy": "Replay",
+  "mem_size": 10000
+}
