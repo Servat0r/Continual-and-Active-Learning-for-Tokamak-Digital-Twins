@@ -17,6 +17,8 @@ from avalanche.evaluation.metrics import loss_metrics, forgetting_metrics
 from avalanche.training.plugins import EvaluationPlugin
 from avalanche.training.supervised import Naive, Replay, LwF, EWC, SynapticIntelligence
 from avalanche.training.plugins import EarlyStoppingPlugin as AvalancheEarlyStopping
+from avalanche.training.plugins import LRSchedulerPlugin
+from torch.optim.lr_scheduler import StepLR
 
 from utils import *
 
@@ -52,7 +54,7 @@ def make_benchmark(
 ):
     float_precision = dtype
     dtype = get_dtype_from_str(dtype)
-    OUTPUTS = BASELINE_HIGHPOW_OUTPUTS if task == 'regression' else ['has_turbulence']
+    OUTPUTS = BASELINE_HIGHPOW_OUTPUTS if task == 'regression' else ['has_turbulence'] #Try with single column
     data = pd.read_csv(csv_file)
     debug_print(f"There are {len(data)} items in the dataset in {csv_file}.")
     # Split the data into train and test sets
@@ -132,6 +134,8 @@ def main():
     early_stopping_patience = 5
     early_stopping_delta = 0.1
     loss_type = 'MSE'
+    scheduler_type = None
+    scheduler_first_exp_only = False
     config = {
         'input_size': input_size,
         'output_size': output_size,
@@ -170,6 +174,8 @@ def main():
         'early_stopping_patience': early_stopping_patience,
         'early_stopping_delta': early_stopping_delta,
         'loss_type': loss_type,
+        'scheduler_type': scheduler_type,
+        'scheduler_first_epoch_only': scheduler_first_exp_only,
     }
     if len(sys.argv) >= 2:
         config_file = sys.argv[1]
@@ -213,6 +219,8 @@ def main():
     early_stopping_patience = config['early_stopping_patience']
     early_stopping_delta = config['early_stopping_delta']
     loss_type = config['loss_type']
+    scheduler_type = config['scheduler_type']
+    scheduler_first_exp_only = config['scheduler_first_epoch_only']
     try:
         print("Configuration Loaded:")
         print(f"  Input size: {input_size}")
@@ -252,6 +260,8 @@ def main():
         print(f"  Early stopping_patience: {early_stopping_patience}")
         print(f"  Early stopping delta: {early_stopping_delta}")
         print(f"  Loss Type: {loss_type}")
+        print(f"  Scheduler Type: {scheduler_type}")
+        print(f"  Scheduler First Epoch Only: {scheduler_first_exp_only}")
     except NameError as e:
         print(f"Error: Missing expected configuration key: \"{e}\"")
         sys.exit(1)
@@ -286,9 +296,8 @@ def main():
     # Prepare folders for experiments
     folder_name = \
         (f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} "
-         f"({model_type} {strategy} {pow_type} {cluster_type} {task}"
-         f"{dataset_type} early_stopping = {early_stopping})")
-    log_folder = os.path.join('logs', folder_name)
+         f"({model_type} early_stopping = {early_stopping})")
+    log_folder = os.path.join('logs', pow_type, cluster_type, task, dataset_type, strategy, folder_name)
     os.makedirs(os.path.join(log_folder), exist_ok=True)
 
     # Print model size to experiment directory
@@ -352,6 +361,13 @@ def main():
             EarlyStoppingPlugin(
                 patience=early_stopping_patience, delta=early_stopping_delta,
                 restore_best_weights=True, metric='Loss', type='min',
+            )
+        )
+    if scheduler_type == 'StepLR':
+        plugins.append(
+            LRSchedulerPlugin(
+                StepLR(optimizer, step_size=30, gamma=0.8),
+                first_exp_only=scheduler_first_exp_only,
             )
         )
 

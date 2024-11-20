@@ -1,6 +1,5 @@
 import os
 import torch
-from avalanche.core import SupervisedPlugin
 from avalanche.evaluation.metric_results import MetricValue
 from avalanche.evaluation import GenericPluginMetric
 from avalanche.logging import BaseLogger
@@ -39,7 +38,10 @@ def extract_metric_type(metric_name: str):
     else:
         raise ValueError(f"Unknown metric name: {metric_name}")
 
-def get_log_folder(hour, minute, seconds, day, month, year=2024):
+def get_log_folder(
+        pow_type, cluster_type, task, dataset_type, strategy, folder_name,
+        hour, minute, seconds, day, month, year=2024
+):
     params = {
         'hour': hour, 'minute': minute, 'seconds': seconds,
         'day': day, 'month': month, 'year': year
@@ -54,9 +56,11 @@ def get_log_folder(hour, minute, seconds, day, month, year=2024):
     month = params['month']
     year = params['year']
     basepath = f"{year}-{month}-{day}_{hour}-{minute}-{seconds}"
-    for dirname in os.listdir('logs'):
+    index_dir = os.path.join('logs', pow_type, cluster_type, task, dataset_type, strategy)
+    print(index_dir)
+    for dirname in os.listdir(index_dir):
         if dirname.startswith(basepath):
-            return os.path.join('logs', dirname)
+            return os.path.join(index_dir, dirname)
     raise ValueError(f"Not found any directory starting with \"{basepath}\"")
 ############################à
 
