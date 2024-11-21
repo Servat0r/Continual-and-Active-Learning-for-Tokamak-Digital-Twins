@@ -49,25 +49,30 @@ def _build_normalization_transforms(data, columns, dtype, transform=None):
 
 @time_logger()
 def make_benchmark(
-        csv_file, train_datasets, test_datasets, task='regression', NUM_CAMPAIGNS=5, dtype='float64',
-        test_size=0.2, normalize_inputs=False, normalize_outputs=False, log_folder=None,
+        csv_file, train_datasets, test_datasets, task='regression',
+        input_columns=BASELINE_HIGHPOW_INPUTS, output_columns=BASELINE_HIGHPOW_OUTPUTS,
+        NUM_CAMPAIGNS=5, dtype='float64', *, test_size=0.2, eval_size=0.25,
+        normalize_inputs=False, normalize_outputs=False, log_folder=None,
 ):
     float_precision = dtype
     dtype = get_dtype_from_str(dtype)
-    OUTPUTS = BASELINE_HIGHPOW_OUTPUTS if task == 'regression' else ['has_turbulence'] #Try with single column
+    if task == 'classification':
+        output_columns = ['has_turbulence']
+    elif output_columns is None:
+        output_columns = BASELINE_HIGHPOW_OUTPUTS
     data = pd.read_csv(csv_file)
     debug_print(f"There are {len(data)} items in the dataset in {csv_file}.")
     # Split the data into train and test sets
-    train_data, test_data = train_test_split(data, test_size=test_size, random_state=42)
+    train_data, test_data = train_test_split(data, test_size=test_size, random_state=42, shuffle=True)
     if normalize_inputs:
-        transform, (mean, std) = _build_normalization_transforms(train_data, BASELINE_HIGHPOW_INPUTS, dtype)
+        transform, (mean, std) = _build_normalization_transforms(train_data, input_columns, dtype)
         if log_folder:
             torch.save(mean, os.path.join(log_folder, "input_mean.pt"))
             torch.save(std, os.path.join(log_folder, "input_std.pt"))
     else:
         transform = None
     if normalize_outputs:
-        target_transform, (mean, std) = _build_normalization_transforms(train_data, OUTPUTS, dtype)
+        target_transform, (mean, std) = _build_normalization_transforms(train_data, output_columns, dtype)
         if log_folder:
             torch.save(mean, os.path.join(log_folder, "output_mean.pt"))
             torch.save(std, os.path.join(log_folder, "output_std.pt"))
@@ -76,7 +81,7 @@ def make_benchmark(
     for campaign in range(NUM_CAMPAIGNS):
         print(f"Loading data for campaign {campaign} ...")
         train_dataset, test_dataset = get_avalanche_csv_regression_datasets(
-            train_data, test_data, BASELINE_HIGHPOW_INPUTS, output_columns=OUTPUTS,
+            train_data, test_data, BASELINE_HIGHPOW_INPUTS, output_columns=output_columns,
             filter_by={'campaign': [campaign]}, float_precision=float_precision,
             device='cpu', transform=transform, target_transform=target_transform,
         )
@@ -97,8 +102,10 @@ def main():
     # Config
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     # model
-    input_size = len(BASELINE_HIGHPOW_INPUTS)
-    output_size = len(BASELINE_HIGHPOW_OUTPUTS)
+    input_columns = BASELINE_HIGHPOW_INPUTS
+    output_columns = BASELINE_HIGHPOW_OUTPUTS
+    input_size = len(input_columns)
+    output_size = len(output_columns)
     train_mb_size = 512
     eval_mb_size = 2048
     train_epochs = 30
@@ -136,7 +143,11 @@ def main():
     loss_type = 'MSE'
     scheduler_type = None
     scheduler_first_exp_only = False
+    scheduler_step_size = 30
+    scheduler_gamma = 0.8
     config = {
+        'input_columns': input_columns,
+        'output_columns': output_columns,
         'input_size': input_size,
         'output_size': output_size,
         'train_mb_size': train_mb_size,
@@ -176,14 +187,18 @@ def main():
         'loss_type': loss_type,
         'scheduler_type': scheduler_type,
         'scheduler_first_epoch_only': scheduler_first_exp_only,
+        'scheduler_step_size': scheduler_step_size,
+        'scheduler_gamma': scheduler_gamma,
     }
     if len(sys.argv) >= 2:
         config_file = sys.argv[1]
         print(config_file)
         new_config_data = load_config(config_file)
         config.update(new_config_data)
-    input_size = config['input_size']
-    output_size = config['output_size']
+    input_columns = config['input_columns']
+    output_columns = config['output_columns']
+    input_size = len(input_columns)
+    output_size = len(output_columns)
     train_mb_size = config['train_mb_size']
     eval_mb_size = config['eval_mb_size']
     train_epochs = config['train_epochs']
@@ -221,8 +236,12 @@ def main():
     loss_type = config['loss_type']
     scheduler_type = config['scheduler_type']
     scheduler_first_exp_only = config['scheduler_first_epoch_only']
+    scheduler_step_size = config['scheduler_step_size']
+    scheduler_gamma = config['scheduler_gamma']
     try:
         print("Configuration Loaded:")
+        print(f"  Input columns: {input_columns}")
+        print(f"  Output columns: {output_columns}")
         print(f"  Input size: {input_size}")
         print(f"  Output size: {output_size}")
         print(f"  Train MB size: {train_mb_size}")
@@ -262,6 +281,8 @@ def main():
         print(f"  Loss Type: {loss_type}")
         print(f"  Scheduler Type: {scheduler_type}")
         print(f"  Scheduler First Epoch Only: {scheduler_first_exp_only}")
+        print(f"  Scheduler Step Size: {scheduler_step_size}")
+        print(f"  Scheduler Gamma: {scheduler_gamma}")
     except NameError as e:
         print(f"Error: Missing expected configuration key: \"{e}\"")
         sys.exit(1)
@@ -312,8 +333,9 @@ def main():
     test_datasets = []
     csv_file = f'data/baseline/cleaned/{pow_type}_cluster/{cluster_type}/{dataset_type}_dataset.csv'
     benchmark = make_benchmark(
-        csv_file, train_datasets, test_datasets, task=task, NUM_CAMPAIGNS=num_campaigns, dtype=dtype,
-        normalize_inputs=normalize_inputs, normalize_outputs=normalize_outputs, log_folder=log_folder,
+        csv_file, train_datasets, test_datasets, task=task, NUM_CAMPAIGNS=num_campaigns,
+        dtype=dtype, normalize_inputs=normalize_inputs, normalize_outputs=normalize_outputs,
+        log_folder=log_folder, input_columns=input_columns, output_columns=output_columns,
     )
 
     train_stream = benchmark.train_stream
@@ -345,7 +367,7 @@ def main():
         relative_distance_metrics(epoch=True, experience=True, stream=True) + \
         r2_score_metrics(epoch=True, experience=True, stream=True)
     # Build logger
-    csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics)
+    csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=test_stream)
     has_interactive_logger = int(os.getenv('INTERACTIVE', '0'))
     loggers = ([InteractiveLogger()] if has_interactive_logger else []) + [csv_logger]
     # Define the evaluation plugin with desired metrics
@@ -355,18 +377,20 @@ def main():
         eval_plugin = EvaluationPlugin(*metrics, loggers=loggers)
 
     # Extra plugins
-    plugins = []
+    plugins = [ValidationStreamPlugin(val_stream=test_stream)]
+
     if early_stopping:
         plugins.append(
-            EarlyStoppingPlugin(
-                patience=early_stopping_patience, delta=early_stopping_delta,
-                restore_best_weights=True, metric='Loss', type='min',
+            AvalancheEarlyStopping(
+                patience=early_stopping_patience, val_stream_name='test_stream',
+                metric_name='Loss_Epoch', mode='min', peval_mode='epoch',
+                margin=early_stopping_delta, verbose=True
             )
         )
     if scheduler_type == 'StepLR':
         plugins.append(
             LRSchedulerPlugin(
-                StepLR(optimizer, step_size=30, gamma=0.8),
+                StepLR(optimizer, step_size=scheduler_step_size, gamma=scheduler_gamma),
                 first_exp_only=scheduler_first_exp_only,
             )
         )

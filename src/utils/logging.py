@@ -66,7 +66,10 @@ def get_log_folder(
 
 
 class CustomCSVLogger(BaseLogger):
-    def __init__(self, log_folder=None, metrics: list[GenericPluginMetric] = None):
+    def __init__(
+            self, log_folder=None, metrics: list[GenericPluginMetric] = None,
+            val_stream=None,
+    ):
         super().__init__()
         self.log_folder = log_folder if log_folder is not None else "csvlogs"
         os.makedirs(self.log_folder, exist_ok=True)
@@ -117,14 +120,34 @@ class CustomCSVLogger(BaseLogger):
                 flush=True,
             )
         for filetype, file in self.eval_files.items():
-            print(
-                "eval_exp",
-                "training_exp",
-                *self.metric_names[filetype],
-                sep=",",
-                file=file,
-                flush=True,
-            )
+            if filetype == 'epoch':
+                print(
+                    "training_exp",
+                    "epoch",
+                    *self.metric_names[filetype],
+                    sep=",",
+                    file=file,
+                    flush=True,
+                )
+            else:
+                print(
+                    "eval_exp",
+                    "training_exp",
+                    *self.metric_names[filetype],
+                    sep=",",
+                    file=file,
+                    flush=True,
+                )
+        self.val_stream = None
+        self.val_experiences = None
+        if val_stream is not None:
+            self.set_validation_stream(val_stream)
+
+    def set_validation_stream(self, stream):
+        self.val_stream = stream
+        self.val_experiences = []
+        for val_exp in self.val_stream:
+            self.val_experiences.append(val_exp)
 
     def _val_to_str(self, m_val):
         if isinstance(m_val, torch.Tensor):
@@ -156,25 +179,35 @@ class CustomCSVLogger(BaseLogger):
         )
 
     def print_eval_metrics(
-        self, eval_exp, training_exp, metric_values, type,
+        self, eval_exp, training_exp, metric_values, out_type, in_type, epoch=None,
     ):
-        file = self.eval_files[type]
-        metric_names = self.metric_names[type]
+        file = self.eval_files[out_type]
+        metric_names = self.metric_names[in_type]
         metric_raw_values = [0.0 for _ in range(len(metric_names))]
         for val in metric_values:
             metric_info = extract_metric_info(val.name)
-            if metric_info['type'] == type:
+            if metric_info['type'] == in_type:
                 metric_name = metric_info['name']
                 metric_idx = metric_names.index(metric_name)
                 metric_raw_values[metric_idx] = self._val_to_str(val.value)
-        print(
-            eval_exp,
-            training_exp,
-            *metric_raw_values,
-            sep=",",
-            file=file,
-            flush=True,
-        )
+        if out_type == 'epoch':
+            print(
+                training_exp,
+                epoch,
+                *metric_raw_values,
+                sep=",",
+                file=file,
+                flush=True,
+            )
+        else:
+            print(
+                eval_exp,
+                training_exp,
+                *metric_raw_values,
+                sep=",",
+                file=file,
+                flush=True,
+            )
 
     def after_training_epoch(
         self,
@@ -189,6 +222,12 @@ class CustomCSVLogger(BaseLogger):
             metric_values,
             type='epoch',
         )
+        #print("Starting evaluation after training epoch: ")
+        #val_exp = self.val_experiences[self.training_exp_id]
+        #eval_results = strategy.eval(val_exp, **kwargs)
+        #for name, value in eval_results.items():
+        #    if 'test_stream' in name:
+        #        print(f">> {name} = {value}")
 
     def after_eval_exp(
         self,
@@ -198,12 +237,22 @@ class CustomCSVLogger(BaseLogger):
     ):
         #super().after_eval_exp(strategy, metric_values, **kwargs)
         # Temporarily ignore the case of validation during training (refer to CSVLogger class for implementing)
-        if not self.in_train_phase:
+        if self.in_train_phase:
             self.print_eval_metrics(
                 strategy.experience.current_experience,
                 self.training_exp_id,
                 metric_values,
-                type='exp',
+                out_type='epoch',
+                in_type='exp',
+                epoch=strategy.clock.train_exp_epochs,
+            )
+        else:
+            self.print_eval_metrics(
+                strategy.experience.current_experience,
+                self.training_exp_id,
+                metric_values,
+                out_type='exp',
+                in_type='exp',
             )
 
     def before_training_exp(

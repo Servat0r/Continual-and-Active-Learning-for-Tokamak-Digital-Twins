@@ -5,7 +5,31 @@ from avalanche.training.plugins import SupervisedPlugin
 from .misc import debug_print
 
 
-class EarlyStoppingPlugin(SupervisedPlugin):
+class ValidationStreamPlugin(SupervisedPlugin):
+
+    def __init__(self, val_stream: Any):
+        super().__init__()
+        self.training_exp_id = None
+        self.val_stream = None
+        self.val_experiences = None
+        self.set_validation_stream(val_stream)
+
+    def set_validation_stream(self, val_stream: Any):
+        self.val_stream = val_stream
+        self.val_experiences = []
+        for val_exp in val_stream:
+            self.val_experiences.append(val_exp)
+
+    def before_training_exp(self, strategy: Template, *args, **kwargs) -> Any:
+        self.training_exp_id = strategy.experience.current_experience
+
+    def after_training_epoch(self, strategy: Template, *args, **kwargs) -> Any:
+        val_exp = self.val_experiences[self.training_exp_id]
+        results = strategy.eval(val_exp)
+        return results
+
+
+class TrainingEarlyStoppingPlugin(SupervisedPlugin):
 
     @property
     def MIN(self):
@@ -78,4 +102,4 @@ class EarlyStoppingPlugin(SupervisedPlugin):
         strategy.model.load_state_dict(self.best_weights)
 
 
-__all__ = ['EarlyStoppingPlugin']
+__all__ = ['ValidationStreamPlugin', 'TrainingEarlyStoppingPlugin']
