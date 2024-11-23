@@ -148,7 +148,7 @@ class SimpleClassificationMLP(nn.Module, BaseModel):
 
     def __init__(
         self,
-        num_classes=10,
+        output_size=10,
         input_size=28 * 28,
         hidden_size=512,
         hidden_layers=1,
@@ -179,7 +179,7 @@ class SimpleClassificationMLP(nn.Module, BaseModel):
             )
 
         self.features = nn.Sequential(*layers)
-        self.logits_layer = nn.Linear(hidden_size, num_classes, dtype=dtype)
+        self.logits_layer = nn.Linear(hidden_size, output_size, dtype=dtype)
         self.sigmoid = nn.Sigmoid()
         self._input_size = input_size
 

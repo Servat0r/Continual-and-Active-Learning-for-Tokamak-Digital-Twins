@@ -5,18 +5,27 @@
     "num_campaigns": 10,
     "train_mb_size": 512,
     "eval_mb_size": 1024,
-    "train_epochs": 250
+    "train_epochs": 1000
   },
   "dataset": {
-    "dataset_type": "complete",
+    "pow_type": "lowpow",
+    "cluster_type": "tau_based",
+    "dataset_type": "not_null",
+    "input_columns": [
+      "ane", "ate", "x", "q", "smag", "alpha",
+      "ani1", "ati0", "normni1", "zeff", "lognustar"
+    ],
     "output_columns": ["pfe"],
-    "output_size": 4,
+    "input_size": 11,
+    "output_size": 1,
     "normalize_inputs": true,
     "normalize_outputs": false
   },
   "architecture": {
     "name": "MLP",
     "parameters": {
+      "input_size": 11,
+      "output_size": 1,
       "hidden_size": 1024,
       "hidden_layers": 2,
       "drop_rate": 0.5
@@ -24,21 +33,24 @@
   },
   "loss": {
     "name": "MSE",
-    "parameters": {}
+    "parameters": {
+      "reduction":  "mean"
+    }
   },
   "optimizer": {
     "name": "SGD",
     "parameters": {
-      "lr": 1e-3,
+      "lr": 1e-2,
       "weight_decay": 1e-4
     }
   },
   "scheduler": {
-    "name": "StepLR",
+    "name": "ReduceLROnPlateau",
     "parameters": {
-      "scheduler_first_exp_only": false,
-      "scheduler_step_size": 50,
-      "scheduler_gamma": 0.8
+      "metric": "val_loss",
+      "first_exp_only": false,
+      "factor": 0.25,
+      "patience": 10
     }
   },
   "strategy": {
@@ -46,10 +58,10 @@
     "parameters": {}
   },
   "early_stopping": {
-    "active": true,
-    "parameters": {
-      "early_stopping_patience": 5,
-      "early_stopping_delta": 0.1
-    }
+    "patience": 20,
+    "delta": 0.1
+  },
+  "validation_stream": {
+    "val_stream": "test_stream"
   }
 }

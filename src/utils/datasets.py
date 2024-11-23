@@ -1,4 +1,5 @@
 from typing import Any, Callable
+import os
 import pandas as pd
 import torch
 from avalanche.benchmarks import AvalancheDataset
@@ -11,6 +12,8 @@ class CSVRegressionDataset(Dataset):
             self, data, input_columns: list[str], output_columns: list[str],
             transform=None, target_transform=None, filter_by: dict[str, list] = None,
             float_precision: str = 'float32', device=None,
+            filter_by_leq: dict[str, int | float] = None,
+            filter_by_geq: dict[str, int | float] = None,
     ):
         if (device is None) or (device == 'gpu'):
             device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -26,6 +29,12 @@ class CSVRegressionDataset(Dataset):
         if filter_by:
             for column, values in filter_by.items():
                 self.data = self.data[self.data[column].isin(values)]
+        if filter_by_leq:
+            for column, value in filter_by_leq.items():
+                self.data = self.data[self.data[column] <= value]
+        if filter_by_geq:
+            for column, value in filter_by_geq.items():
+                self.data = self.data[self.data[column] >= value]
         self.transform = transform
         self.target_transform = target_transform
         self.inputs = torch.tensor(self.data[input_columns].values.astype(float_precision)).to(device)
@@ -60,6 +69,13 @@ def make_datasets(src_path, src_filename, dest_path, output_columns):
     not_null_df = df[df['has_turbulence'] == True]
     not_null_df = not_null_df.drop(columns=['has_turbulence'])
     classification_df = df.drop(columns=output_columns)
+    print(
+        f"Complete dataset has {len(complete_df)} elements",
+        f"Not Null dataset has {len(not_null_df)} elements",
+        f"Classification dataset has {len(classification_df)} elements",
+        sep='\n',
+    )
+    os.makedirs(dest_path, exist_ok=True)
     complete_df.to_csv(path_or_buf=f'{dest_path}/complete_dataset.csv', index=False)
     not_null_df.to_csv(path_or_buf=f'{dest_path}/not_null_dataset.csv', index=False)
     classification_df.to_csv(path_or_buf=f'{dest_path}/classification_dataset.csv', index=False)
@@ -71,16 +87,17 @@ def get_avalanche_csv_regression_datasets(
         float_precision: str = 'float32', device=None, *, indices: list[int] | None = None,
         data_attributes: list[DataAttribute] | None = None, transform_groups: TransformGroups | None = None,
         frozen_transform_groups: TransformGroups | None = None, collate_fn: Callable[[list], Any] | None = None,
+        filter_by_leq: dict[str, int | float] = None, filter_by_geq: dict[str, int | float] = None,
 ):
     base_train_dataset = CSVRegressionDataset(
         train_data, input_columns=input_columns, output_columns=output_columns, transform=transform,
         target_transform=target_transform, filter_by=filter_by, float_precision=float_precision,
-        device=device,
+        device=device, filter_by_geq=filter_by_geq, filter_by_leq=filter_by_leq,
     )
     base_test_dataset = CSVRegressionDataset(
         test_data, input_columns=input_columns, output_columns=output_columns, transform=transform,
         target_transform=target_transform, filter_by=filter_by, float_precision=float_precision,
-        device=device,
+        device=device, filter_by_geq=filter_by_geq, filter_by_leq=filter_by_leq,
     )
 
     train_dataset = AvalancheDataset(
@@ -114,4 +131,5 @@ __all__ = [
     'CSVRegressionDataset', 'get_avalanche_csv_regression_datasets',
     'BASELINE_HIGHPOW_INPUTS', 'BASELINE_HIGHPOW_OUTPUTS',
     'BASELINE_LOWPOW_INPUTS', 'BASELINE_LOWPOW_OUTPUTS',
+    'make_datasets',
 ]
