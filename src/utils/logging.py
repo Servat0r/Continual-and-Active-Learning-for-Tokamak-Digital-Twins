@@ -222,12 +222,6 @@ class CustomCSVLogger(BaseLogger):
             metric_values,
             type='epoch',
         )
-        #print("Starting evaluation after training epoch: ")
-        #val_exp = self.val_experiences[self.training_exp_id]
-        #eval_results = strategy.eval(val_exp, **kwargs)
-        #for name, value in eval_results.items():
-        #    if 'test_stream' in name:
-        #        print(f">> {name} = {value}")
 
     def after_eval_exp(
         self,

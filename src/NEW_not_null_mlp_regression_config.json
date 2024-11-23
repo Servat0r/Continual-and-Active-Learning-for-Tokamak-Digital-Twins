@@ -1,0 +1,55 @@
+{
+  "general": {
+    "task": "regression",
+    "dtype": "float32",
+    "num_campaigns": 10,
+    "train_mb_size": 512,
+    "eval_mb_size": 1024,
+    "train_epochs": 250
+  },
+  "dataset": {
+    "dataset_type": "complete",
+    "output_columns": ["pfe"],
+    "output_size": 4,
+    "normalize_inputs": true,
+    "normalize_outputs": false
+  },
+  "architecture": {
+    "name": "MLP",
+    "parameters": {
+      "hidden_size": 1024,
+      "hidden_layers": 2,
+      "drop_rate": 0.5
+    }
+  },
+  "loss": {
+    "name": "MSE",
+    "parameters": {}
+  },
+  "optimizer": {
+    "name": "SGD",
+    "parameters": {
+      "lr": 1e-3,
+      "weight_decay": 1e-4
+    }
+  },
+  "scheduler": {
+    "name": "StepLR",
+    "parameters": {
+      "scheduler_first_exp_only": false,
+      "scheduler_step_size": 50,
+      "scheduler_gamma": 0.8
+    }
+  },
+  "strategy": {
+    "name": "Naive",
+    "parameters": {}
+  },
+  "early_stopping": {
+    "active": true,
+    "parameters": {
+      "early_stopping_patience": 5,
+      "early_stopping_delta": 0.1
+    }
+  }
+}

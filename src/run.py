@@ -2,6 +2,7 @@ import json
 import sys
 import os
 import shutil
+from rich import print
 
 import pandas as pd
 from datetime import datetime
@@ -16,9 +17,8 @@ from avalanche.benchmarks import *
 from avalanche.evaluation.metrics import loss_metrics, forgetting_metrics
 from avalanche.training.plugins import EvaluationPlugin
 from avalanche.training.supervised import Naive, Replay, LwF, EWC, SynapticIntelligence
-from avalanche.training.plugins import EarlyStoppingPlugin as AvalancheEarlyStopping
 from avalanche.training.plugins import LRSchedulerPlugin
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingLR
 
 from utils import *
 
@@ -29,17 +29,17 @@ def load_config(filename):
             config = json.load(file)
         return config
     except FileNotFoundError:
-        print(f"Error: Configuration file '{filename}' not found.")
+        print(f"[red]Error: Configuration file '{filename}' not found.[/red]")
         sys.exit(1)
     except json.JSONDecodeError:
-        print(f"Error: Failed to parse '{filename}' as JSON.")
+        print(f"[red]Error: Failed to parse '{filename}' as JSON.[/red]")
         sys.exit(1)
 
 
 def _build_normalization_transforms(data, columns, dtype, transform=None):
     mean = torch.tensor(data[columns].mean(axis=0), dtype=dtype)
     std = torch.tensor(data[columns].std(axis=0), dtype=dtype)
-    print(f"mean = {mean}, std = {std} ...")
+    print(f"[green]mean = {mean}, std = {std} ...[/green]")
     if transform is not None:
         transform = transforms.Compose([CustomNormalize(mean, std), transform])
     else:
@@ -79,7 +79,7 @@ def make_benchmark(
     else:
         target_transform = None
     for campaign in range(NUM_CAMPAIGNS):
-        print(f"Loading data for campaign {campaign} ...")
+        print(f"[yellow]Loading data for campaign {campaign} ...[/yellow]")
         train_dataset, test_dataset = get_avalanche_csv_regression_datasets(
             train_data, test_data, BASELINE_HIGHPOW_INPUTS, output_columns=output_columns,
             filter_by={'campaign': [campaign]}, float_precision=float_precision,
@@ -87,10 +87,10 @@ def make_benchmark(
         )
         X, y = train_dataset[0]
         print(
-            f"Input Shape = {X.shape}",
-            f"Output Shape = {y.shape}",
-            f"Length of Train Dataset = {len(train_dataset)}",
-            f"Length of Test Dataset = {len(test_dataset)}"
+            f"[red]Input Shape = {X.shape}[/red]",
+            f"[red]Output Shape = {y.shape}[/red]",
+            f"[red]Length of Train Dataset = {len(train_dataset)}[/red]",
+            f"[red]Length of Test Dataset = {len(test_dataset)}[/red]"
         )
         train_datasets.append(train_dataset)
         test_datasets.append(test_dataset)
@@ -145,6 +145,7 @@ def main():
     scheduler_first_exp_only = False
     scheduler_step_size = 30
     scheduler_gamma = 0.8
+    scheduler_eta_min = 1e-4
     config = {
         'input_columns': input_columns,
         'output_columns': output_columns,
@@ -189,6 +190,7 @@ def main():
         'scheduler_first_epoch_only': scheduler_first_exp_only,
         'scheduler_step_size': scheduler_step_size,
         'scheduler_gamma': scheduler_gamma,
+        'scheduler_eta_min': scheduler_eta_min,
     }
     if len(sys.argv) >= 2:
         config_file = sys.argv[1]
@@ -238,67 +240,78 @@ def main():
     scheduler_first_exp_only = config['scheduler_first_epoch_only']
     scheduler_step_size = config['scheduler_step_size']
     scheduler_gamma = config['scheduler_gamma']
+    scheduler_eta_min = config['scheduler_eta_min']
     try:
-        print("Configuration Loaded:")
-        print(f"  Input columns: {input_columns}")
-        print(f"  Output columns: {output_columns}")
-        print(f"  Input size: {input_size}")
-        print(f"  Output size: {output_size}")
-        print(f"  Train MB size: {train_mb_size}")
-        print(f"  Eval MB size: {eval_mb_size}")
-        print(f"  Train epochs: {train_epochs}")
-        print(f"  Num campaigns: {num_campaigns}")
-        print(f"  Dtype: {dtype}")
-        print(f"  LR: {lr}")
-        print(f"  Momentum: {momentum}")
-        print(f"  Weight decay: {weight_decay}")
-        print(f"  Drop rate: {drop_rate}")
-        print(f"  Out channels 1: {out_channels1}")
-        print(f"  Out channels 2: {out_channels2}")
-        print(f"  Hidden size: {hidden_size}")
-        print(f"  Hidden layers: {hidden_layers}")
-        print(f"  Kernel size: {kernel_size}")
-        print(f"  Padding: {padding}")
-        print(f"  Alpha: {alpha}")
-        print(f"  Temperature: {temperature}")
-        print(f"  Lambda: {lambda_value}")
-        print(f"  Decay factor: {decay_factor}")
-        print(f"  Si-Lambda: {si_lambda}")
-        print(f"  Si-Eps: {si_eps}")
-        print(f"  Pow type: {pow_type}")
-        print(f"  Cluster type: {cluster_type}")
-        print(f"  Optimizer type: {optimizer_type}")
-        print(f"  Dataset type: {dataset_type}")
-        print(f"  Task: {task}")
-        print(f"  Mem size: {mem_size}")
-        print(f"  Strategy: {strategy}")
-        print(f"  Model type: {model_type}")
-        print(f"  Normalize inputs: {normalize_inputs}")
-        print(f"  Normalize outputs: {normalize_outputs}")
-        print(f"  Early stopping: {early_stopping}")
-        print(f"  Early stopping_patience: {early_stopping_patience}")
-        print(f"  Early stopping delta: {early_stopping_delta}")
-        print(f"  Loss Type: {loss_type}")
-        print(f"  Scheduler Type: {scheduler_type}")
-        print(f"  Scheduler First Epoch Only: {scheduler_first_exp_only}")
-        print(f"  Scheduler Step Size: {scheduler_step_size}")
-        print(f"  Scheduler Gamma: {scheduler_gamma}")
+        print("[cyan]Configuration Loaded:[/cyan]")
+        print(f"  [cyan]Input columns: {input_columns}[/cyan]")
+        print(f"  [cyan]Output columns: {output_columns}[/cyan]")
+        print(f"  [cyan]Input size: {input_size}[/cyan]")
+        print(f"  [cyan]Output size: {output_size}[/cyan]")
+        print(f"  [cyan]Train MB size: {train_mb_size}[/cyan]")
+        print(f"  [cyan]Eval MB size: {eval_mb_size}[/cyan]")
+        print(f"  [cyan]Train epochs: {train_epochs}[/cyan]")
+        print(f"  [cyan]Num campaigns: {num_campaigns}[/cyan]")
+        print(f"  [cyan]Dtype: {dtype}[/cyan]")
+        print(f"  [cyan]LR: {lr}[/cyan]")
+        print(f"  [cyan]Momentum: {momentum}[/cyan]")
+        print(f"  [cyan]Weight decay: {weight_decay}[/cyan]")
+        print(f"  [cyan]Drop rate: {drop_rate}[/cyan]")
+        print(f"  [cyan]Out channels 1: {out_channels1}[/cyan]")
+        print(f"  [cyan]Out channels 2: {out_channels2}[/cyan]")
+        print(f"  [cyan]Hidden size: {hidden_size}[/cyan]")
+        print(f"  [cyan]Hidden layers: {hidden_layers}[/cyan]")
+        print(f"  [cyan]Kernel size: {kernel_size}[/cyan]")
+        print(f"  [cyan]Padding: {padding}[/cyan]")
+        print(f"  [cyan]Alpha: {alpha}[/cyan]")
+        print(f"  [cyan]Temperature: {temperature}[/cyan]")
+        print(f"  [cyan]Lambda: {lambda_value}[/cyan]")
+        print(f"  [cyan]Decay factor: {decay_factor}[/cyan]")
+        print(f"  [cyan]Si-Lambda: {si_lambda}[/cyan]")
+        print(f"  [cyan]Si-Eps: {si_eps}[/cyan]")
+        print(f"  [cyan]Pow type: {pow_type}[/cyan]")
+        print(f"  [cyan]Cluster type: {cluster_type}[/cyan]")
+        print(f"  [cyan]Optimizer type: {optimizer_type}[/cyan]")
+        print(f"  [cyan]Dataset type: {dataset_type}[/cyan]")
+        print(f"  [cyan]Task: {task}[/cyan]")
+        print(f"  [cyan]Mem size: {mem_size}[/cyan]")
+        print(f"  [cyan]Strategy: {strategy}[/cyan]")
+        print(f"  [cyan]Model type: {model_type}[/cyan]")
+        print(f"  [cyan]Normalize inputs: {normalize_inputs}[/cyan]")
+        print(f"  [cyan]Normalize outputs: {normalize_outputs}[/cyan]")
+        print(f"  [cyan]Early stopping: {early_stopping}[/cyan]")
+        print(f"  [cyan]Early stopping_patience: {early_stopping_patience}[/cyan]")
+        print(f"  [cyan]Early stopping delta: {early_stopping_delta}[/cyan]")
+        print(f"  [cyan]Loss Type: {loss_type}[/cyan]")
+        print(f"  [cyan]Scheduler Type: {scheduler_type}[/cyan]")
+        print(f"  [cyan]Scheduler First Epoch Only: {scheduler_first_exp_only}[/cyan]")
+        print(f"  [cyan]Scheduler Step Size: {scheduler_step_size}[/cyan]")
+        print(f"  [cyan]Scheduler Gamma: {scheduler_gamma}[/cyan]")
+        print(f"  [cyan]Scheduler Eta Min: {scheduler_eta_min}[/cyan]")
     except NameError as e:
         print(f"Error: Missing expected configuration key: \"{e}\"")
         sys.exit(1)
 
     if task == 'regression':
         if model_type == 'ConvNet':
-            model = SimpleConv1DModel(
-                in_features=input_size, out_channels1=out_channels1, out_channels2=out_channels2,
-                hidden_size=hidden_size, out_features=output_size, kernel_size=kernel_size,
-                padding=padding, dtype=dtype,
-            )
+            if loss_type in ['MSE', 'Huber']:
+                model = SimpleConv1DModel(
+                    in_features=input_size, out_channels1=out_channels1, out_channels2=out_channels2,
+                    hidden_size=hidden_size, out_features=output_size, kernel_size=kernel_size,
+                    padding=padding, dtype=dtype,
+                )
+            else:
+                raise ValueError(f"Invalid model_type = {model_type} for loss type = {loss_type}")
         elif model_type == 'MLP':
-            model = SimpleRegressionMLP(
-                output_size=output_size, hidden_size=hidden_size, dtype=dtype,
-                hidden_layers=hidden_layers, drop_rate=drop_rate,
-            )
+            if loss_type in ['MSE', 'Huber']:
+                model = SimpleRegressionMLP(
+                    output_size=output_size, hidden_size=hidden_size, dtype=dtype,
+                    hidden_layers=hidden_layers, drop_rate=drop_rate,
+                )
+            elif loss_type == 'GaussianNLL':
+                model = GaussianRegressionMLP(
+                    output_size=output_size, hidden_size=hidden_size, dtype=dtype,
+                    hidden_layers=hidden_layers, drop_rate=drop_rate,
+                )
     elif task == 'classification':
         model = SimpleClassificationMLP(
             num_classes=1, input_size=input_size, hidden_size=hidden_size,
@@ -310,8 +323,8 @@ def main():
     # Print Model Size
     trainables, total = get_model_size(model)
     print(
-        f"Trainable Parameters = {trainables}"
-        f"\nTotal Parameters = {total}"
+        f"Trainable Parameters = [red]{trainables}[/red]"
+        f"\nTotal Parameters = [red]{total}[/red]"
     )
 
     # Prepare folders for experiments
@@ -347,7 +360,7 @@ def main():
     elif optimizer_type == 'SGD':
         optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     else:
-        print(f"Error: Unsupported optimizer type '{optimizer_type}'.")
+        print(f"[red]Error: Unsupported optimizer type '{optimizer_type}'.[/red]")
         sys.exit(1)
     with open(os.path.join(log_folder, 'config.json'), 'w') as fp:
         json.dump(config, fp, indent=4)
@@ -357,15 +370,22 @@ def main():
             criterion = MSELoss(reduction='mean') #if task == 'regression' else BCEWithLogitsLoss()
         elif loss_type == 'Huber':
             criterion = HuberLoss(reduction='mean')
+        elif loss_type == 'GaussianNLL':
+            criterion = GaussianNLLLoss(reduction='mean')
         else:
-            raise ValueError(f"Unsupported loss type '{loss_type}'")
+            raise ValueError(f"[red]Unsupported loss type '{loss_type}'[/red]")
     else: # classification
         criterion = BCEWithLogitsLoss()
     # forgetting_metrics(experience=True, stream=True) + \
-    metrics = \
-        loss_metrics(epoch=True, experience=True, stream=True) + \
-        relative_distance_metrics(epoch=True, experience=True, stream=True) + \
-        r2_score_metrics(epoch=True, experience=True, stream=True)
+    if loss_type == 'GaussianNLL':
+        metrics = \
+            loss_metrics(epoch=True, experience=True, stream=True) + \
+            gaussian_mse_metrics(epoch=True, experience=True, stream=True)
+    else:
+        metrics = \
+            loss_metrics(epoch=True, experience=True, stream=True) + \
+            relative_distance_metrics(epoch=True, experience=True, stream=True) + \
+            r2_score_metrics(epoch=True, experience=True, stream=True)
     # Build logger
     csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=test_stream)
     has_interactive_logger = int(os.getenv('INTERACTIVE', '0'))
@@ -377,14 +397,24 @@ def main():
         eval_plugin = EvaluationPlugin(*metrics, loggers=loggers)
 
     # Extra plugins
-    plugins = [ValidationStreamPlugin(val_stream=test_stream)]
+    plugins = [
+        ValidationStreamPlugin(val_stream=test_stream),
+        TqdmTrainingEpochsPlugin(num_exp=num_campaigns, num_epochs=train_epochs)
+    ]
 
     if early_stopping:
+        #plugins.append(
+            #AvalancheEarlyStopping(
+            #    patience=early_stopping_patience, val_stream_name='test_stream',
+            #    metric_name='Loss_Epoch', mode='min', peval_mode='epoch',
+            #    margin=early_stopping_delta, verbose=True
+            #)
+        #)
         plugins.append(
-            AvalancheEarlyStopping(
+            ValidationEarlyStoppingPlugin(
                 patience=early_stopping_patience, val_stream_name='test_stream',
-                metric_name='Loss_Epoch', mode='min', peval_mode='epoch',
-                margin=early_stopping_delta, verbose=True
+                metric='Loss', type='min', restore_best_weights=True,
+                when_below=30, # todo move to parameters
             )
         )
     if scheduler_type == 'StepLR':
@@ -394,6 +424,21 @@ def main():
                 first_exp_only=scheduler_first_exp_only,
             )
         )
+    elif scheduler_type == 'ReduceLROnPlateau':
+        plugins.append(
+            LRSchedulerPlugin(
+                ReduceLROnPlateau(optimizer, mode='min', factor=scheduler_gamma, patience=5),
+                first_exp_only=scheduler_first_exp_only, metric='train_loss'
+            )
+        )
+    elif scheduler_type == 'CosineAnnealingLR':
+        plugins.append(
+            LRSchedulerPlugin(
+                CosineAnnealingLR(optimizer, T_max=scheduler_step_size, eta_min=scheduler_eta_min),
+            )
+        )
+    else:
+        raise ValueError(f"[red]Unknown scheduler type '{scheduler_type}'[/red]")
 
     # Continual learning strategy
     if strategy == 'Naive':
@@ -438,7 +483,7 @@ def main():
             plugins=plugins,
         )
     else:
-        raise ValueError(f"Unknown strategy type '{strategy}'")
+        raise ValueError(f"[red]Unknown strategy type '{strategy}'[/red]")
 
     debug_print(cl_strategy.evaluator)
     debug_print(cl_strategy.plugins)
@@ -447,11 +492,11 @@ def main():
     def run(train_stream, test_stream, cl_strategy, model, log_folder):
         results = []
         for idx, train_exp in enumerate(train_stream):
-            print(f"Starting training experience {idx}: ")
+            print(f"Starting training experience [red]{idx}[/red]: ")
             cl_strategy.train(train_exp)
-            print(f"Starting testing experience {idx}: ")
+            print(f"Starting testing experience [red]{idx}[/red]: ")
             results.append(cl_strategy.eval(test_stream))
-            print(f"Saving model after experience {id}: ")
+            print(f"Saving model after experience [red]{idx}[/red]: ")
             model.eval()
             torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
             model.train()
@@ -469,8 +514,9 @@ def main():
         torch.save(model.state_dict(), os.path.join(log_folder, 'model.pt'))
         # Plot over first 5 experiences
         for metric, title, ylabel in zip(
-            ['Loss_Exp', 'R2Score_Exp'], ['Loss over each experience', 'R2 Score over each experience'],
-            ['Loss', 'R2 Score']
+            ['Loss_Exp', 'R2Score_Exp', 'RelativeDistance_Exp'],
+            ['Loss over each experience', 'R2 Score over each experience', 'Relative Distance over each experience'],
+            ['Loss', 'R2 Score', 'Relative Distance']
         ):
             plot_metric_over_evaluation_experiences(
                 os.path.join(log_folder, 'eval_results_experience.csv'), metric,
@@ -485,7 +531,12 @@ def main():
             )
     except Exception as ex:
         debug_print("Caught Exception: ", ex)
-        shutil.rmtree(log_folder)
+        try:
+            shutil.rmtree(log_folder)
+        except:
+            debug_print(f"[red]Failed to remove {log_folder}[/red]")
+        finally:
+            raise ex
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+import torch
 from torch import float32, float64, float16
 import torch.nn as nn
 import torch.nn.functional as F
@@ -76,6 +77,66 @@ class SimpleRegressionMLP(nn.Module, BaseModel):
         x = self.features(x)
         x = self.regressor(x)
         return x
+
+    def get_features(self, x):
+        x = x.contiguous()
+        x = self.features(x)
+        return x
+
+
+class GaussianRegressionMLP(nn.Module, BaseModel):
+
+    def __init__(
+        self,
+        output_size=4,
+        input_size=15,
+        hidden_size=8,
+        hidden_layers=1,
+        drop_rate=0.5,
+        dtype='float32',
+    ):
+        """
+        :param output_size: output size
+        :param input_size: input size
+        :param hidden_size: hidden layer size
+        :param hidden_layers: number of hidden layers
+        :param drop_rate: dropout rate. 0 to disable
+        """
+        super().__init__()
+        dtype = _get_dtype_from_str(dtype)
+
+        layers = nn.Sequential(
+            *(
+                nn.Linear(input_size, hidden_size, dtype=dtype),
+                nn.BatchNorm1d(hidden_size, dtype=dtype),
+                nn.ReLU(inplace=True),
+                nn.Dropout(p=drop_rate),
+            )
+        )
+        for layer_idx in range(hidden_layers - 1):
+            layers.add_module(
+                f"fc{layer_idx + 1}",
+                nn.Sequential(
+                    *(
+                        nn.Linear(hidden_size, hidden_size, dtype=dtype),
+                        nn.BatchNorm1d(hidden_size, dtype=dtype),
+                        nn.ReLU(inplace=True),
+                        nn.Dropout(p=drop_rate),
+                    )
+                ),
+            )
+
+        self.features = nn.Sequential(*layers)
+        self.mean_layer = nn.Linear(hidden_size, output_size, dtype=dtype)
+        self.variance_layer = nn.Linear(hidden_size, output_size, dtype=dtype)
+        self._input_size = input_size
+
+    def forward(self, x):
+        x = x.contiguous()
+        x = self.features(x)
+        mean = self.mean_layer(x)
+        std = F.softplus(self.variance_layer(x)) # ?
+        return torch.cat([mean, std], dim=1)
 
     def get_features(self, x):
         x = x.contiguous()
@@ -178,6 +239,7 @@ class SimpleConv1DModel(nn.Module):
 
 __all__ = [
     "SimpleRegressionMLP",
+    "GaussianRegressionMLP",
     "SimpleClassificationMLP",
     "SimpleConv1DModel",
     "get_model_size"
