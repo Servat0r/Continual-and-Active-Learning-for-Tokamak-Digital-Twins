@@ -1,6 +1,7 @@
 from typing import Any
 from .parser import *
-from ..utils import ValidationEarlyStoppingPlugin, ValidationStreamPlugin
+from ..utils import ValidationStreamPlugin
+from ..utils.plugins.early_stopping import ValidationEarlyStoppingPlugin
 
 
 @ConfigParser.register_handler('early_stopping')
@@ -26,7 +27,6 @@ def validation_stream_handler(data: dict[str, Any], **kwargs):
     }
     default_config.update(data)
     val_stream = default_config['val_stream']
-    benchmark = kwargs['benchmark']
     plugin = ValidationStreamPlugin(eval(f"benchmark.{val_stream}"))
     return plugin
 

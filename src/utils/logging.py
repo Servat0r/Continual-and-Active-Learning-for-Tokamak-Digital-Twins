@@ -5,38 +5,11 @@ from avalanche.evaluation import GenericPluginMetric
 from avalanche.logging import BaseLogger
 from avalanche.training.templates import SupervisedTemplate
 
-from .misc import debug_print
+from .misc import debug_print, extract_metric_info, extract_metric_type
 
 
 ########################### Helpers
-def extract_metric_info(metric_name: str) -> dict[str, str]:
-    values = metric_name.split("/")
-    results = {
-        'name': values[0],
-        'phase': values[1],
-        'stream': values[2] if len(values) > 2 else None,
-        'exp': values[3] if len(values) > 3 else None,
-    }
-    if results['name'].endswith('Epoch'):
-        results['type'] = 'epoch'
-    elif results['name'].endswith('Exp'):
-        results['type'] = 'exp'
-    elif results['name'].endswith('Stream'):
-        results['type'] = 'stream'
-    else:
-        raise ValueError(f"Unknown metric name: {metric_name}")
-    return results
 
-
-def extract_metric_type(metric_name: str):
-    if metric_name.endswith('Epoch'):
-        return metric_name[:-6], 'epoch'
-    elif metric_name.endswith('Exp'):
-        return metric_name[:-4], 'exp'
-    elif metric_name.endswith('Stream'):
-        return metric_name[:-7], 'stream'
-    else:
-        raise ValueError(f"Unknown metric name: {metric_name}")
 
 def get_log_folder(
         pow_type, cluster_type, task, dataset_type, strategy, folder_name,
@@ -294,6 +267,5 @@ class CustomCSVLogger(BaseLogger):
 
 
 __all__ = [
-    "extract_metric_info", "extract_metric_type",
     "get_log_folder", "CustomCSVLogger"
 ]

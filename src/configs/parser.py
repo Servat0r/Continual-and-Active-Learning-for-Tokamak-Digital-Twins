@@ -32,7 +32,9 @@ class ConfigParser:
             'scheduler',            # Scheduler info
             'early_stopping',       # Early Stopping info
             'validation_stream',    # Validation Stream usage info
-            'plugins'               # (Other) Plugins info
+            'plugins',              # (Other) Plugins info
+            'transform',            # Input Transforms
+            'target_transform',     # Target Transforms
         ]
 
     @classmethod

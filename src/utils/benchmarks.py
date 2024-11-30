@@ -31,6 +31,7 @@ def make_benchmark(
         normalize_inputs=False, normalize_outputs=False, log_folder=None,
         dataset_type='complete', filter_by_leq: dict[str, int | float] = None,
         filter_by_geq: dict[str, int | float] = None,
+        transform=None, target_transform=None,
 ):
     float_precision = dtype
     dtype = get_dtype_from_str(dtype)
@@ -47,17 +48,19 @@ def make_benchmark(
     # Split the data into train and test sets
     train_data, test_data = train_test_split(data, test_size=test_size, random_state=42, shuffle=True)
     if normalize_inputs:
-        transform, (mean, std) = _build_normalization_transforms(train_data, input_columns, dtype)
+        norm_transform, (mean, std) = _build_normalization_transforms(train_data, input_columns, dtype)
         if log_folder:
             torch.save(mean, os.path.join(log_folder, "input_mean.pt"))
             torch.save(std, os.path.join(log_folder, "input_std.pt"))
-    else:
-        transform = None
+        transform = transforms.Compose([norm_transform, transform]) if transform else norm_transform
     if normalize_outputs:
-        target_transform, (mean, std) = _build_normalization_transforms(train_data, output_columns, dtype)
+        norm_target_transform, (mean, std) = _build_normalization_transforms(train_data, output_columns, dtype)
         if log_folder:
             torch.save(mean, os.path.join(log_folder, "output_mean.pt"))
             torch.save(std, os.path.join(log_folder, "output_std.pt"))
+        target_transform = transforms.Compose([norm_target_transform, target_transform]) \
+            if target_transform else norm_target_transform
+        # todo be careful on the fact that normalization is not included for inverse()-based preprocess_* methods
     else:
         target_transform = None
     for campaign in range(NUM_CAMPAIGNS):

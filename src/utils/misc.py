@@ -54,4 +54,37 @@ def time_logger(log_file=None):
     return decorator
 
 
-__all__ = ["debug_print", "time_logger", "float16", "float32", "float64", "get_dtype_from_str"]
+def extract_metric_info(metric_name: str) -> dict[str, str]:
+    values = metric_name.split("/")
+    results = {
+        'name': values[0],
+        'phase': values[1],
+        'stream': values[2] if len(values) > 2 else None,
+        'exp': values[3] if len(values) > 3 else None,
+    }
+    if results['name'].endswith('Epoch'):
+        results['type'] = 'epoch'
+    elif results['name'].endswith('Exp'):
+        results['type'] = 'exp'
+    elif results['name'].endswith('Stream'):
+        results['type'] = 'stream'
+    else:
+        raise ValueError(f"Unknown metric name: {metric_name}")
+    return results
+
+
+def extract_metric_type(metric_name: str):
+    if metric_name.endswith('Epoch'):
+        return metric_name[:-6], 'epoch'
+    elif metric_name.endswith('Exp'):
+        return metric_name[:-4], 'exp'
+    elif metric_name.endswith('Stream'):
+        return metric_name[:-7], 'stream'
+    else:
+        raise ValueError(f"Unknown metric name: {metric_name}")
+
+
+__all__ = [
+    "debug_print", "time_logger", "float16", "float32", "float64",
+    "get_dtype_from_str", "extract_metric_info", "extract_metric_type",
+]

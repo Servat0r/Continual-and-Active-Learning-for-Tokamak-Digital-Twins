@@ -90,6 +90,26 @@ def main():
         filters_by_geq = filters.get('by_geq', None)
         filters_by_leq = filters.get('by_leq', None)
 
+    # Transforms
+    cl_strategy_transform = config_parser.get_config().get('transform', None)
+    cl_strategy_transform_transform = None
+    cl_strategy_transform_preprocess_ytrue = None
+    cl_strategy_transform_preprocess_ypred = None
+    if cl_strategy_transform:
+        cl_strategy_transform_transform = cl_strategy_transform['transform']
+        cl_strategy_transform_preprocess_ytrue = cl_strategy_transform['preprocess_ytrue']
+        cl_strategy_transform_preprocess_ypred = cl_strategy_transform['preprocess_ypred']
+
+    # Target Transforms
+    cl_strategy_target_transform = config_parser.get_config().get('target_transform', None)
+    cl_strategy_target_transform_transform = None
+    cl_strategy_target_transform_preprocess_ytrue = None
+    cl_strategy_target_transform_preprocess_ypred = None
+    if cl_strategy_target_transform:
+        cl_strategy_target_transform_transform = cl_strategy_target_transform['target_transform']
+        cl_strategy_target_transform_preprocess_ytrue = cl_strategy_target_transform['preprocess_ytrue']
+        cl_strategy_target_transform_preprocess_ypred = cl_strategy_target_transform['preprocess_ypred']
+
     print("[green]Configuration Loaded[/green]:")
     print(f"  Device: [cyan]{device}[/cyan]")
     for field_name, field_value in config_parser.get_config().items():
@@ -129,6 +149,8 @@ def main():
         dtype=dtype, normalize_inputs=normalize_inputs, normalize_outputs=normalize_outputs,
         log_folder=log_folder, input_columns=input_columns, output_columns=output_columns,
         dataset_type=dataset_type, filter_by_geq=filters_by_geq, filter_by_leq=filters_by_leq,
+        transform=cl_strategy_transform_transform,
+        target_transform=cl_strategy_target_transform_transform,
     )
 
     train_stream = benchmark.train_stream
@@ -143,13 +165,24 @@ def main():
             gaussian_mse_metrics(epoch=True, experience=True, stream=True)
     else:
         metrics = \
-            loss_metrics(epoch=True, experience=True, stream=True) + \
             relative_distance_metrics(epoch=True, experience=True, stream=True) + \
+            loss_metrics(epoch=True, experience=True, stream=True) + \
             r2_score_metrics(epoch=True, experience=True, stream=True)
+    if cl_strategy_target_transform and False:
+        metrics = preprocessed_metrics(
+            metrics, preprocess_ytrue=cl_strategy_target_transform_preprocess_ytrue,
+            preprocess_ypred=cl_strategy_target_transform_preprocess_ypred
+        )
+        for metric in metrics:
+            print(
+                str(metric), metric._metric,
+                metric._metric.preprocess_ytrue, metric._metric.preprocess_ypred
+            )
     # Build logger
+    mean_std_plugin = MeanStdPlugin([str(metric) for metric in metrics], num_experiences=num_campaigns)
     csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=test_stream)
     has_interactive_logger = int(os.getenv('INTERACTIVE', '0'))
-    loggers = ([InteractiveLogger()] if has_interactive_logger else []) + [csv_logger]
+    loggers = ([InteractiveLogger()] if has_interactive_logger else []) + [csv_logger, mean_std_plugin]
     # Define the evaluation plugin with desired metrics
     if task == 'regression':
         eval_plugin = EvaluationPlugin(*metrics, loggers=loggers)
@@ -159,7 +192,7 @@ def main():
     # Extra plugins
     plugins = [
         ValidationStreamPlugin(val_stream=test_stream),
-        TqdmTrainingEpochsPlugin(num_exp=num_campaigns, num_epochs=train_epochs)
+        TqdmTrainingEpochsPlugin(num_exp=num_campaigns, num_epochs=train_epochs),
     ]
 
     if early_stopping:
@@ -204,6 +237,13 @@ def main():
             ['Loss over each experience', 'R2 Score over each experience', 'Relative Distance over each experience'],
             ['Loss', 'R2 Score', 'Relative Distance']
         ):
+            # Experiences 1-4
+            plot_metric_over_evaluation_experiences(
+                os.path.join(log_folder, 'eval_results_experience.csv'), metric,
+                title, 'Training Experience', ylabel, show=False, start_exp=1, end_exp=4,
+                savepath=os.path.join(log_folder, f'plot_of_1_to_4_experiences_{metric[:-4]}.png'),
+            )
+            # Experiences 0-4
             plot_metric_over_evaluation_experiences(
                 os.path.join(log_folder, 'eval_results_experience.csv'), metric,
                 title, 'Training Experience', ylabel, show=False, start_exp=0, end_exp=4,
@@ -215,6 +255,7 @@ def main():
                 title, 'Training Experience', ylabel, show=False, start_exp=0, end_exp=9,
                 savepath=os.path.join(log_folder, f'plot_of_all_10_experiences_{metric[:-4]}.png'),
             )
+            mean_std_plugin.dump_results(os.path.join(log_folder, "mean_std_metric_dump.csv"))
     except Exception as ex:
         debug_print("Caught Exception: ", ex)
         try:

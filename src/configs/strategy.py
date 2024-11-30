@@ -1,10 +1,12 @@
 from typing import Any
 from .parser import *
-from avalanche.training import Naive, Replay, EWC, SynapticIntelligence, GenerativeReplay, GEM, MAS
-
+from avalanche.training import Naive, Replay, EWC, SynapticIntelligence, GenerativeReplay, \
+    GEM, MAS, Cumulative, JointTraining
 
 __strategy_dict = {
     'Naive': Naive,
+    'Cumulative': Cumulative,
+    'JointTraining': JointTraining,
     'Replay': Replay,
     'EWC': EWC,
     'SI': SynapticIntelligence,

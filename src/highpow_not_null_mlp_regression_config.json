@@ -1,0 +1,80 @@
+{
+  "general": {
+    "task": "regression",
+    "dtype": "float32",
+    "num_campaigns": 10,
+    "train_mb_size": 512,
+    "eval_mb_size": 1024,
+    "train_epochs": 1000
+  },
+  "dataset": {
+    "pow_type": "highpow",
+    "cluster_type": "tau_based",
+    "dataset_type": "not_null",
+    "input_columns": [
+      "ane", "ate", "autor", "machtor", "x", "zeff", "gammae", "q", "smag",
+      "alpha", "ani1", "ati0", "normni1", "ti_te0", "lognustar"
+    ],
+    "output_columns": ["efe"],
+    "input_size": 15,
+    "output_size": 1,
+    "normalize_inputs": true,
+    "normalize_outputs": false
+  },
+  "architecture": {
+    "name": "MLP",
+    "parameters": {
+      "input_size": 15,
+      "output_size": 1,
+      "hidden_size": 1024,
+      "hidden_layers": 2,
+      "drop_rate": 0.5
+    }
+  },
+  "loss": {
+    "name": "MSE",
+    "parameters": {
+      "reduction":  "mean"
+    }
+  },
+  "optimizer": {
+    "name": "SGD",
+    "parameters": {
+      "lr": 1e-3,
+      "weight_decay": 1e-4
+    }
+  },
+  "scheduler": {
+    "name": "ReduceLROnPlateau",
+    "parameters": {
+      "metric": "val_loss",
+      "first_exp_only": false,
+      "factor": 0.25,
+      "patience": 10
+    }
+  },
+  "strategy": {
+    "name": "Naive",
+    "parameters": {
+    }
+  },
+  "early_stopping": {
+    "patience": 50,
+    "delta": 0.1
+  },
+  "validation_stream": {
+    "val_stream": "test_stream"
+  },
+  "filters": {
+    "by_leq": {
+      "x": 0.6
+    }
+  },
+  "target_transform": {
+    "name": "LogarithmTransform",
+    "parameters": {
+      "log_shift": 0,
+      "final_shift": 0
+    }
+  }
+}
