@@ -81,6 +81,9 @@
       "final_shift": 0
     }
   },
+  "parallel": {
+    "num_tasks": 16
+  },
   "start_model_saving": {
     "save_model": false,
     "saved_model_folder": "lowpow_1_mlp_1024_2",

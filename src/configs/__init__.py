@@ -9,3 +9,4 @@ from .scheduler import *
 from .strategy import *
 from .transforms import *
 from .model_saving import *
+from .parallel import *

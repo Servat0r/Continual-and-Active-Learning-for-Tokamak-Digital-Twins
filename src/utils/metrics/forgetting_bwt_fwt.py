@@ -1,3 +1,5 @@
+from typing import Optional, Dict
+
 from avalanche.evaluation import PluginMetric
 from avalanche.evaluation.metrics import ExperienceForgetting, \
     StreamForgetting, ExperienceForwardTransfer, StreamForwardTransfer, \
@@ -5,6 +7,24 @@ from avalanche.evaluation.metrics import ExperienceForgetting, \
 
 
 class ExperienceWiseForgetting(ExperienceForgetting):
+
+    def reset(self) -> None:
+        super().reset()
+
+    def reset_last(self) -> None:
+        super().reset_last()
+
+    def result_key(self, k: int) -> Optional[float]:
+        return super().result_key(k)
+
+    def result(self) -> Dict[int, float]:
+        return super().result()
+
+    def metric_update(self, strategy):
+        return super().metric_update(strategy)
+
+    def metric_result(self, strategy):
+        return super().metric_result(strategy)
 
     def __str__(self):
         return "Forgetting_Exp"

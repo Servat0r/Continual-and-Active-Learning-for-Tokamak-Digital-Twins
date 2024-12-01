@@ -36,6 +36,7 @@ class ConfigParser:
             'transform',            # Input Transforms
             'target_transform',     # Target Transforms
             'start_model_saving',   # Start Model Saving
+            'parallel',             # Parallel Execution
         ]
 
     @classmethod

@@ -5,14 +5,67 @@ import shutil
 from datetime import datetime
 
 from avalanche.logging import InteractiveLogger
-
 from avalanche.evaluation.metrics import loss_metrics
 from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin
+
+from joblib import Parallel, delayed
 
 sys.path.append(os.path.dirname(__file__))  # Add src directory to sys.path
 
 from .utils import *
 from .configs import *
+
+
+def make_scheduler(scheduler_config):
+    if scheduler_config:
+        scheduler_class = scheduler_config['class']
+        scheduler_parameters = scheduler_config['parameters']
+        scheduler_metric = scheduler_config['metric']
+        scheduler_first_epoch_only = scheduler_config['first_epoch_only']
+        scheduler_first_exp_only = scheduler_config['first_exp_only']
+        return LRSchedulerPlugin(
+            scheduler_class(optimizer, **scheduler_parameters),
+            metric=scheduler_metric,
+            first_exp_only=scheduler_first_exp_only,
+            first_epoch_only=scheduler_first_epoch_only,
+        )
+    else:
+        return None
+
+
+def get_metrics(loss_type):
+    if loss_type == 'GaussianNLL':
+        metrics = \
+            loss_metrics(epoch=True, experience=True, stream=True) + \
+            gaussian_mse_metrics(epoch=True, experience=True, stream=True) + \
+            renamed_forgetting_metrics(experience=True, stream=True) + \
+            renamed_bwt_metrics(experience=True, stream=True)
+    else:
+        metrics = \
+            loss_metrics(epoch=True, experience=True, stream=True) + \
+            relative_distance_metrics(epoch=True, experience=True, stream=True) + \
+            r2_score_metrics(epoch=True, experience=True, stream=True) + \
+            renamed_forgetting_metrics(experience=True, stream=True) + \
+            renamed_bwt_metrics(experience=True, stream=True)
+    return metrics
+
+
+def evaluation_experiences_plots(
+    log_folder, metric_list, title_list, ylabel_list
+):
+    for metric, title, ylabel in zip(metric_list, title_list, ylabel_list):
+        # Experiences 0-4
+        plot_metric_over_evaluation_experiences(
+            os.path.join(log_folder, 'eval_results_experience.csv'), metric,
+            title, 'Training Experience', ylabel, show=False, start_exp=0, end_exp=4,
+            savepath=os.path.join(log_folder, f'plot_of_first_5_experiences_{metric[:-4]}.png'),
+        )
+        # Plot over all experiences
+        plot_metric_over_evaluation_experiences(
+            os.path.join(log_folder, 'eval_results_experience.csv'), metric,
+            title, 'Training Experience', ylabel, show=False, start_exp=0, end_exp=9,
+            savepath=os.path.join(log_folder, f'plot_of_all_10_experiences_{metric[:-4]}.png'),
+        )
 
 
 def main():
@@ -65,19 +118,7 @@ def main():
     early_stopping = config_parser.get_config().get('early_stopping', None)
     # Scheduler
     scheduler_config = config_parser.get_config().get('scheduler', None)
-    scheduler = None
-    if scheduler_config:
-        scheduler_class = scheduler_config['class']
-        scheduler_parameters = scheduler_config['parameters']
-        scheduler_metric = scheduler_config['metric']
-        scheduler_first_epoch_only = scheduler_config['first_epoch_only']
-        scheduler_first_exp_only = scheduler_config['first_exp_only']
-        scheduler = LRSchedulerPlugin(
-            scheduler_class(optimizer, **scheduler_parameters),
-            metric=scheduler_metric,
-            first_exp_only=scheduler_first_exp_only,
-            first_epoch_only=scheduler_first_epoch_only,
-        )
+    scheduler = make_scheduler(scheduler_config)
     # CL Strategy Config
     cl_strategy_config = config_parser['strategy']
     cl_strategy_class = cl_strategy_config['class']
@@ -168,29 +209,12 @@ def main():
 
     with open(os.path.join(log_folder, 'config.json'), 'w') as fp:
         json.dump(config, fp, indent=4)
-    if loss_type == 'GaussianNLL':
-        metrics = \
-            loss_metrics(epoch=True, experience=True, stream=True) + \
-            gaussian_mse_metrics(epoch=True, experience=True, stream=True) + \
-            renamed_forgetting_metrics(experience=True, stream=True) + \
-            renamed_bwt_metrics(experience=True, stream=True)
-    else:
-        metrics = \
-            loss_metrics(epoch=True, experience=True, stream=True) + \
-            relative_distance_metrics(epoch=True, experience=True, stream=True) + \
-            r2_score_metrics(epoch=True, experience=True, stream=True) + \
-            renamed_forgetting_metrics(experience=True, stream=True) + \
-            renamed_bwt_metrics(experience=True, stream=True)
+    metrics = get_metrics(loss_type)
     if cl_strategy_target_transform and False:
         metrics = preprocessed_metrics(
             metrics, preprocess_ytrue=cl_strategy_target_transform_preprocess_ytrue,
             preprocess_ypred=cl_strategy_target_transform_preprocess_ypred
         )
-        for metric in metrics:
-            print(
-                str(metric), metric._metric,
-                metric._metric.preprocess_ytrue, metric._metric.preprocess_ypred
-            )
     # Build logger
     mean_std_plugin = MeanStdPlugin([str(metric) for metric in metrics], num_experiences=num_campaigns)
     csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=test_stream)
@@ -244,31 +268,13 @@ def main():
         model.eval()
         # Save model for future usage
         torch.save(model.state_dict(), os.path.join(log_folder, 'model.pt'))
-        # Plot over first 5 experiences
-        for metric, title, ylabel in zip(
-            ['Loss_Exp', 'R2Score_Exp', 'RelativeDistance_Exp'],
+        # Plots
+        evaluation_experiences_plots(
+            log_folder, ['Loss_Exp', 'R2Score_Exp', 'RelativeDistance_Exp'],
             ['Loss over each experience', 'R2 Score over each experience', 'Relative Distance over each experience'],
             ['Loss', 'R2 Score', 'Relative Distance']
-        ):
-            # Experiences 1-4
-            plot_metric_over_evaluation_experiences(
-                os.path.join(log_folder, 'eval_results_experience.csv'), metric,
-                title, 'Training Experience', ylabel, show=False, start_exp=1, end_exp=4,
-                savepath=os.path.join(log_folder, f'plot_of_1_to_4_experiences_{metric[:-4]}.png'),
-            )
-            # Experiences 0-4
-            plot_metric_over_evaluation_experiences(
-                os.path.join(log_folder, 'eval_results_experience.csv'), metric,
-                title, 'Training Experience', ylabel, show=False, start_exp=0, end_exp=4,
-                savepath=os.path.join(log_folder, f'plot_of_first_5_experiences_{metric[:-4]}.png'),
-            )
-            # Plot over all experiences
-            plot_metric_over_evaluation_experiences(
-                os.path.join(log_folder, 'eval_results_experience.csv'), metric,
-                title, 'Training Experience', ylabel, show=False, start_exp=0, end_exp=9,
-                savepath=os.path.join(log_folder, f'plot_of_all_10_experiences_{metric[:-4]}.png'),
-            )
-            mean_std_plugin.dump_results(os.path.join(log_folder, "mean_std_metric_dump.csv"))
+        )
+        mean_std_plugin.dump_results(os.path.join(log_folder, "mean_std_metric_dump.csv"))
     except Exception as ex:
         debug_print("Caught Exception: ", ex)
         try:
