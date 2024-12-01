@@ -122,6 +122,16 @@ def main():
         f"\n[green]Total Parameters[/green] = [red]{total}[/red]"
     )
 
+    # Saving model before usage
+    start_model_saving_data = config_parser['start_model_saving']
+    if start_model_saving_data:
+        saved_model_folder = start_model_saving_data['saved_model_folder']
+        saved_model_name = start_model_saving_data['saved_model_name']
+        os.makedirs(saved_model_folder, exist_ok=True)
+        with open(f'{saved_model_folder}/{saved_model_name}.json', 'w') as fp:
+            json.dump(config['architecture'], fp, indent=4)
+        torch.save(model.state_dict(), f'{saved_model_folder}/{saved_model_name}.pt')
+
     # Prepare folders for experiments
     folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type}"
     log_folder = os.path.join(
@@ -158,16 +168,19 @@ def main():
 
     with open(os.path.join(log_folder, 'config.json'), 'w') as fp:
         json.dump(config, fp, indent=4)
-    # forgetting_metrics(experience=True, stream=True) + \
     if loss_type == 'GaussianNLL':
         metrics = \
             loss_metrics(epoch=True, experience=True, stream=True) + \
-            gaussian_mse_metrics(epoch=True, experience=True, stream=True)
+            gaussian_mse_metrics(epoch=True, experience=True, stream=True) + \
+            renamed_forgetting_metrics(experience=True, stream=True) + \
+            renamed_bwt_metrics(experience=True, stream=True)
     else:
         metrics = \
-            relative_distance_metrics(epoch=True, experience=True, stream=True) + \
             loss_metrics(epoch=True, experience=True, stream=True) + \
-            r2_score_metrics(epoch=True, experience=True, stream=True)
+            relative_distance_metrics(epoch=True, experience=True, stream=True) + \
+            r2_score_metrics(epoch=True, experience=True, stream=True) + \
+            renamed_forgetting_metrics(experience=True, stream=True) + \
+            renamed_bwt_metrics(experience=True, stream=True)
     if cl_strategy_target_transform and False:
         metrics = preprocessed_metrics(
             metrics, preprocess_ytrue=cl_strategy_target_transform_preprocess_ytrue,

@@ -35,6 +35,7 @@ class ConfigParser:
             'plugins',              # (Other) Plugins info
             'transform',            # Input Transforms
             'target_transform',     # Target Transforms
+            'start_model_saving',   # Start Model Saving
         ]
 
     @classmethod

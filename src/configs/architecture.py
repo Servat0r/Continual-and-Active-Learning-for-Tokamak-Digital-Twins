@@ -1,6 +1,16 @@
 from typing import Any
+import torch
+
+from .model_saving import MODELS_DIR
 from .parser import *
-from ..utils import SimpleRegressionMLP, SimpleClassificationMLP, GaussianRegressionMLP
+from ..utils import SimpleRegressionMLP, SimpleClassificationMLP, GaussianRegressionMLP, SimpleConv1DModel
+
+__model_classes = {
+    'MLP': SimpleRegressionMLP,
+    'GaussianMLP': GaussianRegressionMLP,
+    'ClassificationMLP': SimpleClassificationMLP,
+    'ConvNet': SimpleConv1DModel,
+}
 
 
 def mlp_config(parameters: dict[str, Any], gaussian=False, task='regression'):
@@ -33,6 +43,16 @@ def mlp_config(parameters: dict[str, Any], gaussian=False, task='regression'):
         raise ValueError(f"Invalid task \"{task}\"")
 
 
+def saved_model_handler(model_folder: str, model_name: str, model_class_name: str, **kwargs):
+    model_class = __model_classes.get(model_class_name, None)
+    if not model_class:
+        raise ValueError(f"Invalid model class name \"{model_class_name}\"")
+    model_path = f'{MODELS_DIR}/{model_folder}/{model_name}'
+    model = model_class(**kwargs)
+    model.load_state_dict(torch.load(model_path))
+    return model
+
+
 @ConfigParser.register_handler('architecture')
 def architecture_handler(data: dict[str, Any], **kwargs):
     if 'name' not in data:
@@ -41,6 +61,15 @@ def architecture_handler(data: dict[str, Any], **kwargs):
         raise ValueError(f"\"parameters\" field not present in configuration")
     name, parameters = data['name'], data['parameters']
     task = kwargs['task'] if 'task' in kwargs else 'regression'
+    print(task)
+    if name == 'saved':
+        model_folder = data.get('model_folder', '')
+        model_name = data.get('model_name', 'model.pt')
+        model_class_name = data.get('model_class_name', 'MLP')
+        return saved_model_handler(
+            model_folder=model_folder, model_name=model_name,
+            model_class_name=model_class_name, **parameters
+        )
     if (name == 'MLP') or (name == 'mlp'):
         return mlp_config(parameters, gaussian=False, task=task)
     elif (name == 'GaussianMLP') or (name == 'gaussian_mlp'):
@@ -49,4 +78,4 @@ def architecture_handler(data: dict[str, Any], **kwargs):
         raise ValueError(f"Invalid architecture name \"{name}\"")
 
 
-__all__ = ['mlp_config', 'architecture_handler']
+__all__ = ['mlp_config', 'saved_model_handler', 'architecture_handler']

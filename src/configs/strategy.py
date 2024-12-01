@@ -1,12 +1,15 @@
 from typing import Any
 from .parser import *
 from avalanche.training import Naive, Replay, EWC, SynapticIntelligence, GenerativeReplay, \
-    GEM, MAS, Cumulative, JointTraining
+    GEM, MAS, Cumulative, JointTraining, FromScratchTraining
+
 
 __strategy_dict = {
     'Naive': Naive,
     'Cumulative': Cumulative,
     'JointTraining': JointTraining,
+    'FromScratch': FromScratchTraining,
+    'FromScratchTraining': FromScratchTraining,
     'Replay': Replay,
     'EWC': EWC,
     'SI': SynapticIntelligence,

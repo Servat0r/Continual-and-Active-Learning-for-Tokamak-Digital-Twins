@@ -1,0 +1,10 @@
+{
+    "name": "MLP",
+    "parameters": {
+        "input_size": 11,
+        "output_size": 1,
+        "hidden_size": 1024,
+        "hidden_layers": 2,
+        "drop_rate": 0.5
+    }
+}
