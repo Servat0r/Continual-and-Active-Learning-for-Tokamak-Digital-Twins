@@ -23,7 +23,7 @@ def __transform_inside_loop(data):
 
 
 @ConfigParser.register_handler('transform')
-def transform_handler(data: dict[str, Any], **kwargs):
+def transform_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     transform = __transform_inside_loop(data)
     return {
         'transform': transform,

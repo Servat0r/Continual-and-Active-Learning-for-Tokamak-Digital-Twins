@@ -5,7 +5,7 @@ from ..utils import GaussianNLLLoss
 
 
 @ConfigParser.register_handler('loss')
-def loss_handler(data: dict[str, Any], **kwargs):
+def loss_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
     if 'parameters' not in data:

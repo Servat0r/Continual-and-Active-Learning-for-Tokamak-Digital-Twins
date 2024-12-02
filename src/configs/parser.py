@@ -48,9 +48,10 @@ class ConfigParser:
             return wrapper
         return decorator
 
-    def __init__(self, config_path: str = None):
+    def __init__(self, config_path: str = None, task_id: int = 0):
         self.config_path = config_path
         self.config = None
+        self.task_id = task_id
 
     def reset(self):
         self.config_path = None
@@ -77,7 +78,7 @@ class ConfigParser:
             key_handler: Callable | None = self.__parsing_dict__.get(key, None)
             if not key_handler:
                 raise RuntimeError(f"Config handler for {key} not found.")
-            validation_result = key_handler(self.config[key], **self.config)
+            validation_result = key_handler(self.config[key], task_id=self.task_id, **self.config)
             if validation_result is None:
                 raise ValueError(f"Validation failed for key '{key}': {validation_result}")
             else:
@@ -91,7 +92,7 @@ class ConfigParser:
             else:
                 key_handler: Callable | None = self.__parsing_dict__.get(key, None)
                 if key_handler:
-                    validation_result = key_handler(self.config[key], **self.config)
+                    validation_result = key_handler(self.config[key], task_id=self.task_id, **self.config)
                     if validation_result is None:
                         raise ValueError(f"Validation failed for key '{key}': {validation_result}")
                     else:

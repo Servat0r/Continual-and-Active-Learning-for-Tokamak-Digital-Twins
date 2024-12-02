@@ -4,7 +4,7 @@ from torch.optim import SGD, Adam, AdamW, Adagrad, RMSprop
 
 
 @ConfigParser.register_handler('optimizer')
-def optimizer_handler(data: dict[str, Any], **kwargs):
+def optimizer_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
     if 'parameters' not in data:

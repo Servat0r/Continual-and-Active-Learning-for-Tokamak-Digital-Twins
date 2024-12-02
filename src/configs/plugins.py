@@ -5,7 +5,7 @@ from ..utils.plugins.early_stopping import ValidationEarlyStoppingPlugin
 
 
 @ConfigParser.register_handler('early_stopping')
-def early_stopping_handler(data: dict[str, Any], **kwargs):
+def early_stopping_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     default_config = {
         'patience': 10,
         'metric': 'Loss',
@@ -21,7 +21,7 @@ def early_stopping_handler(data: dict[str, Any], **kwargs):
 
 
 #@ConfigParser.register_handler('validation_stream')
-def validation_stream_handler(data: dict[str, Any], **kwargs):
+def validation_stream_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     default_config = {
         'val_stream': 'test_stream'
     }

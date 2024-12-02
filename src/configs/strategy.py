@@ -20,7 +20,7 @@ __strategy_dict = {
 
 
 @ConfigParser.register_handler('strategy')
-def strategy_handler(data: dict[str, Any], **kwargs):
+def strategy_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
     if 'parameters' not in data:

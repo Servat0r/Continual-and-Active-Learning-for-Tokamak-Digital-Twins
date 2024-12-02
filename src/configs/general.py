@@ -3,7 +3,7 @@ from .parser import *
 
 
 @ConfigParser.register_handler('general')
-def general_handler(data: dict[str, Any], **kwargs):
+def general_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     default_config = {
         'train_mb_size': 512,
         'eval_mb_size': 2048,

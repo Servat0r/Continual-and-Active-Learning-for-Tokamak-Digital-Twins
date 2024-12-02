@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingL
 
 
 @ConfigParser.register_handler('scheduler')
-def scheduler_handler(data: dict[str, Any], **kwargs):
+def scheduler_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
     if 'parameters' not in data:
