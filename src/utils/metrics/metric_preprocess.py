@@ -29,6 +29,7 @@ class PreprocessMetric(Metric[float]):
             "After preprocessing: ",
             f"predicted = {predicted}",
             f"actual = {actual}",
+            f"metric = {str(self.metric)}",
             sep='\n'
         )
         self.metric.update(predicted, actual)

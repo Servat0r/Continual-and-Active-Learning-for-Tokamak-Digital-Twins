@@ -29,8 +29,8 @@ class CustomNormalize(ReversableTransform):
 
 class LogarithmTransform(ReversableTransform):
     def __init__(self, log_shift=0, final_shift=0):
-        self.log_shift = 0
-        self.final_shift = 0
+        self.log_shift = log_shift
+        self.final_shift = final_shift
 
     def __call__(self, tensor):
         return torch.log(tensor + self.log_shift) + self.final_shift

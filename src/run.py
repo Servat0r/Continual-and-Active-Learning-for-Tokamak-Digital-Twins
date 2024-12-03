@@ -44,16 +44,17 @@ def get_metrics(loss_type):
     if loss_type == 'GaussianNLL':
         metrics = \
             loss_metrics(epoch=True, experience=True, stream=True) + \
-            gaussian_mse_metrics(epoch=True, experience=True, stream=True) + \
-            renamed_forgetting_metrics(experience=True, stream=True) + \
-            renamed_bwt_metrics(experience=True, stream=True)
+            gaussian_mse_metrics(epoch=True, experience=True, stream=True) #+ \
+            #renamed_forgetting_metrics(experience=True, stream=True) + \
+            #renamed_bwt_metrics(experience=True, stream=True)
     else:
+        #metrics = \
+        #    loss_metrics(epoch=True, experience=True, stream=True) + \
         metrics = \
-            loss_metrics(epoch=True, experience=True, stream=True) + \
             relative_distance_metrics(epoch=True, experience=True, stream=True) + \
-            r2_score_metrics(epoch=True, experience=True, stream=True) + \
-            renamed_forgetting_metrics(experience=True, stream=True) + \
-            renamed_bwt_metrics(experience=True, stream=True)
+            r2_score_metrics(epoch=True, experience=True, stream=True) #+ \
+            #renamed_forgetting_metrics(experience=True, stream=True) + \
+            #renamed_bwt_metrics(experience=True, stream=True)
     return metrics
 
 
@@ -245,17 +246,21 @@ def task_training_loop(config_file_path: str, task_id: int):
 
         with open(os.path.join(log_folder, 'config.json'), 'w') as fp:
             json.dump(config, fp, indent=4)
+
+        # Get and transform metrics
         metrics = get_metrics(loss_type)
         if cl_strategy_target_transform and False:
             metrics = preprocessed_metrics(
                 metrics, preprocess_ytrue=cl_strategy_target_transform_preprocess_ytrue,
                 preprocess_ypred=cl_strategy_target_transform_preprocess_ypred
             )
+
         # Build logger
         mean_std_plugin = MeanStdPlugin([str(metric) for metric in metrics], num_experiences=num_campaigns)
         csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=eval_stream)
         has_interactive_logger = int(os.getenv('INTERACTIVE', '0'))
         loggers = ([InteractiveLogger()] if has_interactive_logger else []) + [csv_logger, mean_std_plugin]
+
         # Define the evaluation plugin with desired metrics
         if task == 'regression':
             eval_plugin = EvaluationPlugin(*metrics, loggers=loggers)

@@ -99,8 +99,7 @@ def plot_metric_over_evaluation_experiences_multiple_runs(
             x_values, mean_values, label=column, marker='o', linestyle='-'
         )
         plt.fill_between(
-            x_values, mean_values - std_vals, mean_values + std_vals, alpha=0.2,
-            label=f'{column} ±1 std'
+            x_values, mean_values - std_vals, mean_values + std_vals, alpha=0.2
         )
     plt.title(title)
     plt.xlabel(xlabel)
