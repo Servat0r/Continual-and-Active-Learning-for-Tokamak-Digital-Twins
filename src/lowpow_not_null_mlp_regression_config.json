@@ -5,7 +5,7 @@
     "num_campaigns": 10,
     "train_mb_size": 512,
     "eval_mb_size": 1024,
-    "train_epochs": 100
+    "train_epochs": 200
   },
   "dataset": {
     "pow_type": "lowpow",
@@ -22,7 +22,7 @@
     "normalize_outputs": false
   },
   "architecture": {
-    "name": "MLP",
+    "name": "saved",
     "model_folder": "lowpow_mlp_1024_2_8runs",
     "model_name": "model",
     "model_class_name": "MLP",
@@ -63,10 +63,12 @@
   },
   "early_stopping": {
     "patience": 50,
-    "delta": 0.1
+    "delta": 0.1,
+    "val_stream_name": "eval_stream",
+    "min_epochs": 100
   },
   "validation_stream": {
-    "val_stream": "test_stream"
+    "val_stream": "eval_stream"
   },
   "target_transform": {
     "name": "LogarithmTransform",
@@ -76,7 +78,7 @@
     }
   },
   "start_model_saving": {
-    "save_model": true,
+    "save_model": false,
     "saved_model_folder": "lowpow_mlp_1024_2_8runs",
     "saved_model_name": "model",
     "add_timestamp": false

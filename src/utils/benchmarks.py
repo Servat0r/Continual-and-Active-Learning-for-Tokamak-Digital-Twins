@@ -25,9 +25,9 @@ def _build_normalization_transforms(data, columns, dtype, transform=None):
 
 
 def make_benchmark(
-        csv_file, train_datasets, test_datasets, task='regression',
+        csv_file, train_datasets, eval_datasets, test_datasets, task='regression',
         input_columns=BASELINE_HIGHPOW_INPUTS, output_columns=BASELINE_HIGHPOW_OUTPUTS,
-        NUM_CAMPAIGNS=5, dtype='float64', *, test_size=0.2,
+        NUM_CAMPAIGNS=5, dtype='float64', *, test_size=0.2, eval_size=0.25,
         normalize_inputs=False, normalize_outputs=False, log_folder=None,
         dataset_type='complete', filter_by_leq: dict[str, int | float] = None,
         filter_by_geq: dict[str, int | float] = None,
@@ -46,7 +46,8 @@ def make_benchmark(
         data = data[data.apply(filter_function, axis=1)]
         debug_print(f"After filtering, there are {len(data)} items.")
     # Split the data into train and test sets
-    train_data, test_data = train_test_split(data, test_size=test_size, random_state=42, shuffle=True)
+    dev_data, test_data = train_test_split(data, test_size=test_size, random_state=42, shuffle=True)
+    train_data, eval_data = train_test_split(dev_data, test_size=eval_size, random_state=42, shuffle=True)
     if normalize_inputs:
         norm_transform, (mean, std) = _build_normalization_transforms(train_data, input_columns, dtype)
         if log_folder:
@@ -65,8 +66,8 @@ def make_benchmark(
         target_transform = None
     for campaign in range(NUM_CAMPAIGNS):
         print(f"[yellow]Loading data for campaign {campaign} ...[/yellow]")
-        train_dataset, test_dataset = get_avalanche_csv_regression_datasets(
-            train_data, test_data, input_columns=input_columns, output_columns=output_columns,
+        train_dataset, eval_dataset, test_dataset = get_avalanche_csv_regression_datasets(
+            train_data, eval_data, test_data, input_columns=input_columns, output_columns=output_columns,
             filter_by={'campaign': [campaign]}, float_precision=float_precision,
             device='cpu', transform=transform, target_transform=target_transform,
             filter_by_leq=filter_by_leq, filter_by_geq=filter_by_geq,
@@ -76,9 +77,11 @@ def make_benchmark(
             f"[red]Input Shape = {X.shape}[/red]",
             f"[red]Output Shape = {y.shape}[/red]",
             f"[red]Length of Train Dataset = {len(train_dataset)}[/red]",
+            f"[red]Length of Validation Dataset = {len(eval_dataset)}[/red]",
             f"[red]Length of Test Dataset = {len(test_dataset)}[/red]"
         )
         train_datasets.append(train_dataset)
+        eval_datasets.append(eval_dataset)
         test_datasets.append(test_dataset)
-    benchmark = benchmark_from_datasets(train=train_datasets, test=test_datasets)
+    benchmark = benchmark_from_datasets(train=train_datasets, eval=eval_datasets, test=test_datasets)
     return benchmark

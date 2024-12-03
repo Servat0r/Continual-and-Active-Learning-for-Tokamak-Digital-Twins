@@ -61,6 +61,7 @@ def extract_metric_info(metric_name: str) -> dict[str, str]:
         'phase': values[1],
         'stream': values[2] if len(values) > 2 else None,
         'exp': values[3] if len(values) > 3 else None,
+        'exp_number': int(values[3][3:]) if len(values) > 3 else None,
     }
     if results['name'].endswith('Epoch'):
         results['type'] = 'epoch'

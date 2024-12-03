@@ -1,13 +1,12 @@
 from typing import Optional, Dict, Sequence
 
 from avalanche.evaluation import PluginMetric
-from avalanche.evaluation.metrics import ExperienceLoss, StreamLoss, \
-    GenericExperienceForgetting, GenericStreamForgetting, GenericExperienceForwardTransfer, \
-    GenericStreamForwardTransfer
+from avalanche.evaluation.metrics import GenericExperienceForgetting, \
+    GenericStreamForgetting, GenericExperienceForwardTransfer, GenericStreamForwardTransfer
 from avalanche.evaluation.metrics.forgetting_bwt import forgetting_to_bwt
 from avalanche.evaluation.metrics.loss import LossPluginMetric
 
-from .r2_score import ExperienceR2Score, StreamR2Score
+from .r2_score import ExperienceR2Score, StreamR2Score, PluginR2Score
 
 
 class ExperienceWiseForgetting(GenericExperienceForgetting):
@@ -22,7 +21,7 @@ class ExperienceWiseForgetting(GenericExperienceForgetting):
         return self.forgetting.result()
 
     def metric_update(self, strategy):
-        if isinstance(self._current_metric, LossPluginMetric):
+        if any([isinstance(self._current_metric, pm) for pm in [LossPluginMetric, PluginR2Score]]):
             self._current_metric.update(strategy)
         else:
             self._current_metric.update(strategy.mb_y, strategy.mb_output, 0)
@@ -47,7 +46,7 @@ class StreamWiseForgetting(GenericStreamForgetting):
         return self.forgetting.result()
 
     def metric_update(self, strategy):
-        if isinstance(self._current_metric, LossPluginMetric):
+        if any([isinstance(self._current_metric, pm) for pm in [LossPluginMetric, PluginR2Score]]):
             self._current_metric.update(strategy)
         else:
             self._current_metric.update(strategy.mb_y, strategy.mb_output, 0)
@@ -72,7 +71,7 @@ class ExperienceWiseForwardTransfer(GenericExperienceForwardTransfer):
         return self.forward_transfer.result()
 
     def metric_update(self, strategy):
-        if isinstance(self._current_metric, LossPluginMetric):
+        if any([isinstance(self._current_metric, pm) for pm in [LossPluginMetric, PluginR2Score]]):
             self._current_metric.update(strategy)
         else:
             self._current_metric.update(strategy.mb_y, strategy.mb_output, 0)
@@ -91,7 +90,7 @@ class StreamWiseForwardTransfer(GenericStreamForwardTransfer):
         super().__init__(metric)
 
     def metric_update(self, strategy):
-        if isinstance(self._current_metric, LossPluginMetric):
+        if any([isinstance(self._current_metric, pm) for pm in [LossPluginMetric, PluginR2Score]]):
             self._current_metric.update(strategy)
         else:
             self._current_metric.update(strategy.mb_y, strategy.mb_output, 0)
@@ -130,7 +129,7 @@ class StreamWiseBWT(StreamWiseForgetting):
 
 def renamed_forgetting_metrics(*, experience=False, stream=False, base_metrics=None):
     metrics: list[PluginMetric] = []
-    base_metrics = base_metrics if base_metrics is not None else [ExperienceLoss(), StreamLoss()]
+    base_metrics = base_metrics if base_metrics is not None else [ExperienceR2Score(), StreamR2Score()]
     if experience:
         for metric in base_metrics:
             if str(metric).endswith('_Exp'):

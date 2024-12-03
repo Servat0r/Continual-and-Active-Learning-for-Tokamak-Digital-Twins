@@ -2,6 +2,7 @@ import json
 import sys
 import os
 import shutil
+from collections import defaultdict
 from datetime import datetime
 import argparse
 
@@ -15,6 +16,11 @@ sys.path.append(os.path.dirname(__file__))  # Add src directory to sys.path
 
 from .utils import *
 from .configs import *
+
+
+METRIC_LIST = ['Loss_Exp', 'R2Score_Exp', 'RelativeDistance_Exp']
+TITLE_LIST = ['Loss over each experience', 'R2 Score over each experience', 'Relative Distance over each experience']
+YLABEL_LIST = ['Loss', 'R2 Score', 'Relative Distance']
 
 
 def make_scheduler(scheduler_config, optimizer):
@@ -65,6 +71,36 @@ def evaluation_experiences_plots(log_folder, metric_list, title_list, ylabel_lis
             title, 'Training Experience', ylabel, show=False, start_exp=0, end_exp=9,
             savepath=os.path.join(log_folder, f'plot_of_all_10_experiences_{metric[:-4]}.png'),
         )
+
+
+def mean_std_evaluation_experiences_plots(file_paths, metric_list, title_list, ylabel_list):
+    save_folder = os.path.dirname(file_paths[0])
+    for metric, title, ylabel in zip(metric_list, title_list, ylabel_list):
+        # Experiences 0-4
+        plot_metric_over_evaluation_experiences_multiple_runs(
+            file_paths, metric, title, 'Training Experience',
+            ylabel, show=False, start_exp=0, end_exp=4,
+            savepath=os.path.join(save_folder, f'mean_std_plot_of_first_5_experiences_{metric[:-4]}.png'),
+        )
+        # Plot over all experiences
+        plot_metric_over_evaluation_experiences_multiple_runs(
+            file_paths, metric, title, 'Training Experience',
+            ylabel, show=False, start_exp=0, end_exp=9,
+            savepath=os.path.join(save_folder, f'mean_std_plot_of_all_10_experiences_{metric[:-4]}.png'),
+        )
+
+
+def process_test_results(final_test_results: dict):
+    results = defaultdict(dict)
+    for key, value in final_test_results.items():
+        info = extract_metric_info(key)
+        if info['type'] == 'exp':
+            exp_id = info['exp_number']
+            name = info['name']
+            results[str(exp_id)][name] = value
+        else:
+            results["stream"][key] = value
+    return results
 
 
 def task_training_loop(config_file_path: str, task_id: int):
@@ -187,6 +223,7 @@ def task_training_loop(config_file_path: str, task_id: int):
             )
 
         train_datasets = []
+        eval_datasets = []
         test_datasets = []
         csv_file = f'data/baseline/cleaned/{pow_type}_cluster/{cluster_type}/complete_dataset.csv'
         print(
@@ -194,7 +231,7 @@ def task_training_loop(config_file_path: str, task_id: int):
             f"\nOutput columns = {output_columns}"
         )
         benchmark = make_benchmark(
-            csv_file, train_datasets, test_datasets, task=task, NUM_CAMPAIGNS=num_campaigns,
+            csv_file, train_datasets, eval_datasets, test_datasets, task=task, NUM_CAMPAIGNS=num_campaigns,
             dtype=dtype, normalize_inputs=normalize_inputs, normalize_outputs=normalize_outputs,
             log_folder=log_folder, input_columns=input_columns, output_columns=output_columns,
             dataset_type=dataset_type, filter_by_geq=filters_by_geq, filter_by_leq=filters_by_leq,
@@ -203,6 +240,7 @@ def task_training_loop(config_file_path: str, task_id: int):
         )
 
         train_stream = benchmark.train_stream
+        eval_stream = benchmark.eval_stream
         test_stream = benchmark.test_stream
 
         with open(os.path.join(log_folder, 'config.json'), 'w') as fp:
@@ -215,7 +253,7 @@ def task_training_loop(config_file_path: str, task_id: int):
             )
         # Build logger
         mean_std_plugin = MeanStdPlugin([str(metric) for metric in metrics], num_experiences=num_campaigns)
-        csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=test_stream)
+        csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=eval_stream)
         has_interactive_logger = int(os.getenv('INTERACTIVE', '0'))
         loggers = ([InteractiveLogger()] if has_interactive_logger else []) + [csv_logger, mean_std_plugin]
         # Define the evaluation plugin with desired metrics
@@ -226,7 +264,7 @@ def task_training_loop(config_file_path: str, task_id: int):
 
         # Extra plugins
         plugins = [
-            ValidationStreamPlugin(val_stream=test_stream),
+            ValidationStreamPlugin(val_stream=eval_stream),
             TqdmTrainingEpochsPlugin(num_exp=num_campaigns, num_epochs=train_epochs),
         ]
 
@@ -243,13 +281,13 @@ def task_training_loop(config_file_path: str, task_id: int):
         )
 
         @time_logger(log_file=f'{log_folder}/timing.txt')
-        def run(train_stream, test_stream, cl_strategy, model, log_folder):
+        def run(train_stream, eval_stream, cl_strategy, model, log_folder):
             results = []
             for idx, train_exp in enumerate(train_stream):
                 print(f"Starting training experience [red]{idx}[/red]: ")
                 cl_strategy.train(train_exp)
                 print(f"Starting testing experience [red]{idx}[/red]: ")
-                results.append(cl_strategy.eval(test_stream))
+                results.append(cl_strategy.eval(eval_stream))
                 print(f"Saving model after experience [red]{idx}[/red]: ")
                 model.eval()
                 torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
@@ -259,21 +297,27 @@ def task_training_loop(config_file_path: str, task_id: int):
         # train and test loop over the stream of experiences
         print("[#aa0000]Starting ...[/#aa0000]")
         try:
-            results = run(train_stream, test_stream, cl_strategy, model, log_folder)
+            results = run(train_stream, eval_stream, cl_strategy, model, log_folder)
             with open(os.path.join(log_folder, 'results.json'), 'w') as fp:
                 json.dump(results, fp, indent=4)
+
+            # Finally evaluate on test stream
+            final_test_results = cl_strategy.eval(test_stream)
+            # Filter by results on test_stream
+            final_test_results = {
+                k: v for k, v in final_test_results.items() if "test_stream" in k
+            }
+            final_test_results = process_test_results(final_test_results)
+            with open(os.path.join(log_folder, 'final_test_results.json'), 'w') as fp:
+                json.dump(final_test_results, fp, indent=4)
 
             model.eval()
             # Save model for future usage
             torch.save(model.state_dict(), os.path.join(log_folder, 'model.pt'))
             # Plots
-            evaluation_experiences_plots(
-                log_folder, ['Loss_Exp', 'R2Score_Exp', 'RelativeDistance_Exp'],
-                ['Loss over each experience', 'R2 Score over each experience', 'Relative Distance over each experience'],
-                ['Loss', 'R2 Score', 'Relative Distance']
-            )
+            evaluation_experiences_plots(log_folder, METRIC_LIST, TITLE_LIST, YLABEL_LIST)
             mean_std_plugin.dump_results(os.path.join(log_folder, "mean_std_metric_dump.csv"))
-            return True
+            return {'result': True, 'log_folder': log_folder}
         except Exception as ex:
             debug_print("Caught Exception: ", ex)
             try:
@@ -327,6 +371,12 @@ def main():
     else:
         results = task_training_loop(config_file_path, 0)
         print(results)
+    # Plot means and standard deviations
+    if num_jobs > 1:
+        file_paths = [
+            os.path.join(result['log_folder'], 'eval_results_experience.csv') for result in results
+        ]
+        mean_std_evaluation_experiences_plots(file_paths, METRIC_LIST, TITLE_LIST, YLABEL_LIST)
 
 
 if __name__ == '__main__':

@@ -82,7 +82,7 @@ def make_datasets(src_path, src_filename, dest_path, output_columns):
 
 
 def get_avalanche_csv_regression_datasets(
-        train_data, test_data, input_columns: list[str], output_columns: list[str], # todo modify later
+        train_data, eval_data, test_data, input_columns: list[str], output_columns: list[str], # todo modify later
         transform=None, target_transform=None, filter_by: dict[str, list] = None,
         float_precision: str = 'float32', device=None, *, indices: list[int] | None = None,
         data_attributes: list[DataAttribute] | None = None, transform_groups: TransformGroups | None = None,
@@ -91,6 +91,11 @@ def get_avalanche_csv_regression_datasets(
 ):
     base_train_dataset = CSVRegressionDataset(
         train_data, input_columns=input_columns, output_columns=output_columns, transform=transform,
+        target_transform=target_transform, filter_by=filter_by, float_precision=float_precision,
+        device=device, filter_by_geq=filter_by_geq, filter_by_leq=filter_by_leq,
+    )
+    base_eval_dataset = CSVRegressionDataset(
+        eval_data, input_columns=input_columns, output_columns=output_columns, transform=transform,
         target_transform=target_transform, filter_by=filter_by, float_precision=float_precision,
         device=device, filter_by_geq=filter_by_geq, filter_by_leq=filter_by_leq,
     )
@@ -105,12 +110,17 @@ def get_avalanche_csv_regression_datasets(
         transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
         collate_fn=collate_fn
     )
+    eval_dataset = AvalancheDataset(
+        [base_eval_dataset], indices=indices, data_attributes=data_attributes,
+        transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
+        collate_fn=collate_fn
+    )
     test_dataset = AvalancheDataset(
         [base_test_dataset], indices=indices, data_attributes=data_attributes,
         transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
         collate_fn=collate_fn
     )
-    return train_dataset, test_dataset
+    return train_dataset, eval_dataset, test_dataset
 
 
 # Constants for loading baseline fields

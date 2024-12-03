@@ -20,7 +20,7 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
     def __init__(
             self, patience=3, delta=0.01, metric='Loss', type='min',
             restore_best_weights=True, val_stream_name='test_stream',
-            when_above=None, when_below=None,
+            when_above=None, when_below=None, min_epochs=0,
     ):
         super().__init__()
         self.patience = patience
@@ -38,6 +38,7 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
         self.validation_plugin = None
         self.when_above = when_above
         self.when_below = when_below
+        self.min_epochs = min_epochs
 
     def before_training(self, strategy: Template, *args, **kwargs) -> Any:
         self.inside_training = True
@@ -69,10 +70,6 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
                             current_metric = last_metrics.get(metric, None)
                             break
             if current_metric is not None:
-                #debug_print(
-                #    f"[{type(self).__name__}] {self.metric} metric after epoch {self.current_epoch}: {current_metric:.4f}"
-                #)
-
                 if self.type == self.MAX:
                     if self.best_metric is None or current_metric > self.best_metric + self.delta:
                         self.best_metric = current_metric
@@ -90,7 +87,7 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
                     else:
                         self.wait += 1
 
-                if (self.wait >= self.patience and
+                if ((self.current_epoch > self.min_epochs) and (self.wait >= self.patience) and
                     (self.when_above is None or current_metric > self.when_above) and
                     (self.when_below is None or current_metric < self.when_below)):
                     debug_print(

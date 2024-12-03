@@ -44,11 +44,11 @@ def mlp_config(parameters: dict[str, Any], gaussian=False, task='regression', ta
 
 
 def saved_model_handler(model_folder: str, model_name: str, model_class_name: str, **kwargs):
-    task_id = kwargs.get('task_id', 0)
+    task_id = kwargs.pop('task_id', 0)
     model_class = __model_classes.get(model_class_name, None)
     if not model_class:
         raise ValueError(f"Invalid model class name \"{model_class_name}\"")
-    model_path = f'{MODELS_DIR}/{model_folder}/{model_name} task_{task_id}'
+    model_path = f'{MODELS_DIR}/{model_folder}/{model_name} task_{task_id}.pt'
     print(f"Loading model from path: {model_path}")
     model = model_class(**kwargs)
     model.load_state_dict(torch.load(model_path))
