@@ -1,11 +1,11 @@
 from typing import Any
 
 from .parser import *
-from ..utils import LogarithmTransform, ReversableTransform
-
+from ..utils import LogarithmTransform, ReversableTransform, SqrtTransform
 
 __names_dict__: dict[str, type(ReversableTransform)] = {
-    'LogarithmTransform': LogarithmTransform
+    'LogarithmTransform': LogarithmTransform,
+    'SqrtTransform': SqrtTransform,
 }
 
 
@@ -33,7 +33,7 @@ def transform_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
 
 
 @ConfigParser.register_handler('target_transform')
-def target_transform_handler(data: dict[str, Any], **kwargs):
+def target_transform_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     transform = __transform_inside_loop(data)
     return {
         'target_transform': transform,

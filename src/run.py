@@ -7,7 +7,7 @@ from datetime import datetime
 import argparse
 
 from avalanche.logging import InteractiveLogger
-from avalanche.evaluation.metrics import loss_metrics
+from avalanche.evaluation.metrics import loss_metrics, accuracy_metrics
 from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin
 
 from joblib import Parallel, delayed
@@ -44,17 +44,22 @@ def get_metrics(loss_type):
     if loss_type == 'GaussianNLL':
         metrics = \
             loss_metrics(epoch=True, experience=True, stream=True) + \
-            gaussian_mse_metrics(epoch=True, experience=True, stream=True) #+ \
-            #renamed_forgetting_metrics(experience=True, stream=True) + \
-            #renamed_bwt_metrics(experience=True, stream=True)
-    else:
-        #metrics = \
-        #    loss_metrics(epoch=True, experience=True, stream=True) + \
+            gaussian_mse_metrics(epoch=True, experience=True, stream=True) + \
+            renamed_forgetting_metrics(experience=True, stream=True) + \
+            renamed_bwt_metrics(experience=True, stream=True)
+    elif loss_type in ['BCE', 'bce', 'BCEWithLogits', 'bce_with_logits']:
         metrics = \
+            loss_metrics(epoch=True, experience=True, stream=True) + \
+            accuracy_metrics(epoch=True, experience=True, stream=True) + \
+            renamed_forgetting_metrics(experience=True, stream=True) + \
+            renamed_bwt_metrics(experience=True, stream=True)
+    else:
+        metrics = \
+            loss_metrics(epoch=True, experience=True, stream=True) + \
             relative_distance_metrics(epoch=True, experience=True, stream=True) + \
-            r2_score_metrics(epoch=True, experience=True, stream=True) #+ \
-            #renamed_forgetting_metrics(experience=True, stream=True) + \
-            #renamed_bwt_metrics(experience=True, stream=True)
+            r2_score_metrics(epoch=True, experience=True, stream=True) + \
+            renamed_forgetting_metrics(experience=True, stream=True) + \
+            renamed_bwt_metrics(experience=True, stream=True)
     return metrics
 
 
@@ -185,8 +190,10 @@ def task_training_loop(config_file_path: str, task_id: int):
 
     # Prepare folders for experiments
     folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}"
+    output_columns_str = '_'.join(output_columns)
     log_folder = os.path.join(
-        'logs', pow_type, cluster_type, task, dataset_type, strategy_type, folder_name
+        'logs', pow_type, cluster_type, task, dataset_type,
+        output_columns_str, strategy_type, folder_name
     )
     os.makedirs(os.path.join(log_folder), exist_ok=True)
     stdout_file_path = os.path.join(log_folder, 'stdout.txt')
@@ -249,7 +256,7 @@ def task_training_loop(config_file_path: str, task_id: int):
 
         # Get and transform metrics
         metrics = get_metrics(loss_type)
-        if cl_strategy_target_transform and False:
+        if cl_strategy_target_transform:
             metrics = preprocessed_metrics(
                 metrics, preprocess_ytrue=cl_strategy_target_transform_preprocess_ytrue,
                 preprocess_ypred=cl_strategy_target_transform_preprocess_ypred

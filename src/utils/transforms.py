@@ -28,7 +28,7 @@ class CustomNormalize(ReversableTransform):
 
 
 class LogarithmTransform(ReversableTransform):
-    def __init__(self, log_shift=0, final_shift=0):
+    def __init__(self, log_shift=0.0, final_shift=0.0):
         self.log_shift = log_shift
         self.final_shift = final_shift
 
@@ -39,4 +39,13 @@ class LogarithmTransform(ReversableTransform):
         return lambda tensor: torch.exp(tensor - self.final_shift) - self.log_shift
 
 
-__all__ = ['ReversableTransform', 'CustomNormalize', 'LogarithmTransform']
+class SqrtTransform(ReversableTransform):
+
+    def __call__(self, tensor):
+        return torch.sqrt(tensor)
+
+    def inverse(self):
+        return lambda tensor: tensor ** 2
+
+
+__all__ = ['ReversableTransform', 'CustomNormalize', 'LogarithmTransform', 'SqrtTransform']

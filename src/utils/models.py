@@ -108,7 +108,6 @@ class GaussianRegressionMLP(nn.Module, BaseModel):
         layers = nn.Sequential(
             *(
                 nn.Linear(input_size, hidden_size, dtype=dtype),
-                #nn.LayerNorm(hidden_size, dtype=dtype),
                 nn.ReLU(inplace=True),
                 nn.Dropout(p=drop_rate),
             )
@@ -119,7 +118,6 @@ class GaussianRegressionMLP(nn.Module, BaseModel):
                 nn.Sequential(
                     *(
                         nn.Linear(hidden_size, hidden_size, dtype=dtype),
-                        #nn.LayerNorm(hidden_size, dtype=dtype),
                         nn.ReLU(inplace=True),
                         nn.Dropout(p=drop_rate),
                     )
@@ -161,7 +159,6 @@ class SimpleClassificationMLP(nn.Module, BaseModel):
         layers = nn.Sequential(
             *(
                 nn.Linear(input_size, hidden_size, dtype=dtype),
-                #nn.LayerNorm(hidden_size, dtype=dtype),
                 nn.ReLU(inplace=True),
                 nn.Dropout(p=drop_rate),
             )
@@ -172,7 +169,6 @@ class SimpleClassificationMLP(nn.Module, BaseModel):
                 nn.Sequential(
                     *(
                         nn.Linear(hidden_size, hidden_size, dtype=dtype),
-                        #nn.LayerNorm(hidden_size, dtype=dtype),
                         nn.ReLU(inplace=True),
                         nn.Dropout(p=drop_rate),
                     )

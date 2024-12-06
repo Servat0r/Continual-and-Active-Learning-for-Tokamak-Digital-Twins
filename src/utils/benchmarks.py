@@ -62,8 +62,6 @@ def make_benchmark(
         target_transform = transforms.Compose([norm_target_transform, target_transform]) \
             if target_transform else norm_target_transform
         # todo be careful on the fact that normalization is not included for inverse()-based preprocess_* methods
-    else:
-        target_transform = None
     for campaign in range(NUM_CAMPAIGNS):
         print(f"[yellow]Loading data for campaign {campaign} ...[/yellow]")
         train_dataset, eval_dataset, test_dataset = get_avalanche_csv_regression_datasets(

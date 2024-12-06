@@ -43,7 +43,7 @@
   "optimizer": {
     "name": "Adam",
     "parameters": {
-      "lr": 1e-2,
+      "lr": 5e-3,
       "weight_decay": 1e-4
     }
   },
@@ -57,8 +57,10 @@
     }
   },
   "strategy": {
-    "name": "Naive",
+    "name": "MAS",
     "parameters": {
+      "lambda_reg": 10.0,
+      "alpha": 0.5
     }
   },
   "early_stopping": {
@@ -69,13 +71,6 @@
   },
   "validation_stream": {
     "val_stream": "eval_stream"
-  },
-  "target_transform": {
-    "name": "LogarithmTransform",
-    "parameters": {
-      "log_shift": 0,
-      "final_shift": 0
-    }
   },
   "start_model_saving": {
     "save_model": false,

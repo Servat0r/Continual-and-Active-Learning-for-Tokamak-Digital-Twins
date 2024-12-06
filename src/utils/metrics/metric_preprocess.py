@@ -2,6 +2,9 @@ from typing import Callable
 import torch
 from avalanche.evaluation import Metric, GenericPluginMetric
 
+from .forgetting_bwt_fwt import ExperienceWiseForgetting, ExperienceWiseForwardTransfer, ExperienceWiseBWT, StreamWiseForgetting, \
+    StreamWiseForwardTransfer, StreamWiseBWT
+
 
 class PreprocessMetric(Metric[float]):
 
@@ -17,21 +20,8 @@ class PreprocessMetric(Metric[float]):
         self.metric.reset()
 
     def update(self, predicted: torch.Tensor, actual: torch.Tensor) -> None:
-        print(
-            "Before preprocessing: ",
-            f"predicted = {predicted}",
-            f"actual = {actual}",
-            sep='\n'
-        )
         predicted = self.preprocess_ypred(predicted)
         actual = self.preprocess_ytrue(actual)
-        print(
-            "After preprocessing: ",
-            f"predicted = {predicted}",
-            f"actual = {actual}",
-            f"metric = {str(self.metric)}",
-            sep='\n'
-        )
         self.metric.update(predicted, actual)
 
     def result(self) -> float:
@@ -47,13 +37,6 @@ class PluginPreprocess(GenericPluginMetric[float, PreprocessMetric]):
         self, reset_at, emit_at, mode, metric: Metric, preprocess_ytrue: Callable,
         preprocess_ypred: Callable, split_by_task=False,
     ):
-        """Creates the Accuracy plugin
-
-        :param reset_at:
-        :param emit_at:
-        :param mode:
-        :param split_by_task: whether to compute task-aware accuracy or not.
-        """
         super().__init__(
             PreprocessMetric(
                 metric, preprocess_ytrue=preprocess_ytrue, preprocess_ypred=preprocess_ypred
@@ -88,6 +71,15 @@ class MinibatchPreprocess(PluginPreprocess):
             metric_name = 'Loss'
         return f"{metric_name}_MB"
 
+    def reset(self) -> None:
+        super(MinibatchPreprocess, self).reset()
+
+    def result(self) -> float:
+        return super(MinibatchPreprocess, self).result()
+
+    def update(self, strategy):
+        return super(MinibatchPreprocess, self).update(strategy)
+
 
 class EpochPreprocess(PluginPreprocess):
 
@@ -105,6 +97,15 @@ class EpochPreprocess(PluginPreprocess):
         if metric_name == 'LossMetric':
             metric_name = 'Loss'
         return f"{metric_name}_Epoch"
+
+    def reset(self) -> None:
+        super(EpochPreprocess, self).reset()
+
+    def result(self) -> float:
+        return super(EpochPreprocess, self).result()
+
+    def update(self, strategy):
+        return super(EpochPreprocess, self).update(strategy)
 
 
 class RunningEpochPreprocess(PluginPreprocess):
@@ -124,6 +125,15 @@ class RunningEpochPreprocess(PluginPreprocess):
             metric_name = 'Loss'
         return f"{metric_name}_RunningEpoch"
 
+    def reset(self) -> None:
+        super(RunningEpochPreprocess, self).reset()
+
+    def result(self) -> float:
+        return super(RunningEpochPreprocess, self).result()
+
+    def update(self, strategy):
+        return super(RunningEpochPreprocess, self).update(strategy)
+
 
 class ExperiencePreprocess(PluginPreprocess):
 
@@ -141,6 +151,15 @@ class ExperiencePreprocess(PluginPreprocess):
         if metric_name == 'LossMetric':
             metric_name = 'Loss'
         return f"{metric_name}_Exp"
+
+    def reset(self) -> None:
+        super(ExperiencePreprocess, self).reset()
+
+    def result(self) -> float:
+        return super(ExperiencePreprocess, self).result()
+
+    def update(self, strategy):
+        return super(ExperiencePreprocess, self).update(strategy)
 
 
 class StreamPreprocess(PluginPreprocess):
@@ -160,11 +179,36 @@ class StreamPreprocess(PluginPreprocess):
             metric_name = 'Loss'
         return f"{metric_name}_Stream"
 
+    def reset(self) -> None:
+        super(StreamPreprocess, self).reset()
+
+    def result(self) -> float:
+        return super(StreamPreprocess, self).result()
+
+    def update(self, strategy):
+        return super(StreamPreprocess, self).update(strategy)
+
 
 def preprocessed_metrics(metrics: list[GenericPluginMetric], preprocess_ytrue, preprocess_ypred):
     result = []
     for metric in metrics:
-        if metric._reset_at == "iteration":
+        if hasattr(metric, '_metric'):
+            print(f"Pippo {metric._metric}")
+        elif hasattr(metric, '_current_metric'):
+            print(f"Pippo {metric._current_metric}")
+        # Special Metrics
+        if any([
+            isinstance(metric, cls) for cls in \
+                [ExperienceWiseForgetting, ExperienceWiseForwardTransfer, ExperienceWiseBWT]
+        ]):
+            result.append(ExperiencePreprocess(metric._current_metric._metric, preprocess_ytrue, preprocess_ypred))
+        elif any([
+            isinstance(metric, cls) for cls in \
+                [StreamWiseForgetting, StreamWiseForwardTransfer, StreamWiseBWT]
+        ]):
+            result.append(StreamPreprocess(metric._current_metric._metric, preprocess_ytrue, preprocess_ypred))
+        # Generic Metrics
+        elif metric._reset_at == "iteration":
             result.append(MinibatchPreprocess(metric._metric, preprocess_ytrue, preprocess_ypred))
         elif metric._reset_at == "experience":
             result.append(ExperiencePreprocess(metric._metric, preprocess_ytrue, preprocess_ypred))

@@ -31,6 +31,7 @@ def mlp_config(parameters: dict[str, Any], gaussian=False, task='regression', ta
     assert default_config['dtype'] in ['float16', 'float32', 'float64']
     for key in default_config:
         assert key in ['hidden_size', 'hidden_layers', 'input_size', 'output_size', 'drop_rate', 'dtype']
+    print(task)
     if task == 'regression':
         if gaussian:
             return GaussianRegressionMLP(**default_config)
@@ -62,7 +63,12 @@ def architecture_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'parameters' not in data:
         raise ValueError(f"\"parameters\" field not present in configuration")
     name, parameters = data['name'], data['parameters']
-    task = kwargs['task'] if 'task' in kwargs else 'regression'
+    if 'task' in kwargs:
+        task = kwargs.pop('task')
+    elif ('general' in kwargs) and ('task' in kwargs['general']):
+        task = kwargs['general']['task']
+    else:
+        task = 'regression'
     print(task)
     if name == 'saved':
         model_folder = data.get('model_folder', '')

@@ -63,7 +63,9 @@ def extract_metric_info(metric_name: str) -> dict[str, str]:
         'exp': values[3] if len(values) > 3 else None,
         'exp_number': int(values[3][3:]) if len(values) > 3 else None,
     }
-    if results['name'].endswith('Epoch'):
+    if results['name'].endswith('MB'):
+        results['type'] = 'minibatch'
+    elif results['name'].endswith('Epoch'):
         results['type'] = 'epoch'
     elif results['name'].endswith('Exp'):
         results['type'] = 'exp'
@@ -75,7 +77,9 @@ def extract_metric_info(metric_name: str) -> dict[str, str]:
 
 
 def extract_metric_type(metric_name: str):
-    if metric_name.endswith('Epoch'):
+    if metric_name.endswith('MB'):
+        return metric_name[:-6], 'minibatch'
+    elif metric_name.endswith('Epoch'):
         return metric_name[:-6], 'epoch'
     elif metric_name.endswith('Exp'):
         return metric_name[:-4], 'exp'
