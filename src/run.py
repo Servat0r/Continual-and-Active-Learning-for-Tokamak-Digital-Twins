@@ -8,9 +8,13 @@ import argparse
 
 from avalanche.logging import InteractiveLogger
 from avalanche.evaluation.metrics import loss_metrics, accuracy_metrics
-from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin
+from avalanche.models import VAE_loss
+from avalanche.training import GenerativeReplay, VAETraining
+from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin, GenerativeReplayPlugin
 
 from joblib import Parallel, delayed
+
+from src.example_avalanche import cl_strategy
 
 sys.path.append(os.path.dirname(__file__))  # Add src directory to sys.path
 
@@ -251,8 +255,9 @@ def task_training_loop(config_file_path: str, task_id: int):
         eval_stream = benchmark.eval_stream
         test_stream = benchmark.test_stream
 
-        with open(os.path.join(log_folder, 'config.json'), 'w') as fp:
-            json.dump(config, fp, indent=4)
+        if cl_strategy_class != GenerativeReplay:
+            with open(os.path.join(log_folder, 'config.json'), 'w') as fp:
+                json.dump(config, fp, indent=4)
 
         # Get and transform metrics
         metrics = get_metrics(loss_type)
@@ -285,7 +290,40 @@ def task_training_loop(config_file_path: str, task_id: int):
         if scheduler:
             plugins.append(scheduler)
 
+        print(f"[red]CL Strategy Class[/red]: {cl_strategy_class}")
         # Continual learning strategy
+        if cl_strategy_class == GenerativeReplay:
+            generator_strategy_config = cl_strategy_parameters.pop('generator_strategy')
+            generator_model = generator_strategy_config['model']
+            generator_optimizer = generator_strategy_config['optimizer']
+            train_mb_size = config["general"]["train_mb_size"]
+            train_epochs = config["general"]["train_epochs"]
+            eval_mb_size = config["general"]["eval_mb_size"]
+            replay_size = cl_strategy_parameters.get("replay_size", None)
+            increasing_replay_size = cl_strategy_parameters.get("increasing_replay_size", False)
+            is_weighted_replay = cl_strategy_parameters.get("is_weighted_replay", False)
+            weight_replay_loss_factor = cl_strategy_parameters.get("weight_replay_loss_factor", 1.0)
+            weight_replay_loss = cl_strategy_parameters.get("weight_replay_loss", 1e-4)
+            generator_strategy = VAETraining(
+                model=generator_model,
+                optimizer=generator_optimizer,
+                criterion=VAE_loss,
+                train_mb_size=train_mb_size,
+                train_epochs=train_epochs,
+                eval_mb_size=eval_mb_size,
+                device=device,
+                plugins=[
+                    GenerativeReplayPlugin(
+                        replay_size=replay_size,
+                        increasing_replay_size=increasing_replay_size,
+                        is_weighted_replay=is_weighted_replay,
+                        weight_replay_loss_factor=weight_replay_loss_factor,
+                        weight_replay_loss=weight_replay_loss,
+                    )
+                ],
+            )
+            cl_strategy_parameters['generator_strategy'] = generator_strategy
+
         cl_strategy = cl_strategy_class(
             model=model, optimizer=optimizer, criterion=criterion, train_mb_size=train_mb_size,
             train_epochs=train_epochs, eval_mb_size=eval_mb_size, device=device, evaluator=eval_plugin,

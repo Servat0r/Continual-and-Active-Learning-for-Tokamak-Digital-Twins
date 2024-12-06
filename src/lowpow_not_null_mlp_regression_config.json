@@ -57,10 +57,9 @@
     }
   },
   "strategy": {
-    "name": "MAS",
+    "name": "GenerativeReplay",
     "parameters": {
-      "lambda_reg": 10.0,
-      "alpha": 0.5
+      "nhid": 2
     }
   },
   "early_stopping": {
