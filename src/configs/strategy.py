@@ -7,6 +7,7 @@ from avalanche.training import Naive, Replay, EWC, SynapticIntelligence, Generat
     GEM, MAS, Cumulative, JointTraining, FromScratchTraining
 
 from .parser import *
+from ..utils.strategies import *
 
 
 __strategy_dict = {
@@ -21,6 +22,10 @@ __strategy_dict = {
     'GenerativeReplay': GenerativeReplay,
     'GEM': GEM,
     'MAS': MAS,
+    'EWCReplay': EWCReplay,
+    'MASReplay': MASReplay,
+    'GEMReplay': GEMReplay,
+    'SIReplay': SIReplay,
 }
 
 

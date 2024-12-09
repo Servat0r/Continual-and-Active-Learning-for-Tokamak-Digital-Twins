@@ -9,12 +9,10 @@ import argparse
 from avalanche.logging import InteractiveLogger
 from avalanche.evaluation.metrics import loss_metrics, accuracy_metrics
 from avalanche.models import VAE_loss
-from avalanche.training import GenerativeReplay, VAETraining
+from avalanche.training import GenerativeReplay, VAETraining, JointTraining
 from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin, GenerativeReplayPlugin
 
 from joblib import Parallel, delayed
-
-from src.example_avalanche import cl_strategy
 
 sys.path.append(os.path.dirname(__file__))  # Add src directory to sys.path
 
@@ -22,9 +20,12 @@ from .utils import *
 from .configs import *
 
 
-METRIC_LIST = ['Loss_Exp', 'R2Score_Exp', 'RelativeDistance_Exp']
-TITLE_LIST = ['Loss over each experience', 'R2 Score over each experience', 'Relative Distance over each experience']
-YLABEL_LIST = ['Loss', 'R2 Score', 'Relative Distance']
+METRIC_LIST = ['Loss_Exp', 'R2Score_Exp', 'RelativeDistance_Exp', 'Forgetting_Exp']
+TITLE_LIST = [
+    'Loss over each experience', 'R2 Score over each experience',
+    'Relative Distance over each experience', 'Forgetting over each experience'
+]
+YLABEL_LIST = ['Loss', 'R2 Score', 'Relative Distance', 'Forgetting']
 
 
 def make_scheduler(scheduler_config, optimizer):
@@ -333,15 +334,25 @@ def task_training_loop(config_file_path: str, task_id: int):
         @time_logger(log_file=f'{log_folder}/timing.txt')
         def run(train_stream, eval_stream, cl_strategy, model, log_folder):
             results = []
-            for idx, train_exp in enumerate(train_stream):
-                print(f"Starting training experience [red]{idx}[/red]: ")
-                cl_strategy.train(train_exp)
-                print(f"Starting testing experience [red]{idx}[/red]: ")
+            if isinstance(cl_strategy, JointTraining):
+                print(f"Starting [red]JointTraining[/red]training experience: ")
+                cl_strategy.train(train_stream)
+                print(f"Starting [red]JointTraining[/red] evaluation experience: ")
                 results.append(cl_strategy.eval(eval_stream))
-                print(f"Saving model after experience [red]{idx}[/red]: ")
+                print(f"Saving model after [red]JointTraining[/red] experience: ")
                 model.eval()
-                torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
+                torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_0.pt'))
                 model.train()
+            else:
+                for idx, train_exp in enumerate(train_stream):
+                    print(f"Starting training experience [red]{idx}[/red]: ")
+                    cl_strategy.train(train_exp)
+                    print(f"Starting testing experience [red]{idx}[/red]: ")
+                    results.append(cl_strategy.eval(eval_stream))
+                    print(f"Saving model after experience [red]{idx}[/red]: ")
+                    model.eval()
+                    torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
+                    model.train()
             return results
 
         # train and test loop over the stream of experiences
@@ -351,8 +362,10 @@ def task_training_loop(config_file_path: str, task_id: int):
             with open(os.path.join(log_folder, 'results.json'), 'w') as fp:
                 json.dump(results, fp, indent=4)
 
-            # Finally evaluate on test stream
+            # Finally close the logger and evaluate on test stream
+            csv_logger.set_test_stream_type()
             final_test_results = cl_strategy.eval(test_stream)
+            csv_logger.close()
             # Filter by results on test_stream
             final_test_results = {
                 k: v for k, v in final_test_results.items() if "test_stream" in k
@@ -360,7 +373,6 @@ def task_training_loop(config_file_path: str, task_id: int):
             final_test_results = process_test_results(final_test_results)
             with open(os.path.join(log_folder, 'final_test_results.json'), 'w') as fp:
                 json.dump(final_test_results, fp, indent=4)
-
             model.eval()
             # Save model for future usage
             torch.save(model.state_dict(), os.path.join(log_folder, 'model.pt'))
@@ -375,7 +387,7 @@ def task_training_loop(config_file_path: str, task_id: int):
             except:
                 debug_print(f"[red]Failed to remove {log_folder}[/red]")
             finally:
-                raise ex
+                return None
 
 
 def main():
@@ -424,8 +436,16 @@ def main():
     # Plot means and standard deviations
     if num_jobs > 1:
         file_paths = [
-            os.path.join(result['log_folder'], 'eval_results_experience.csv') for result in results
+            os.path.join(result['log_folder'], 'eval_results_experience.csv') for result in results if result is not None
         ]
+        if len(file_paths) != len(results):
+            raise RuntimeError(f"Something went wrong during training: {len(file_paths)} vs. {len(results)}")
+        save_folder = os.path.dirname(file_paths[0])
+        # Save csv files for mean and std values
+        get_means_std_over_evaluation_experiences_multiple_runs(
+            file_paths, os.path.join(save_folder, 'mean_values.csv'), os.path.join(save_folder, 'std_values.csv')
+        )
+        # Plot mean and std values
         mean_std_evaluation_experiences_plots(file_paths, METRIC_LIST, TITLE_LIST, YLABEL_LIST)
 
 

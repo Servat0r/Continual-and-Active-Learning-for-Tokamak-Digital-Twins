@@ -1,8 +1,11 @@
 import os
+import pandas as pd
+import numpy as np
 from torch import float16, float32, float64
 from datetime import datetime
 from dotenv import load_dotenv
 from rich import print as dbprint
+from pathlib import Path
 
 
 load_dotenv(
@@ -89,7 +92,60 @@ def extract_metric_type(metric_name: str):
         raise ValueError(f"Unknown metric name: {metric_name}")
 
 
+def get_means_std_over_evaluation_experiences_multiple_runs(
+        file_paths_or_bufs: list[str | pd.DataFrame], mean_savepath: str, std_savepath: str
+):
+    dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths_or_bufs]
+    columns = dfs[0].columns
+    mean_df = pd.DataFrame(columns=columns)
+    std_df = pd.DataFrame(columns=columns)
+    for column in columns:
+        values = [df[column].to_numpy(dtype=np.float32) for df in dfs]
+        arr = np.round(np.vstack(values), decimals=8)
+        mean_df[column] = arr.mean(axis=0)
+        std_df[column] = arr.std(axis=0)
+    mean_df.to_csv(mean_savepath, index=False)
+    std_df.to_csv(std_savepath, index=False)
+    return mean_df, std_df
+
+
+def extract_metric_values_over_evaluation_experiences(
+    file_paths_or_bufs: list[str | pd.DataFrame], metric: str, num_exp: int = None,
+):
+    dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths_or_bufs]
+    num_exp = num_exp if num_exp is not None else len(dfs[0]['eval_exp'].unique())
+    result_dfs = []
+    for df in dfs:
+        result_df = pd.DataFrame()
+        for exp_id in range(num_exp):
+            data = df[df['eval_exp'] == exp_id][metric].to_numpy()
+            result_df[exp_id] = data
+        result_dfs.append(result_df)
+    return result_dfs
+
+
+def get_all_tasks_paths(base_path: str):
+    path = Path(base_path)
+    directories = [os.path.join(base_path, d.name) for d in path.iterdir() if d.is_dir()]
+    # Order as task_0, task_1, task_2 etc
+    directories = sorted(directories, key=lambda x: int(x[-1]))
+    files = [
+        os.path.join(dir_path, 'eval_results_experience.csv') for dir_path in directories
+    ]
+    mean_path = os.path.join(directories[0], 'mean_eval_results_experience.csv')
+    std_path = os.path.join(directories[0], 'std_eval_results_experience.csv')
+    return {
+        'directories': directories,
+        'files': files,
+        'mean_path': mean_path,
+        'std_path': std_path,
+    }
+
+
 __all__ = [
     "debug_print", "time_logger", "float16", "float32", "float64",
     "get_dtype_from_str", "extract_metric_info", "extract_metric_type",
+    "get_means_std_over_evaluation_experiences_multiple_runs",
+    "extract_metric_values_over_evaluation_experiences",
+    "get_all_tasks_paths",
 ]

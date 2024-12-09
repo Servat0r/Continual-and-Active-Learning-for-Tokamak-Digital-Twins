@@ -57,9 +57,11 @@
     }
   },
   "strategy": {
-    "name": "GenerativeReplay",
+    "name": "EWCReplay",
     "parameters": {
-      "nhid": 2
+      "mode": "separate",
+      "ewc_lambda": 10.0,
+      "mem_size": 2000
     }
   },
   "early_stopping": {

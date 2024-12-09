@@ -1,4 +1,6 @@
 import os
+import sys
+
 import torch
 from avalanche.evaluation.metric_results import MetricValue
 from avalanche.evaluation import GenericPluginMetric
@@ -39,6 +41,10 @@ def get_log_folder(
 
 
 class CustomCSVLogger(BaseLogger):
+
+    VAL = 'val'
+    TEST = 'test'
+
     def __init__(
             self, log_folder=None, metrics: list[GenericPluginMetric] = None,
             val_stream=None,
@@ -57,9 +63,19 @@ class CustomCSVLogger(BaseLogger):
             'exp': open(os.path.join(self.log_folder, "eval_results_experience.csv"), "w"), # Experience
             'stream': open(os.path.join(self.log_folder, "eval_results_stream.csv"), "w"), # Stream
         }
+        self.test_files = {
+            'epoch': open(os.path.join(self.log_folder, "test_results_epoch.csv"), "w"), # Epoch
+            'exp': open(os.path.join(self.log_folder, "test_results_experience.csv"), "w"), # Experience
+            'stream': open(os.path.join(self.log_folder, "test_results_stream.csv"), "w") # Stream
+        }
 
         # current training experience id
         self.training_exp_id = None
+
+        # is open?
+        self.is_open = True
+        self.stream_type = self.VAL
+        self.set_val_stream_type()
 
         # if we are currently training or evaluating
         # evaluation within training will not change this flag
@@ -116,6 +132,12 @@ class CustomCSVLogger(BaseLogger):
         if val_stream is not None:
             self.set_validation_stream(val_stream)
 
+    def set_val_stream_type(self):
+        self.stream_type = self.VAL
+
+    def set_test_stream_type(self):
+        self.stream_type = self.TEST
+
     def set_validation_stream(self, stream):
         self.val_stream = stream
         self.val_experiences = []
@@ -154,7 +176,12 @@ class CustomCSVLogger(BaseLogger):
     def print_eval_metrics(
         self, eval_exp, training_exp, metric_values, out_type, in_type, epoch=None,
     ):
-        file = self.eval_files[out_type]
+        if self.stream_type == self.VAL:
+            file = self.eval_files[out_type]
+        elif self.stream_type == self.TEST:
+            file = self.test_files[out_type]
+        else:
+            raise RuntimeError(f"Invalid stream type {self.stream_type}")
         metric_names = self.metric_names[in_type]
         metric_raw_values = [0.0 for _ in range(len(metric_names))]
         for val in metric_values:
@@ -189,6 +216,13 @@ class CustomCSVLogger(BaseLogger):
         **kwargs,
     ):
         #super().after_training_epoch(strategy, metric_values, **kwargs)
+        if not self.is_open:
+            print(
+                "Logger has been closed",
+                file=sys.stderr,
+                flush=True,
+            )
+            return
         self.print_train_metrics(
             self.training_exp_id,
             strategy.clock.train_exp_epochs,
@@ -203,7 +237,13 @@ class CustomCSVLogger(BaseLogger):
         **kwargs,
     ):
         #super().after_eval_exp(strategy, metric_values, **kwargs)
-        # Temporarily ignore the case of validation during training (refer to CSVLogger class for implementing)
+        if not self.is_open:
+            print(
+                "Logger has been closed",
+                file=sys.stderr,
+                flush=True,
+            )
+            return
         if self.in_train_phase:
             self.print_eval_metrics(
                 strategy.experience.current_experience,
@@ -260,9 +300,12 @@ class CustomCSVLogger(BaseLogger):
         self.in_train_phase = False
 
     def close(self):
+        self.is_open = False
         for file in self.training_files.values():
             file.close()
         for file in self.eval_files.values():
+            file.close()
+        for file in self.test_files.values():
             file.close()
 
 
