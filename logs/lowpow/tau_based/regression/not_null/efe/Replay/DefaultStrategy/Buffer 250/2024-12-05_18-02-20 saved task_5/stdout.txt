@@ -1,0 +1,439 @@
+[32mConfiguration Loaded[0m:
+  Device: [36mcu[0m[1;36mda:0[0m
+  architecture: [1;36mSimpleRegressionMLP[0m[1;36m([0m
+[36m  [0m[1;36m([0m[36mfeatures[0m[1;36m)[0m[36m: [0m[1;36mSequential[0m[1;36m([0m
+[36m    [0m[1;36m([0m[1;36m0[0m[1;36m)[0m[36m: [0m[1;36mLinear[0m[1;36m([0m[36min_features[0m[36m=[0m[1;36m11[0m[36m, [0m[36mout_features[0m[36m=[0m[1;36m1024[0m[36m, [0m[36mbias[0m[36m=[0m[3;36mTrue[0m[1;36m)[0m
+[36m    [0m[1;36m([0m[1;36m1[0m[1;36m)[0m[36m: [0m[1;36mReLU[0m[1;36m([0m[36minplace[0m[36m=[0m[3;36mTrue[0m[1;36m)[0m
+[36m    [0m[1;36m([0m[1;36m2[0m[1;36m)[0m[36m: [0m[1;36mDropout[0m[1;36m([0m[36mp[0m[36m=[0m[1;36m0[0m[1;36m.5[0m[36m, [0m[36minplace[0m[36m=[0m[3;36mFalse[0m[1;36m)[0m
+[36m    [0m[1;36m([0m[1;36m3[0m[1;36m)[0m[36m: [0m[1;36mSequential[0m[1;36m([0m
+[36m      [0m[1;36m([0m[1;36m0[0m[1;36m)[0m[36m: [0m[1;36mLinear[0m[1;36m([0m[36min_features[0m[36m=[0m[1;36m1024[0m[36m, [0m[36mout_features[0m[36m=[0m[1;36m1024[0m[36m, [0m[36mbias[0m[36m=[0m[3;36mTrue[0m[1;36m)[0m
+[36m      [0m[1;36m([0m[1;36m1[0m[1;36m)[0m[36m: [0m[1;36mReLU[0m[1;36m([0m[36minplace[0m[36m=[0m[3;36mTrue[0m[1;36m)[0m
+[36m      [0m[1;36m([0m[1;36m2[0m[1;36m)[0m[36m: [0m[1;36mDropout[0m[1;36m([0m[36mp[0m[36m=[0m[1;36m0[0m[1;36m.5[0m[36m, [0m[36minplace[0m[36m=[0m[3;36mFalse[0m[1;36m)[0m
+[36m    [0m[1;36m)[0m
+[36m  [0m[1;36m)[0m
+[36m  [0m[1;36m([0m[36mregressor[0m[1;36m)[0m[36m: [0m[1;36mLinear[0m[1;36m([0m[36min_features[0m[36m=[0m[1;36m1024[0m[36m, [0m[36mout_features[0m[36m=[0m[1;36m1[0m[36m, [0m[36mbias[0m[36m=[0m[3;36mTrue[0m[1;36m)[0m
+[1;36m)[0m
+  loss: [1;36mMSELoss[0m[1;36m([0m[1;36m)[0m
+  optimizer: [1;36m{[0m[36m'class'[0m[36m: [0m[1;36m<[0m[1;36mclass[0m[36m [0m[36m'torch.optim.adam.Adam'[0m[1;36m>[0m[36m, [0m[36m'parameters'[0m[36m: [0m[1;36m{[0m[36m'lr'[0m[36m: [0m[1;36m0.005[0m[36m, [0m[36m'weight_decay'[0m[36m: [0m[1;36m0.0001[0m[1;36m}[0m[1;36m}[0m
+  scheduler: [1;36m{[0m[36m'class'[0m[36m: [0m[1;36m<[0m[1;36mclass[0m[36m [0m[36m'torch.optim.lr_scheduler.ReduceLROnPlateau'[0m[1;36m>[0m[36m, [0m[36m'metric'[0m[36m: [0m[36m'val_loss'[0m[36m, [0m[36m'first_epoch_only'[0m[36m: [0m[3;36mFalse[0m[36m, [0m[36m'first_exp_only'[0m[36m: [0m[3;36mFalse[0m[36m, [0m[36m'parameters'[0m[36m: [0m[1;36m{[0m[36m'factor'[0m[36m: [0m
+[1;36m0.25[0m[36m, [0m[36m'patience'[0m[36m: [0m[1;36m10[0m[1;36m}[0m[1;36m}[0m
+  strategy: [1;36m{[0m[36m'class'[0m[36m: [0m[1;36m<[0m[1;36mclass[0m[36m [0m[36m'avalanche.training.supervised.strategy_wrappers.Replay'[0m[1;36m>[0m[36m, [0m[36m'parameters'[0m[36m: [0m[1;36m{[0m[36m'mem_size'[0m[36m: [0m[1;36m250[0m[1;36m}[0m[1;36m}[0m
+  early_stopping: [1;36m<[0m[1;36msrc.utils.plugins.early_stopping.ValidationEarlyStoppingPlugin[0m[36m object at [0m[1;36m0x000001EBE3EC28D0[0m[1;36m>[0m
+  validation_stream: [1;36m{[0m[36m'val_stream'[0m[36m: [0m[36m'eval_stream'[0m[1;36m}[0m
+  start_model_saving: [1;36m{[0m[1;36m}[0m
+  train_mb_size: [1;36m512[0m
+  eval_mb_size: [1;36m1024[0m
+  train_epochs: [1;36m200[0m
+  num_campaigns: [1;36m10[0m
+  dtype: [36mfloat32[0m
+  task: [36mregression[0m
+  input_columns: [1;36m[[0m[36m'ane'[0m[36m, [0m[36m'ate'[0m[36m, [0m[36m'x'[0m[36m, [0m[36m'q'[0m[36m, [0m[36m'smag'[0m[36m, [0m[36m'alpha'[0m[36m, [0m[36m'ani1'[0m[36m, [0m[36m'ati0'[0m[36m, [0m[36m'normni1'[0m[36m, [0m[36m'zeff'[0m[36m, [0m[36m'lognustar'[0m[1;36m][0m
+  output_columns: [1;36m[[0m[36m'efe'[0m[1;36m][0m
+  input_size: [1;36m11[0m
+  output_size: [1;36m1[0m
+  pow_type: [36mlowpow[0m
+  cluster_type: [36mtau_based[0m
+  dataset_type: [36mnot_null[0m
+  normalize_inputs: [3;36mTrue[0m
+  normalize_outputs: [3;36mFalse[0m
+  plugins: [1;36m{[0m[1;36m}[0m
+  transform: [1;36m{[0m[1;36m}[0m
+  target_transform: [1;36m{[0m[1;36m}[0m
+  parallel: [1;36m{[0m[1;36m}[0m
+[32mTrainable Parameters[0m = [1;31m1062913[0m
+[32mTotal Parameters[0m = [1;31m1062913[0m
+Input columns = [1m[[0m[32m'ane'[0m, [32m'ate'[0m, [32m'x'[0m, [32m'q'[0m, [32m'smag'[0m, [32m'alpha'[0m, [32m'ani1'[0m, [32m'ati0'[0m, [32m'normni1'[0m, [32m'zeff'[0m, [32m'lognustar'[0m[1m][0m
+Output columns = [1m[[0m[32m'efe'[0m[1m][0m
+There are [1;36m346580[0m items in the dataset in data/baseline/cleaned/lowpow_cluster/tau_based/complete_dataset.csv.
+After filtering, there are [1;36m104431[0m items.
+[32mmean = [0m[1;32mtensor[0m[1;32m([0m[1;32m[[0m[32m [0m[1;32m5.0877[0m[32m,  [0m[1;32m9.8408[0m[32m,  [0m[1;32m0.6622[0m[32m,  [0m[1;32m2.0930[0m[32m,  [0m[1;32m1.4962[0m[32m,  [0m[1;32m0.0940[0m[32m,  [0m[1;32m4.0585[0m[32m,  [0m[1;32m9.1070[0m[32m,[0m
+[32m         [0m[1;32m0.0188[0m[32m,  [0m[1;32m1.7542[0m[32m, [0m[1;32m-0.7193[0m[1;32m][0m[1;32m)[0m[32m, std = [0m[1;32mtensor[0m[1;32m([0m[1;32m[[0m[1;32m5.1160e+00[0m[32m, [0m[1;32m8.6058e+00[0m[32m, [0m[1;32m1.7283e-01[0m[32m, [0m[1;32m8.6660e-01[0m[32m, [0m[1;32m1.1500e+00[0m[32m, [0m[1;32m7.8966e-02[0m[32m,[0m
+[32m        [0m[1;32m3.7603e+00[0m[32m, [0m[1;32m7.7116e+00[0m[32m, [0m[1;32m6.6799e-03[0m[32m, [0m[1;32m3.0126e-01[0m[32m, [0m[1;32m3.9829e-01[0m[1;32m][0m[1;32m)[0m[32m [0m[32m...[0m
+[33mLoading data for campaign [0m[1;33m0[0m[33m [0m[33m...[0m
+Using cpu ...
+Using cpu ...
+Using cpu ...
+[31mInput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m11[0m[1;31m][0m[1;31m)[0m [31mOutput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m1[0m[1;31m][0m[1;31m)[0m [31mLength of Train Dataset = [0m[1;31m5126[0m [31mLength of Validation Dataset = [0m[1;31m1700[0m [31mLength of Test Dataset = [0m[1;31m1710[0m
+[33mLoading data for campaign [0m[1;33m1[0m[33m [0m[33m...[0m
+Using cpu ...
+Using cpu ...
+Using cpu ...
+[31mInput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m11[0m[1;31m][0m[1;31m)[0m [31mOutput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m1[0m[1;31m][0m[1;31m)[0m [31mLength of Train Dataset = [0m[1;31m5682[0m [31mLength of Validation Dataset = [0m[1;31m1842[0m [31mLength of Test Dataset = [0m[1;31m1899[0m
+[33mLoading data for campaign [0m[1;33m2[0m[33m [0m[33m...[0m
+Using cpu ...
+Using cpu ...
+Using cpu ...
+[31mInput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m11[0m[1;31m][0m[1;31m)[0m [31mOutput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m1[0m[1;31m][0m[1;31m)[0m [31mLength of Train Dataset = [0m[1;31m8072[0m [31mLength of Validation Dataset = [0m[1;31m2706[0m [31mLength of Test Dataset = [0m[1;31m2666[0m
+[33mLoading data for campaign [0m[1;33m3[0m[33m [0m[33m...[0m
+Using cpu ...
+Using cpu ...
+Using cpu ...
+[31mInput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m11[0m[1;31m][0m[1;31m)[0m [31mOutput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m1[0m[1;31m][0m[1;31m)[0m [31mLength of Train Dataset = [0m[1;31m5915[0m [31mLength of Validation Dataset = [0m[1;31m2042[0m [31mLength of Test Dataset = [0m[1;31m1982[0m
+[33mLoading data for campaign [0m[1;33m4[0m[33m [0m[33m...[0m
+Using cpu ...
+Using cpu ...
+Using cpu ...
+[31mInput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m11[0m[1;31m][0m[1;31m)[0m [31mOutput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m1[0m[1;31m][0m[1;31m)[0m [31mLength of Train Dataset = [0m[1;31m10364[0m [31mLength of Validation Dataset = [0m[1;31m3425[0m [31mLength of Test Dataset = [0m[1;31m3548[0m
+[33mLoading data for campaign [0m[1;33m5[0m[33m [0m[33m...[0m
+Using cpu ...
+Using cpu ...
+Using cpu ...
+[31mInput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m11[0m[1;31m][0m[1;31m)[0m [31mOutput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m1[0m[1;31m][0m[1;31m)[0m [31mLength of Train Dataset = [0m[1;31m8977[0m [31mLength of Validation Dataset = [0m[1;31m2978[0m [31mLength of Test Dataset = [0m[1;31m2944[0m
+[33mLoading data for campaign [0m[1;33m6[0m[33m [0m[33m...[0m
+Using cpu ...
+Using cpu ...
+Using cpu ...
+[31mInput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m11[0m[1;31m][0m[1;31m)[0m [31mOutput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m1[0m[1;31m][0m[1;31m)[0m [31mLength of Train Dataset = [0m[1;31m6213[0m [31mLength of Validation Dataset = [0m[1;31m2096[0m [31mLength of Test Dataset = [0m[1;31m2115[0m
+[33mLoading data for campaign [0m[1;33m7[0m[33m [0m[33m...[0m
+Using cpu ...
+Using cpu ...
+Using cpu ...
+[31mInput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m11[0m[1;31m][0m[1;31m)[0m [31mOutput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m1[0m[1;31m][0m[1;31m)[0m [31mLength of Train Dataset = [0m[1;31m3146[0m [31mLength of Validation Dataset = [0m[1;31m1106[0m [31mLength of Test Dataset = [0m[1;31m1012[0m
+[33mLoading data for campaign [0m[1;33m8[0m[33m [0m[33m...[0m
+Using cpu ...
+Using cpu ...
+Using cpu ...
+[31mInput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m11[0m[1;31m][0m[1;31m)[0m [31mOutput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m1[0m[1;31m][0m[1;31m)[0m [31mLength of Train Dataset = [0m[1;31m3865[0m [31mLength of Validation Dataset = [0m[1;31m1232[0m [31mLength of Test Dataset = [0m[1;31m1281[0m
+[33mLoading data for campaign [0m[1;33m9[0m[33m [0m[33m...[0m
+Using cpu ...
+Using cpu ...
+Using cpu ...
+[31mInput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m11[0m[1;31m][0m[1;31m)[0m [31mOutput Shape = [0m[1;31mtorch.Size[0m[1;31m([0m[1;31m[[0m[1;31m1[0m[1;31m][0m[1;31m)[0m [31mLength of Train Dataset = [0m[1;31m5298[0m [31mLength of Validation Dataset = [0m[1;31m1759[0m [31mLength of Test Dataset = [0m[1;31m1730[0m
+Metric names: ['Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'RelativeDistance_Epoch', 'RelativeDistance_Exp', 'RelativeDistance_Stream', 'R2Score_Epoch', 'R2Score_Exp', 'R2Score_Stream', 'Forgetting_Exp', 'Forgetting_Stream', 'BWT_Exp', 'BWT_Stream']
+Metric names: ['Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'RelativeDistance_Epoch', 'RelativeDistance_Exp', 'RelativeDistance_Stream', 'R2Score_Epoch', 'R2Score_Exp', 'R2Score_Stream', 'Forgetting_Exp', 'Forgetting_Stream', 'BWT_Exp', 'BWT_Stream']
+Metric names: ['Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'RelativeDistance_Epoch', 'RelativeDistance_Exp', 'RelativeDistance_Stream', 'R2Score_Epoch', 'R2Score_Exp', 'R2Score_Stream', 'Forgetting_Exp', 'Forgetting_Stream', 'BWT_Exp', 'BWT_Stream']
+Metric names: ['Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'RelativeDistance_Epoch', 'RelativeDistance_Exp', 'RelativeDistance_Stream', 'R2Score_Epoch', 'R2Score_Exp', 'R2Score_Stream', 'Forgetting_Exp', 'Forgetting_Stream', 'BWT_Exp', 'BWT_Stream']
+Metric names: ['Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'RelativeDistance_Epoch', 'RelativeDistance_Exp', 'RelativeDistance_Stream', 'R2Score_Epoch', 'R2Score_Exp', 'R2Score_Stream', 'Forgetting_Exp', 'Forgetting_Stream', 'BWT_Exp', 'BWT_Stream']
+Metric names: ['Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'RelativeDistance_Epoch', 'RelativeDistance_Exp', 'RelativeDistance_Stream', 'R2Score_Epoch', 'R2Score_Exp', 'R2Score_Stream', 'Forgetting_Exp', 'Forgetting_Stream', 'BWT_Exp', 'BWT_Stream']
+Metric names: ['Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'RelativeDistance_Epoch', 'RelativeDistance_Exp', 'RelativeDistance_Stream', 'R2Score_Epoch', 'R2Score_Exp', 'R2Score_Stream', 'Forgetting_Exp', 'Forgetting_Stream', 'BWT_Exp', 'BWT_Stream']
+Metric names: ['Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'RelativeDistance_Epoch', 'RelativeDistance_Exp', 'RelativeDistance_Stream', 'R2Score_Epoch', 'R2Score_Exp', 'R2Score_Stream', 'Forgetting_Exp', 'Forgetting_Stream', 'BWT_Exp', 'BWT_Stream']
+Metric names: ['Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'RelativeDistance_Epoch', 'RelativeDistance_Exp', 'RelativeDistance_Stream', 'R2Score_Epoch', 'R2Score_Exp', 'R2Score_Stream', 'Forgetting_Exp', 'Forgetting_Stream', 'BWT_Exp', 'BWT_Stream']
+Metric names: ['Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'Loss_Epoch', 'Loss_Exp', 'Loss_Stream', 'RelativeDistance_Epoch', 'RelativeDistance_Exp', 'RelativeDistance_Stream', 'R2Score_Epoch', 'R2Score_Exp', 'R2Score_Stream', 'Forgetting_Exp', 'Forgetting_Stream', 'BWT_Exp', 'BWT_Stream']
+Loss_Epoch
+Loss_Exp
+Loss_Stream
+Loss_Epoch
+Loss_Exp
+Loss_Stream
+RelativeDistance_Epoch
+RelativeDistance_Exp
+RelativeDistance_Stream
+R2Score_Epoch
+R2Score_Exp
+R2Score_Stream
+Forgetting_Exp
+Forgetting_Stream
+BWT_Exp
+BWT_Stream
+[1m{[0m
+    [32m'epoch'[0m: [1m[[0m[32m'Loss_Epoch'[0m, [32m'Loss_Epoch'[0m, [32m'RelativeDistance_Epoch'[0m, [32m'R2Score_Epoch'[0m[1m][0m,
+    [32m'exp'[0m: [1m[[0m[32m'Loss_Exp'[0m, [32m'Loss_Exp'[0m, [32m'RelativeDistance_Exp'[0m, [32m'R2Score_Exp'[0m, [32m'Forgetting_Exp'[0m, [32m'BWT_Exp'[0m[1m][0m,
+    [32m'stream'[0m: [1m[[0m[32m'Loss_Stream'[0m, [32m'Loss_Stream'[0m, [32m'RelativeDistance_Stream'[0m, [32m'R2Score_Stream'[0m, [32m'Forgetting_Stream'[0m, [32m'BWT_Stream'[0m[1m][0m
+[1m}[0m
+[38;2;170;0;0mStarting [0m[38;2;170;0;0m...[0m
+[run] Start Time: 2024-12-05 18:02:28
+Starting training experience [1;31m0[0m: 
+[1m[[0mValidationEarlyStoppingPlugin[1m][0m: No Loss_Exp metric found after epoch [1;36m0[0m.
+[1m[[0mValidationEarlyStoppingPlugin[1m][0m: Early stopping triggered after epoch [1;36m163[0m.
+Starting testing experience [1;31m0[0m: 
+MeanStdPlugin:
+{'Loss_Exp': 47.28229775821461, 'RelativeDistance_Exp': 1.0329701602458954, 'R2Score_Exp': 0.8776059150695801}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+Saving model after experience [1;31m0[0m: 
+Starting training experience [1;31m1[0m: 
+Starting testing experience [1;31m1[0m: 
+MeanStdPlugin:
+{'Loss_Exp': 75.42941140567555, 'RelativeDistance_Exp': 0.9498976171016693, 'R2Score_Exp': 0.8091126680374146, 'Forgetting_Exp': 0.06849324703216553, 'BWT_Exp': -0.06849324703216553}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461, 75.42941140567555, 75.42941140567555], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954, 0.9498976171016693], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801, 0.8091126680374146], 'R2Score_Stream': [], 'Forgetting_Exp': [0.06849324703216553], 'Forgetting_Stream': [], 'BWT_Exp': [-0.06849324703216553], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 33.678076521452034, 'RelativeDistance_Exp': 1.0652570128440857, 'R2Score_Exp': 0.897217184305191}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [33.678076521452034, 33.678076521452034], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0652570128440857], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.897217184305191], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+Saving model after experience [1;31m1[0m: 
+Starting training experience [1;31m2[0m: 
+[1m[[0mValidationEarlyStoppingPlugin[1m][0m: Early stopping triggered after epoch [1;36m101[0m.
+Starting testing experience [1;31m2[0m: 
+MeanStdPlugin:
+{'Loss_Exp': 64.681726882037, 'RelativeDistance_Exp': 0.8772051632404327, 'R2Score_Exp': 0.8343635201454163, 'Forgetting_Exp': 0.04324239492416382, 'BWT_Exp': -0.04324239492416382}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461, 75.42941140567555, 75.42941140567555, 64.681726882037, 64.681726882037], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954, 0.9498976171016693, 0.8772051632404327], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801, 0.8091126680374146, 0.8343635201454163], 'R2Score_Stream': [], 'Forgetting_Exp': [0.06849324703216553, 0.04324239492416382], 'Forgetting_Stream': [], 'BWT_Exp': [-0.06849324703216553, -0.04324239492416382], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 48.9025986098829, 'RelativeDistance_Exp': 1.0146164298057556, 'R2Score_Exp': 0.8509383797645569, 'Forgetting_Exp': 0.046278804540634155, 'BWT_Exp': -0.046278804540634155}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [33.678076521452034, 33.678076521452034, 48.9025986098829, 48.9025986098829], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0652570128440857, 1.0146164298057556], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.897217184305191, 0.8509383797645569], 'R2Score_Stream': [], 'Forgetting_Exp': [0.046278804540634155], 'Forgetting_Stream': [], 'BWT_Exp': [-0.046278804540634155], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 56.817420468890745, 'RelativeDistance_Exp': 0.7456234892209371, 'R2Score_Exp': 0.8211161692937216}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [56.817420468890745, 56.817420468890745], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7456234892209371], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8211161692937216], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+Saving model after experience [1;31m2[0m: 
+Starting training experience [1;31m3[0m: 
+Starting testing experience [1;31m3[0m: 
+MeanStdPlugin:
+{'Loss_Exp': 83.18547463809743, 'RelativeDistance_Exp': 0.9199698567390442, 'R2Score_Exp': 0.7898313701152802, 'Forgetting_Exp': 0.08777454495429993, 'BWT_Exp': -0.08777454495429993}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461, 75.42941140567555, 75.42941140567555, 64.681726882037, 64.681726882037, 83.18547463809743, 83.18547463809743], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954, 0.9498976171016693, 0.8772051632404327, 0.9199698567390442], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801, 0.8091126680374146, 0.8343635201454163, 0.7898313701152802], 'R2Score_Stream': [], 'Forgetting_Exp': [0.06849324703216553, 0.04324239492416382, 0.08777454495429993], 'Forgetting_Stream': [], 'BWT_Exp': [-0.06849324703216553, -0.04324239492416382, -0.08777454495429993], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 60.93198079162001, 'RelativeDistance_Exp': 1.0857372283935547, 'R2Score_Exp': 0.8140515983104706, 'Forgetting_Exp': 0.08316558599472046, 'BWT_Exp': -0.08316558599472046}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [33.678076521452034, 33.678076521452034, 48.9025986098829, 48.9025986098829, 60.93198079162001, 60.93198079162001], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0652570128440857, 1.0146164298057556, 1.0857372283935547], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.897217184305191, 0.8509383797645569, 0.8140515983104706], 'R2Score_Stream': [], 'Forgetting_Exp': [0.046278804540634155, 0.08316558599472046], 'Forgetting_Stream': [], 'BWT_Exp': [-0.046278804540634155, -0.08316558599472046], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 68.93303461631668, 'RelativeDistance_Exp': 0.7970688740412394, 'R2Score_Exp': 0.7847609122594198, 'Forgetting_Exp': 0.03635525703430176, 'BWT_Exp': -0.03635525703430176}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [56.817420468890745, 56.817420468890745, 68.93303461631668, 68.93303461631668], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7456234892209371, 0.7970688740412394], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8211161692937216, 0.7847609122594198], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03635525703430176], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03635525703430176], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 42.32847448754381, 'RelativeDistance_Exp': 0.7013973593711853, 'R2Score_Exp': 0.8631362020969391}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.32847448754381, 42.32847448754381], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7013973593711853], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8631362020969391], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+Saving model after experience [1;31m3[0m: 
+Starting training experience [1;31m4[0m: 
+[1m[[0mValidationEarlyStoppingPlugin[1m][0m: Early stopping triggered after epoch [1;36m101[0m.
+Starting testing experience [1;31m4[0m: 
+MeanStdPlugin:
+{'Loss_Exp': 112.10127369600184, 'RelativeDistance_Exp': 0.9856147766113281, 'R2Score_Exp': 0.7128795087337494, 'Forgetting_Exp': 0.1647264063358307, 'BWT_Exp': -0.1647264063358307}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461, 75.42941140567555, 75.42941140567555, 64.681726882037, 64.681726882037, 83.18547463809743, 83.18547463809743, 112.10127369600184, 112.10127369600184], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954, 0.9498976171016693, 0.8772051632404327, 0.9199698567390442, 0.9856147766113281], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801, 0.8091126680374146, 0.8343635201454163, 0.7898313701152802, 0.7128795087337494], 'R2Score_Stream': [], 'Forgetting_Exp': [0.06849324703216553, 0.04324239492416382, 0.08777454495429993, 0.1647264063358307], 'Forgetting_Stream': [], 'BWT_Exp': [-0.06849324703216553, -0.04324239492416382, -0.08777454495429993, -0.1647264063358307], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 65.79534084556157, 'RelativeDistance_Exp': 1.2742184400558472, 'R2Score_Exp': 0.7993212342262268, 'Forgetting_Exp': 0.09789595007896423, 'BWT_Exp': -0.09789595007896423}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [33.678076521452034, 33.678076521452034, 48.9025986098829, 48.9025986098829, 60.93198079162001, 60.93198079162001, 65.79534084556157, 65.79534084556157], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0652570128440857, 1.0146164298057556, 1.0857372283935547, 1.2742184400558472], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.897217184305191, 0.8509383797645569, 0.8140515983104706, 0.7993212342262268], 'R2Score_Stream': [], 'Forgetting_Exp': [0.046278804540634155, 0.08316558599472046, 0.09789595007896423], 'Forgetting_Stream': [], 'BWT_Exp': [-0.046278804540634155, -0.08316558599472046, -0.09789595007896423], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 79.32463948319598, 'RelativeDistance_Exp': 0.7979457775751749, 'R2Score_Exp': 0.7540424863497416, 'Forgetting_Exp': 0.06707368294397997, 'BWT_Exp': -0.06707368294397997}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [56.817420468890745, 56.817420468890745, 68.93303461631668, 68.93303461631668, 79.32463948319598, 79.32463948319598], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7456234892209371, 0.7970688740412394, 0.7979457775751749], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8211161692937216, 0.7847609122594198, 0.7540424863497416], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03635525703430176, 0.06707368294397997], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03635525703430176, -0.06707368294397997], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 48.09800402261134, 'RelativeDistance_Exp': 0.7255769968032837, 'R2Score_Exp': 0.8444832861423492, 'Forgetting_Exp': 0.018652915954589844, 'BWT_Exp': -0.018652915954589844}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.32847448754381, 42.32847448754381, 48.09800402261134, 48.09800402261134], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7013973593711853, 0.7255769968032837], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8631362020969391, 0.8444832861423492], 'R2Score_Stream': [], 'Forgetting_Exp': [0.018652915954589844], 'Forgetting_Stream': [], 'BWT_Exp': [-0.018652915954589844], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 37.302139009350405, 'RelativeDistance_Exp': 0.6545981019735336, 'R2Score_Exp': 0.8546762466430664}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [37.302139009350405, 37.302139009350405], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.6545981019735336], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8546762466430664], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+Saving model after experience [1;31m4[0m: 
+Starting training experience [1;31m5[0m: 
+[1m[[0mValidationEarlyStoppingPlugin[1m][0m: Early stopping triggered after epoch [1;36m101[0m.
+Starting testing experience [1;31m5[0m: 
+MeanStdPlugin:
+{'Loss_Exp': 112.60204071044922, 'RelativeDistance_Exp': 1.0227871537208557, 'R2Score_Exp': 0.7147865295410156, 'Forgetting_Exp': 0.16281938552856445, 'BWT_Exp': -0.16281938552856445}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461, 75.42941140567555, 75.42941140567555, 64.681726882037, 64.681726882037, 83.18547463809743, 83.18547463809743, 112.10127369600184, 112.10127369600184, 112.60204071044922, 112.60204071044922], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954, 0.9498976171016693, 0.8772051632404327, 0.9199698567390442, 0.9856147766113281, 1.0227871537208557], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801, 0.8091126680374146, 0.8343635201454163, 0.7898313701152802, 0.7128795087337494, 0.7147865295410156], 'R2Score_Stream': [], 'Forgetting_Exp': [0.06849324703216553, 0.04324239492416382, 0.08777454495429993, 0.1647264063358307, 0.16281938552856445], 'Forgetting_Stream': [], 'BWT_Exp': [-0.06849324703216553, -0.04324239492416382, -0.08777454495429993, -0.1647264063358307, -0.16281938552856445], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 95.38495769355765, 'RelativeDistance_Exp': 1.272418737411499, 'R2Score_Exp': 0.709030032157898, 'Forgetting_Exp': 0.1881871521472931, 'BWT_Exp': -0.1881871521472931}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [33.678076521452034, 33.678076521452034, 48.9025986098829, 48.9025986098829, 60.93198079162001, 60.93198079162001, 65.79534084556157, 65.79534084556157, 95.38495769355765, 95.38495769355765], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0652570128440857, 1.0146164298057556, 1.0857372283935547, 1.2742184400558472, 1.272418737411499], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.897217184305191, 0.8509383797645569, 0.8140515983104706, 0.7993212342262268, 0.709030032157898], 'R2Score_Stream': [], 'Forgetting_Exp': [0.046278804540634155, 0.08316558599472046, 0.09789595007896423, 0.1881871521472931], 'Forgetting_Stream': [], 'BWT_Exp': [-0.046278804540634155, -0.08316558599472046, -0.09789595007896423, -0.1881871521472931], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 81.85652621340417, 'RelativeDistance_Exp': 0.8020789424578348, 'R2Score_Exp': 0.7447845737139384, 'Forgetting_Exp': 0.0763315955797832, 'BWT_Exp': -0.0763315955797832}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [56.817420468890745, 56.817420468890745, 68.93303461631668, 68.93303461631668, 79.32463948319598, 79.32463948319598, 81.85652621340417, 81.85652621340417], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7456234892209371, 0.7970688740412394, 0.7979457775751749, 0.8020789424578348], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8211161692937216, 0.7847609122594198, 0.7540424863497416, 0.7447845737139384], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03635525703430176, 0.06707368294397997, 0.0763315955797832], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03635525703430176, -0.06707368294397997, -0.0763315955797832], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 55.94296658447744, 'RelativeDistance_Exp': 0.8078406453132629, 'R2Score_Exp': 0.8191005885601044, 'Forgetting_Exp': 0.04403561353683472, 'BWT_Exp': -0.04403561353683472}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.32847448754381, 42.32847448754381, 48.09800402261134, 48.09800402261134, 55.94296658447744, 55.94296658447744], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7013973593711853, 0.7255769968032837, 0.8078406453132629], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8631362020969391, 0.8444832861423492, 0.8191005885601044], 'R2Score_Stream': [], 'Forgetting_Exp': [0.018652915954589844, 0.04403561353683472], 'Forgetting_Stream': [], 'BWT_Exp': [-0.018652915954589844, -0.04403561353683472], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 41.42861076633425, 'RelativeDistance_Exp': 0.684063270688057, 'R2Score_Exp': 0.8403755724430084, 'Forgetting_Exp': 0.014300674200057983, 'BWT_Exp': -0.014300674200057983}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [37.302139009350405, 37.302139009350405, 41.42861076633425, 41.42861076633425], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.6545981019735336, 0.684063270688057], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8546762466430664, 0.8403755724430084], 'R2Score_Stream': [], 'Forgetting_Exp': [0.014300674200057983], 'Forgetting_Stream': [], 'BWT_Exp': [-0.014300674200057983], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 44.0985852197323, 'RelativeDistance_Exp': 1.1282796661059062, 'R2Score_Exp': 0.840882937113444}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [44.0985852197323, 44.0985852197323], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.1282796661059062], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.840882937113444], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+Saving model after experience [1;31m5[0m: 
+Starting training experience [1;31m6[0m: 
+[1m[[0mValidationEarlyStoppingPlugin[1m][0m: Early stopping triggered after epoch [1;36m101[0m.
+Starting testing experience [1;31m6[0m: 
+MeanStdPlugin:
+{'Loss_Exp': 99.01950531005859, 'RelativeDistance_Exp': 1.0639051496982574, 'R2Score_Exp': 0.7473528385162354, 'Forgetting_Exp': 0.13025307655334473, 'BWT_Exp': -0.13025307655334473}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461, 75.42941140567555, 75.42941140567555, 64.681726882037, 64.681726882037, 83.18547463809743, 83.18547463809743, 112.10127369600184, 112.10127369600184, 112.60204071044922, 112.60204071044922, 99.01950531005859, 99.01950531005859], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954, 0.9498976171016693, 0.8772051632404327, 0.9199698567390442, 0.9856147766113281, 1.0227871537208557, 1.0639051496982574], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801, 0.8091126680374146, 0.8343635201454163, 0.7898313701152802, 0.7128795087337494, 0.7147865295410156, 0.7473528385162354], 'R2Score_Stream': [], 'Forgetting_Exp': [0.06849324703216553, 0.04324239492416382, 0.08777454495429993, 0.1647264063358307, 0.16281938552856445, 0.13025307655334473], 'Forgetting_Stream': [], 'BWT_Exp': [-0.06849324703216553, -0.04324239492416382, -0.08777454495429993, -0.1647264063358307, -0.16281938552856445, -0.13025307655334473], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 88.37839221436607, 'RelativeDistance_Exp': 1.3552197217941284, 'R2Score_Exp': 0.7305737733840942, 'Forgetting_Exp': 0.1666434109210968, 'BWT_Exp': -0.1666434109210968}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [33.678076521452034, 33.678076521452034, 48.9025986098829, 48.9025986098829, 60.93198079162001, 60.93198079162001, 65.79534084556157, 65.79534084556157, 95.38495769355765, 95.38495769355765, 88.37839221436607, 88.37839221436607], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0652570128440857, 1.0146164298057556, 1.0857372283935547, 1.2742184400558472, 1.272418737411499, 1.3552197217941284], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.897217184305191, 0.8509383797645569, 0.8140515983104706, 0.7993212342262268, 0.709030032157898, 0.7305737733840942], 'R2Score_Stream': [], 'Forgetting_Exp': [0.046278804540634155, 0.08316558599472046, 0.09789595007896423, 0.1881871521472931, 0.1666434109210968], 'Forgetting_Stream': [], 'BWT_Exp': [-0.046278804540634155, -0.08316558599472046, -0.09789595007896423, -0.1881871521472931, -0.1666434109210968], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 81.2419545468981, 'RelativeDistance_Exp': 0.7720253864924113, 'R2Score_Exp': 0.7486777901649475, 'Forgetting_Exp': 0.07243837912877404, 'BWT_Exp': -0.07243837912877404}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [56.817420468890745, 56.817420468890745, 68.93303461631668, 68.93303461631668, 79.32463948319598, 79.32463948319598, 81.85652621340417, 81.85652621340417, 81.2419545468981, 81.2419545468981], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7456234892209371, 0.7970688740412394, 0.7979457775751749, 0.8020789424578348, 0.7720253864924113], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8211161692937216, 0.7847609122594198, 0.7540424863497416, 0.7447845737139384, 0.7486777901649475], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03635525703430176, 0.06707368294397997, 0.0763315955797832, 0.07243837912877404], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03635525703430176, -0.06707368294397997, -0.0763315955797832, -0.07243837912877404], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 58.95201098883888, 'RelativeDistance_Exp': 0.8560692965984344, 'R2Score_Exp': 0.8094111382961273, 'Forgetting_Exp': 0.05372506380081177, 'BWT_Exp': -0.05372506380081177}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.32847448754381, 42.32847448754381, 48.09800402261134, 48.09800402261134, 55.94296658447744, 55.94296658447744, 58.95201098883888, 58.95201098883888], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7013973593711853, 0.7255769968032837, 0.8078406453132629, 0.8560692965984344], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8631362020969391, 0.8444832861423492, 0.8191005885601044, 0.8094111382961273], 'R2Score_Stream': [], 'Forgetting_Exp': [0.018652915954589844, 0.04403561353683472, 0.05372506380081177], 'Forgetting_Stream': [], 'BWT_Exp': [-0.018652915954589844, -0.04403561353683472, -0.05372506380081177], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 43.077470737652185, 'RelativeDistance_Exp': 0.7204217463731766, 'R2Score_Exp': 0.8373089581727982, 'Forgetting_Exp': 0.01736728847026825, 'BWT_Exp': -0.01736728847026825}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [37.302139009350405, 37.302139009350405, 41.42861076633425, 41.42861076633425, 43.077470737652185, 43.077470737652185], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.6545981019735336, 0.684063270688057, 0.7204217463731766], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8546762466430664, 0.8403755724430084, 0.8373089581727982], 'R2Score_Stream': [], 'Forgetting_Exp': [0.014300674200057983, 0.01736728847026825], 'Forgetting_Stream': [], 'BWT_Exp': [-0.014300674200057983, -0.01736728847026825], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 50.96405130748864, 'RelativeDistance_Exp': 1.090486745039622, 'R2Score_Exp': 0.8171953956286112, 'Forgetting_Exp': 0.023687541484832764, 'BWT_Exp': -0.023687541484832764}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [44.0985852197323, 44.0985852197323, 50.96405130748864, 50.96405130748864], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.1282796661059062, 1.090486745039622], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.840882937113444, 0.8171953956286112], 'R2Score_Stream': [], 'Forgetting_Exp': [0.023687541484832764], 'Forgetting_Stream': [], 'BWT_Exp': [-0.023687541484832764], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 42.902379538266715, 'RelativeDistance_Exp': 0.8575563033421835, 'R2Score_Exp': 0.8339394529660543}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.902379538266715, 42.902379538266715], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.8575563033421835], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8339394529660543], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+Saving model after experience [1;31m6[0m: 
+Starting training experience [1;31m7[0m: 
+Starting testing experience [1;31m7[0m: 
+MeanStdPlugin:
+{'Loss_Exp': 93.37117368810317, 'RelativeDistance_Exp': 1.1549978852272034, 'R2Score_Exp': 0.7614845931529999, 'Forgetting_Exp': 0.1161213219165802, 'BWT_Exp': -0.1161213219165802}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461, 75.42941140567555, 75.42941140567555, 64.681726882037, 64.681726882037, 83.18547463809743, 83.18547463809743, 112.10127369600184, 112.10127369600184, 112.60204071044922, 112.60204071044922, 99.01950531005859, 99.01950531005859, 93.37117368810317, 93.37117368810317], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954, 0.9498976171016693, 0.8772051632404327, 0.9199698567390442, 0.9856147766113281, 1.0227871537208557, 1.0639051496982574, 1.1549978852272034], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801, 0.8091126680374146, 0.8343635201454163, 0.7898313701152802, 0.7128795087337494, 0.7147865295410156, 0.7473528385162354, 0.7614845931529999], 'R2Score_Stream': [], 'Forgetting_Exp': [0.06849324703216553, 0.04324239492416382, 0.08777454495429993, 0.1647264063358307, 0.16281938552856445, 0.13025307655334473, 0.1161213219165802], 'Forgetting_Stream': [], 'BWT_Exp': [-0.06849324703216553, -0.04324239492416382, -0.08777454495429993, -0.1647264063358307, -0.16281938552856445, -0.13025307655334473, -0.1161213219165802], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 87.58739942784678, 'RelativeDistance_Exp': 1.3913283944129944, 'R2Score_Exp': 0.7327833473682404, 'Forgetting_Exp': 0.16443383693695068, 'BWT_Exp': -0.16443383693695068}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [33.678076521452034, 33.678076521452034, 48.9025986098829, 48.9025986098829, 60.93198079162001, 60.93198079162001, 65.79534084556157, 65.79534084556157, 95.38495769355765, 95.38495769355765, 88.37839221436607, 88.37839221436607, 87.58739942784678, 87.58739942784678], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0652570128440857, 1.0146164298057556, 1.0857372283935547, 1.2742184400558472, 1.272418737411499, 1.3552197217941284, 1.3913283944129944], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.897217184305191, 0.8509383797645569, 0.8140515983104706, 0.7993212342262268, 0.709030032157898, 0.7305737733840942, 0.7327833473682404], 'R2Score_Stream': [], 'Forgetting_Exp': [0.046278804540634155, 0.08316558599472046, 0.09789595007896423, 0.1881871521472931, 0.1666434109210968, 0.16443383693695068], 'Forgetting_Stream': [], 'BWT_Exp': [-0.046278804540634155, -0.08316558599472046, -0.09789595007896423, -0.1881871521472931, -0.1666434109210968, -0.16443383693695068], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 81.72903965670183, 'RelativeDistance_Exp': 0.8191480040550232, 'R2Score_Exp': 0.7461665670077006, 'Forgetting_Exp': 0.07494960228602099, 'BWT_Exp': -0.07494960228602099}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [56.817420468890745, 56.817420468890745, 68.93303461631668, 68.93303461631668, 79.32463948319598, 79.32463948319598, 81.85652621340417, 81.85652621340417, 81.2419545468981, 81.2419545468981, 81.72903965670183, 81.72903965670183], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7456234892209371, 0.7970688740412394, 0.7979457775751749, 0.8020789424578348, 0.7720253864924113, 0.8191480040550232], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8211161692937216, 0.7847609122594198, 0.7540424863497416, 0.7447845737139384, 0.7486777901649475, 0.7461665670077006], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03635525703430176, 0.06707368294397997, 0.0763315955797832, 0.07243837912877404, 0.07494960228602099], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03635525703430176, -0.06707368294397997, -0.0763315955797832, -0.07243837912877404, -0.07494960228602099], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 53.693422375416546, 'RelativeDistance_Exp': 0.7748223543167114, 'R2Score_Exp': 0.8263927102088928, 'Forgetting_Exp': 0.036743491888046265, 'BWT_Exp': -0.036743491888046265}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.32847448754381, 42.32847448754381, 48.09800402261134, 48.09800402261134, 55.94296658447744, 55.94296658447744, 58.95201098883888, 58.95201098883888, 53.693422375416546, 53.693422375416546], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7013973593711853, 0.7255769968032837, 0.8078406453132629, 0.8560692965984344, 0.7748223543167114], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8631362020969391, 0.8444832861423492, 0.8191005885601044, 0.8094111382961273, 0.8263927102088928], 'R2Score_Stream': [], 'Forgetting_Exp': [0.018652915954589844, 0.04403561353683472, 0.05372506380081177, 0.036743491888046265], 'Forgetting_Stream': [], 'BWT_Exp': [-0.018652915954589844, -0.04403561353683472, -0.05372506380081177, -0.036743491888046265], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 41.340101270466825, 'RelativeDistance_Exp': 0.6800203174352646, 'R2Score_Exp': 0.8430605679750443, 'Forgetting_Exp': 0.011615678668022156, 'BWT_Exp': -0.011615678668022156}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [37.302139009350405, 37.302139009350405, 41.42861076633425, 41.42861076633425, 43.077470737652185, 43.077470737652185, 41.340101270466825, 41.340101270466825], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.6545981019735336, 0.684063270688057, 0.7204217463731766, 0.6800203174352646], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8546762466430664, 0.8403755724430084, 0.8373089581727982, 0.8430605679750443], 'R2Score_Stream': [], 'Forgetting_Exp': [0.014300674200057983, 0.01736728847026825, 0.011615678668022156], 'Forgetting_Stream': [], 'BWT_Exp': [-0.014300674200057983, -0.01736728847026825, -0.011615678668022156], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 54.40596676193043, 'RelativeDistance_Exp': 0.9975439508756002, 'R2Score_Exp': 0.8041108449300131, 'Forgetting_Exp': 0.036772092183430916, 'BWT_Exp': -0.036772092183430916}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [44.0985852197323, 44.0985852197323, 50.96405130748864, 50.96405130748864, 54.40596676193043, 54.40596676193043], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.1282796661059062, 1.090486745039622, 0.9975439508756002], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.840882937113444, 0.8171953956286112, 0.8041108449300131], 'R2Score_Stream': [], 'Forgetting_Exp': [0.023687541484832764, 0.036772092183430916], 'Forgetting_Stream': [], 'BWT_Exp': [-0.023687541484832764, -0.036772092183430916], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 46.120235530474716, 'RelativeDistance_Exp': 0.8156021237373352, 'R2Score_Exp': 0.8008604844411215, 'Forgetting_Exp': 0.03307896852493286, 'BWT_Exp': -0.03307896852493286}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.902379538266715, 42.902379538266715, 46.120235530474716, 46.120235530474716], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.8575563033421835, 0.8156021237373352], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8339394529660543, 0.8008604844411215], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03307896852493286], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03307896852493286], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 47.25499305242224, 'RelativeDistance_Exp': 0.587885171175003, 'R2Score_Exp': 0.8825419843196869}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.25499305242224, 47.25499305242224], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.587885171175003], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8825419843196869], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+Saving model after experience [1;31m7[0m: 
+Starting training experience [1;31m8[0m: 
+Starting testing experience [1;31m8[0m: 
+MeanStdPlugin:
+{'Loss_Exp': 100.51089332131778, 'RelativeDistance_Exp': 1.2054365277290344, 'R2Score_Exp': 0.7430905401706696, 'Forgetting_Exp': 0.13451537489891052, 'BWT_Exp': -0.13451537489891052}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461, 75.42941140567555, 75.42941140567555, 64.681726882037, 64.681726882037, 83.18547463809743, 83.18547463809743, 112.10127369600184, 112.10127369600184, 112.60204071044922, 112.60204071044922, 99.01950531005859, 99.01950531005859, 93.37117368810317, 93.37117368810317, 100.51089332131778, 100.51089332131778], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954, 0.9498976171016693, 0.8772051632404327, 0.9199698567390442, 0.9856147766113281, 1.0227871537208557, 1.0639051496982574, 1.1549978852272034, 1.2054365277290344], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801, 0.8091126680374146, 0.8343635201454163, 0.7898313701152802, 0.7128795087337494, 0.7147865295410156, 0.7473528385162354, 0.7614845931529999, 0.7430905401706696], 'R2Score_Stream': [], 'Forgetting_Exp': [0.06849324703216553, 0.04324239492416382, 0.08777454495429993, 0.1647264063358307, 0.16281938552856445, 0.13025307655334473, 0.1161213219165802, 0.13451537489891052], 'Forgetting_Stream': [], 'BWT_Exp': [-0.06849324703216553, -0.04324239492416382, -0.08777454495429993, -0.1647264063358307, -0.16281938552856445, -0.13025307655334473, -0.1161213219165802, -0.13451537489891052], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 94.32488108250787, 'RelativeDistance_Exp': 1.2832911014556885, 'R2Score_Exp': 0.7121206521987915, 'Forgetting_Exp': 0.18509653210639954, 'BWT_Exp': -0.18509653210639954}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [33.678076521452034, 33.678076521452034, 48.9025986098829, 48.9025986098829, 60.93198079162001, 60.93198079162001, 65.79534084556157, 65.79534084556157, 95.38495769355765, 95.38495769355765, 88.37839221436607, 88.37839221436607, 87.58739942784678, 87.58739942784678, 94.32488108250787, 94.32488108250787], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0652570128440857, 1.0146164298057556, 1.0857372283935547, 1.2742184400558472, 1.272418737411499, 1.3552197217941284, 1.3913283944129944, 1.2832911014556885], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.897217184305191, 0.8509383797645569, 0.8140515983104706, 0.7993212342262268, 0.709030032157898, 0.7305737733840942, 0.7327833473682404, 0.7121206521987915], 'R2Score_Stream': [], 'Forgetting_Exp': [0.046278804540634155, 0.08316558599472046, 0.09789595007896423, 0.1881871521472931, 0.1666434109210968, 0.16443383693695068, 0.18509653210639954], 'Forgetting_Stream': [], 'BWT_Exp': [-0.046278804540634155, -0.08316558599472046, -0.09789595007896423, -0.1881871521472931, -0.1666434109210968, -0.16443383693695068, -0.18509653210639954], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 89.70534839052142, 'RelativeDistance_Exp': 0.7423608104387919, 'R2Score_Exp': 0.7199538548787435, 'Forgetting_Exp': 0.10116231441497803, 'BWT_Exp': -0.10116231441497803}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [56.817420468890745, 56.817420468890745, 68.93303461631668, 68.93303461631668, 79.32463948319598, 79.32463948319598, 81.85652621340417, 81.85652621340417, 81.2419545468981, 81.2419545468981, 81.72903965670183, 81.72903965670183, 89.70534839052142, 89.70534839052142], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7456234892209371, 0.7970688740412394, 0.7979457775751749, 0.8020789424578348, 0.7720253864924113, 0.8191480040550232, 0.7423608104387919], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8211161692937216, 0.7847609122594198, 0.7540424863497416, 0.7447845737139384, 0.7486777901649475, 0.7461665670077006, 0.7199538548787435], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03635525703430176, 0.06707368294397997, 0.0763315955797832, 0.07243837912877404, 0.07494960228602099, 0.10116231441497803], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03635525703430176, -0.06707368294397997, -0.0763315955797832, -0.07243837912877404, -0.07494960228602099, -0.10116231441497803], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 54.621810550671015, 'RelativeDistance_Exp': 0.870138019323349, 'R2Score_Exp': 0.8233969211578369, 'Forgetting_Exp': 0.03973928093910217, 'BWT_Exp': -0.03973928093910217}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.32847448754381, 42.32847448754381, 48.09800402261134, 48.09800402261134, 55.94296658447744, 55.94296658447744, 58.95201098883888, 58.95201098883888, 53.693422375416546, 53.693422375416546, 54.621810550671015, 54.621810550671015], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7013973593711853, 0.7255769968032837, 0.8078406453132629, 0.8560692965984344, 0.7748223543167114, 0.870138019323349], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8631362020969391, 0.8444832861423492, 0.8191005885601044, 0.8094111382961273, 0.8263927102088928, 0.8233969211578369], 'R2Score_Stream': [], 'Forgetting_Exp': [0.018652915954589844, 0.04403561353683472, 0.05372506380081177, 0.036743491888046265, 0.03973928093910217], 'Forgetting_Stream': [], 'BWT_Exp': [-0.018652915954589844, -0.04403561353683472, -0.05372506380081177, -0.036743491888046265, -0.03973928093910217], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 39.85617710085681, 'RelativeDistance_Exp': 0.6724816709756851, 'R2Score_Exp': 0.8458533436059952, 'Forgetting_Exp': 0.008822903037071228, 'BWT_Exp': -0.008822903037071228}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [37.302139009350405, 37.302139009350405, 41.42861076633425, 41.42861076633425, 43.077470737652185, 43.077470737652185, 41.340101270466825, 41.340101270466825, 39.85617710085681, 39.85617710085681], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.6545981019735336, 0.684063270688057, 0.7204217463731766, 0.6800203174352646, 0.6724816709756851], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8546762466430664, 0.8403755724430084, 0.8373089581727982, 0.8430605679750443, 0.8458533436059952], 'R2Score_Stream': [], 'Forgetting_Exp': [0.014300674200057983, 0.01736728847026825, 0.011615678668022156, 0.008822903037071228], 'Forgetting_Stream': [], 'BWT_Exp': [-0.014300674200057983, -0.01736728847026825, -0.011615678668022156, -0.008822903037071228], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 52.28079121924632, 'RelativeDistance_Exp': 1.1411146521568298, 'R2Score_Exp': 0.8115353584289551, 'Forgetting_Exp': 0.029347578684488895, 'BWT_Exp': -0.029347578684488895}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [44.0985852197323, 44.0985852197323, 50.96405130748864, 50.96405130748864, 54.40596676193043, 54.40596676193043, 52.28079121924632, 52.28079121924632], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.1282796661059062, 1.090486745039622, 0.9975439508756002, 1.1411146521568298], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.840882937113444, 0.8171953956286112, 0.8041108449300131, 0.8115353584289551], 'R2Score_Stream': [], 'Forgetting_Exp': [0.023687541484832764, 0.036772092183430916, 0.029347578684488895], 'Forgetting_Stream': [], 'BWT_Exp': [-0.023687541484832764, -0.036772092183430916, -0.029347578684488895], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 50.81967052430597, 'RelativeDistance_Exp': 0.7950641314188639, 'R2Score_Exp': 0.7835061152776083, 'Forgetting_Exp': 0.050433337688446045, 'BWT_Exp': -0.050433337688446045}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.902379538266715, 42.902379538266715, 46.120235530474716, 46.120235530474716, 50.81967052430597, 50.81967052430597], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.8575563033421835, 0.8156021237373352, 0.7950641314188639], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8339394529660543, 0.8008604844411215, 0.7835061152776083], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03307896852493286, 0.050433337688446045], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03307896852493286, -0.050433337688446045], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 45.34056069924215, 'RelativeDistance_Exp': 0.6185230016708374, 'R2Score_Exp': 0.8819975852966309, 'Forgetting_Exp': 0.0005443990230560303, 'BWT_Exp': -0.0005443990230560303}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.25499305242224, 47.25499305242224, 45.34056069924215, 45.34056069924215], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.587885171175003, 0.6185230016708374], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8825419843196869, 0.8819975852966309], 'R2Score_Stream': [], 'Forgetting_Exp': [0.0005443990230560303], 'Forgetting_Stream': [], 'BWT_Exp': [-0.0005443990230560303], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 50.33783721923828, 'RelativeDistance_Exp': 0.805735781788826, 'R2Score_Exp': 0.8097534775733948}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [50.33783721923828, 50.33783721923828], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.805735781788826], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8097534775733948], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+Saving model after experience [1;31m8[0m: 
+Starting training experience [1;31m9[0m: 
+[1m[[0mValidationEarlyStoppingPlugin[1m][0m: Early stopping triggered after epoch [1;36m101[0m.
+Starting testing experience [1;31m9[0m: 
+MeanStdPlugin:
+{'Loss_Exp': 84.37499132941751, 'RelativeDistance_Exp': 1.2425786852836609, 'R2Score_Exp': 0.78329998254776, 'Forgetting_Exp': 0.09430593252182007, 'BWT_Exp': -0.09430593252182007}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461, 75.42941140567555, 75.42941140567555, 64.681726882037, 64.681726882037, 83.18547463809743, 83.18547463809743, 112.10127369600184, 112.10127369600184, 112.60204071044922, 112.60204071044922, 99.01950531005859, 99.01950531005859, 93.37117368810317, 93.37117368810317, 100.51089332131778, 100.51089332131778, 84.37499132941751, 84.37499132941751], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954, 0.9498976171016693, 0.8772051632404327, 0.9199698567390442, 0.9856147766113281, 1.0227871537208557, 1.0639051496982574, 1.1549978852272034, 1.2054365277290344, 1.2425786852836609], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801, 0.8091126680374146, 0.8343635201454163, 0.7898313701152802, 0.7128795087337494, 0.7147865295410156, 0.7473528385162354, 0.7614845931529999, 0.7430905401706696, 0.78329998254776], 'R2Score_Stream': [], 'Forgetting_Exp': [0.06849324703216553, 0.04324239492416382, 0.08777454495429993, 0.1647264063358307, 0.16281938552856445, 0.13025307655334473, 0.1161213219165802, 0.13451537489891052, 0.09430593252182007], 'Forgetting_Stream': [], 'BWT_Exp': [-0.06849324703216553, -0.04324239492416382, -0.08777454495429993, -0.1647264063358307, -0.16281938552856445, -0.13025307655334473, -0.1161213219165802, -0.13451537489891052, -0.09430593252182007], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 84.52745979797827, 'RelativeDistance_Exp': 1.1735670566558838, 'R2Score_Exp': 0.7420937716960907, 'Forgetting_Exp': 0.15512341260910034, 'BWT_Exp': -0.15512341260910034}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [33.678076521452034, 33.678076521452034, 48.9025986098829, 48.9025986098829, 60.93198079162001, 60.93198079162001, 65.79534084556157, 65.79534084556157, 95.38495769355765, 95.38495769355765, 88.37839221436607, 88.37839221436607, 87.58739942784678, 87.58739942784678, 94.32488108250787, 94.32488108250787, 84.52745979797827, 84.52745979797827], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0652570128440857, 1.0146164298057556, 1.0857372283935547, 1.2742184400558472, 1.272418737411499, 1.3552197217941284, 1.3913283944129944, 1.2832911014556885, 1.1735670566558838], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.897217184305191, 0.8509383797645569, 0.8140515983104706, 0.7993212342262268, 0.709030032157898, 0.7305737733840942, 0.7327833473682404, 0.7121206521987915, 0.7420937716960907], 'R2Score_Stream': [], 'Forgetting_Exp': [0.046278804540634155, 0.08316558599472046, 0.09789595007896423, 0.1881871521472931, 0.1666434109210968, 0.16443383693695068, 0.18509653210639954, 0.15512341260910034], 'Forgetting_Stream': [], 'BWT_Exp': [-0.046278804540634155, -0.08316558599472046, -0.09789595007896423, -0.1881871521472931, -0.1666434109210968, -0.16443383693695068, -0.18509653210639954, -0.15512341260910034], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 80.99014903066428, 'RelativeDistance_Exp': 0.7897125879923502, 'R2Score_Exp': 0.7474574049313863, 'Forgetting_Exp': 0.0736587643623352, 'BWT_Exp': -0.0736587643623352}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [56.817420468890745, 56.817420468890745, 68.93303461631668, 68.93303461631668, 79.32463948319598, 79.32463948319598, 81.85652621340417, 81.85652621340417, 81.2419545468981, 81.2419545468981, 81.72903965670183, 81.72903965670183, 89.70534839052142, 89.70534839052142, 80.99014903066428, 80.99014903066428], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7456234892209371, 0.7970688740412394, 0.7979457775751749, 0.8020789424578348, 0.7720253864924113, 0.8191480040550232, 0.7423608104387919, 0.7897125879923502], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8211161692937216, 0.7847609122594198, 0.7540424863497416, 0.7447845737139384, 0.7486777901649475, 0.7461665670077006, 0.7199538548787435, 0.7474574049313863], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03635525703430176, 0.06707368294397997, 0.0763315955797832, 0.07243837912877404, 0.07494960228602099, 0.10116231441497803, 0.0736587643623352], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03635525703430176, -0.06707368294397997, -0.0763315955797832, -0.07243837912877404, -0.07494960228602099, -0.10116231441497803, -0.0736587643623352], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 55.67119474345627, 'RelativeDistance_Exp': 0.8850398659706116, 'R2Score_Exp': 0.8200133144855499, 'Forgetting_Exp': 0.04312288761138916, 'BWT_Exp': -0.04312288761138916}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.32847448754381, 42.32847448754381, 48.09800402261134, 48.09800402261134, 55.94296658447744, 55.94296658447744, 58.95201098883888, 58.95201098883888, 53.693422375416546, 53.693422375416546, 54.621810550671015, 54.621810550671015, 55.67119474345627, 55.67119474345627], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7013973593711853, 0.7255769968032837, 0.8078406453132629, 0.8560692965984344, 0.7748223543167114, 0.870138019323349, 0.8850398659706116], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8631362020969391, 0.8444832861423492, 0.8191005885601044, 0.8094111382961273, 0.8263927102088928, 0.8233969211578369, 0.8200133144855499], 'R2Score_Stream': [], 'Forgetting_Exp': [0.018652915954589844, 0.04403561353683472, 0.05372506380081177, 0.036743491888046265, 0.03973928093910217, 0.04312288761138916], 'Forgetting_Stream': [], 'BWT_Exp': [-0.018652915954589844, -0.04403561353683472, -0.05372506380081177, -0.036743491888046265, -0.03973928093910217, -0.04312288761138916], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 42.9151045494358, 'RelativeDistance_Exp': 0.6967852115631104, 'R2Score_Exp': 0.8354551494121552, 'Forgetting_Exp': 0.019221097230911255, 'BWT_Exp': -0.019221097230911255}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [37.302139009350405, 37.302139009350405, 41.42861076633425, 41.42861076633425, 43.077470737652185, 43.077470737652185, 41.340101270466825, 41.340101270466825, 39.85617710085681, 39.85617710085681, 42.9151045494358, 42.9151045494358], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.6545981019735336, 0.684063270688057, 0.7204217463731766, 0.6800203174352646, 0.6724816709756851, 0.6967852115631104], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8546762466430664, 0.8403755724430084, 0.8373089581727982, 0.8430605679750443, 0.8458533436059952, 0.8354551494121552], 'R2Score_Stream': [], 'Forgetting_Exp': [0.014300674200057983, 0.01736728847026825, 0.011615678668022156, 0.008822903037071228, 0.019221097230911255], 'Forgetting_Stream': [], 'BWT_Exp': [-0.014300674200057983, -0.01736728847026825, -0.011615678668022156, -0.008822903037071228, -0.019221097230911255], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 56.54939845682711, 'RelativeDistance_Exp': 1.1841681996981304, 'R2Score_Exp': 0.7964852054913839, 'Forgetting_Exp': 0.044397731622060066, 'BWT_Exp': -0.044397731622060066}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [44.0985852197323, 44.0985852197323, 50.96405130748864, 50.96405130748864, 54.40596676193043, 54.40596676193043, 52.28079121924632, 52.28079121924632, 56.54939845682711, 56.54939845682711], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.1282796661059062, 1.090486745039622, 0.9975439508756002, 1.1411146521568298, 1.1841681996981304], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.840882937113444, 0.8171953956286112, 0.8041108449300131, 0.8115353584289551, 0.7964852054913839], 'R2Score_Stream': [], 'Forgetting_Exp': [0.023687541484832764, 0.036772092183430916, 0.029347578684488895, 0.044397731622060066], 'Forgetting_Stream': [], 'BWT_Exp': [-0.023687541484832764, -0.036772092183430916, -0.029347578684488895, -0.044397731622060066], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 60.322351848806136, 'RelativeDistance_Exp': 0.9994193514188131, 'R2Score_Exp': 0.7539468208948771, 'Forgetting_Exp': 0.07999263207117724, 'BWT_Exp': -0.07999263207117724}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.902379538266715, 42.902379538266715, 46.120235530474716, 46.120235530474716, 50.81967052430597, 50.81967052430597, 60.322351848806136, 60.322351848806136], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.8575563033421835, 0.8156021237373352, 0.7950641314188639, 0.9994193514188131], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8339394529660543, 0.8008604844411215, 0.7835061152776083, 0.7539468208948771], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03307896852493286, 0.050433337688446045, 0.07999263207117724], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03307896852493286, -0.050433337688446045, -0.07999263207117724], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 50.596076558339014, 'RelativeDistance_Exp': 0.7319041788578033, 'R2Score_Exp': 0.8570417761802673, 'Forgetting_Exp': 0.025500208139419556, 'BWT_Exp': -0.025500208139419556}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.25499305242224, 47.25499305242224, 45.34056069924215, 45.34056069924215, 50.596076558339014, 50.596076558339014], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.587885171175003, 0.6185230016708374, 0.7319041788578033], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8825419843196869, 0.8819975852966309, 0.8570417761802673], 'R2Score_Stream': [], 'Forgetting_Exp': [0.0005443990230560303, 0.025500208139419556], 'Forgetting_Stream': [], 'BWT_Exp': [-0.0005443990230560303, -0.025500208139419556], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 43.156565777667154, 'RelativeDistance_Exp': 1.0086565166711807, 'R2Score_Exp': 0.8418649435043335, 'Forgetting_Exp': -0.03211146593093872, 'BWT_Exp': 0.03211146593093872}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [50.33783721923828, 50.33783721923828, 43.156565777667154, 43.156565777667154], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.805735781788826, 1.0086565166711807], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8097534775733948, 0.8418649435043335], 'R2Score_Stream': [], 'Forgetting_Exp': [-0.03211146593093872], 'Forgetting_Stream': [], 'BWT_Exp': [0.03211146593093872], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 44.81702013433217, 'RelativeDistance_Exp': 0.8696818351745605, 'R2Score_Exp': 0.8747732937335968}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [44.81702013433217, 44.81702013433217], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.8696818351745605], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8747732937335968], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+Saving model after experience [1;31m9[0m: 
+[run] End Time: 2024-12-05 18:18:30
+[run] Elapsed Time: 0:16:02.053806
+MeanStdPlugin:
+{'Loss_Exp': 109.37851908722816, 'RelativeDistance_Exp': 1.3220213651657104, 'R2Score_Exp': 0.7508685886859894, 'Forgetting_Exp': 0.1267373263835907, 'BWT_Exp': -0.1267373263835907}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.28229775821461, 47.28229775821461, 75.42941140567555, 75.42941140567555, 64.681726882037, 64.681726882037, 83.18547463809743, 83.18547463809743, 112.10127369600184, 112.10127369600184, 112.60204071044922, 112.60204071044922, 99.01950531005859, 99.01950531005859, 93.37117368810317, 93.37117368810317, 100.51089332131778, 100.51089332131778, 84.37499132941751, 84.37499132941751, 109.37851908722816, 109.37851908722816], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0329701602458954, 0.9498976171016693, 0.8772051632404327, 0.9199698567390442, 0.9856147766113281, 1.0227871537208557, 1.0639051496982574, 1.1549978852272034, 1.2054365277290344, 1.2425786852836609, 1.3220213651657104], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8776059150695801, 0.8091126680374146, 0.8343635201454163, 0.7898313701152802, 0.7128795087337494, 0.7147865295410156, 0.7473528385162354, 0.7614845931529999, 0.7430905401706696, 0.78329998254776, 0.7508685886859894], 'R2Score_Stream': [], 'Forgetting_Exp': [0.06849324703216553, 0.04324239492416382, 0.08777454495429993, 0.1647264063358307, 0.16281938552856445, 0.13025307655334473, 0.1161213219165802, 0.13451537489891052, 0.09430593252182007, 0.1267373263835907], 'Forgetting_Stream': [], 'BWT_Exp': [-0.06849324703216553, -0.04324239492416382, -0.08777454495429993, -0.1647264063358307, -0.16281938552856445, -0.13025307655334473, -0.1161213219165802, -0.13451537489891052, -0.09430593252182007, -0.1267373263835907], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 86.41148420658283, 'RelativeDistance_Exp': 1.5012831091880798, 'R2Score_Exp': 0.7495977580547333, 'Forgetting_Exp': 0.14761942625045776, 'BWT_Exp': -0.14761942625045776}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [33.678076521452034, 33.678076521452034, 48.9025986098829, 48.9025986098829, 60.93198079162001, 60.93198079162001, 65.79534084556157, 65.79534084556157, 95.38495769355765, 95.38495769355765, 88.37839221436607, 88.37839221436607, 87.58739942784678, 87.58739942784678, 94.32488108250787, 94.32488108250787, 84.52745979797827, 84.52745979797827, 86.41148420658283, 86.41148420658283], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.0652570128440857, 1.0146164298057556, 1.0857372283935547, 1.2742184400558472, 1.272418737411499, 1.3552197217941284, 1.3913283944129944, 1.2832911014556885, 1.1735670566558838, 1.5012831091880798], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.897217184305191, 0.8509383797645569, 0.8140515983104706, 0.7993212342262268, 0.709030032157898, 0.7305737733840942, 0.7327833473682404, 0.7121206521987915, 0.7420937716960907, 0.7495977580547333], 'R2Score_Stream': [], 'Forgetting_Exp': [0.046278804540634155, 0.08316558599472046, 0.09789595007896423, 0.1881871521472931, 0.1666434109210968, 0.16443383693695068, 0.18509653210639954, 0.15512341260910034, 0.14761942625045776], 'Forgetting_Stream': [], 'BWT_Exp': [-0.046278804540634155, -0.08316558599472046, -0.09789595007896423, -0.1881871521472931, -0.1666434109210968, -0.16443383693695068, -0.18509653210639954, -0.15512341260910034, -0.14761942625045776], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 67.86543327726463, 'RelativeDistance_Exp': 0.8470494349797567, 'R2Score_Exp': 0.7811540961265564, 'Forgetting_Exp': 0.03996207316716516, 'BWT_Exp': -0.03996207316716516}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [56.817420468890745, 56.817420468890745, 68.93303461631668, 68.93303461631668, 79.32463948319598, 79.32463948319598, 81.85652621340417, 81.85652621340417, 81.2419545468981, 81.2419545468981, 81.72903965670183, 81.72903965670183, 89.70534839052142, 89.70534839052142, 80.99014903066428, 80.99014903066428, 67.86543327726463, 67.86543327726463], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7456234892209371, 0.7970688740412394, 0.7979457775751749, 0.8020789424578348, 0.7720253864924113, 0.8191480040550232, 0.7423608104387919, 0.7897125879923502, 0.8470494349797567], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8211161692937216, 0.7847609122594198, 0.7540424863497416, 0.7447845737139384, 0.7486777901649475, 0.7461665670077006, 0.7199538548787435, 0.7474574049313863, 0.7811540961265564], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03635525703430176, 0.06707368294397997, 0.0763315955797832, 0.07243837912877404, 0.07494960228602099, 0.10116231441497803, 0.0736587643623352, 0.03996207316716516], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03635525703430176, -0.06707368294397997, -0.0763315955797832, -0.07243837912877404, -0.07494960228602099, -0.10116231441497803, -0.0736587643623352, -0.03996207316716516], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 49.24145528214009, 'RelativeDistance_Exp': 0.7251655757427216, 'R2Score_Exp': 0.837225615978241, 'Forgetting_Exp': 0.02591058611869812, 'BWT_Exp': -0.02591058611869812}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.32847448754381, 42.32847448754381, 48.09800402261134, 48.09800402261134, 55.94296658447744, 55.94296658447744, 58.95201098883888, 58.95201098883888, 53.693422375416546, 53.693422375416546, 54.621810550671015, 54.621810550671015, 55.67119474345627, 55.67119474345627, 49.24145528214009, 49.24145528214009], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.7013973593711853, 0.7255769968032837, 0.8078406453132629, 0.8560692965984344, 0.7748223543167114, 0.870138019323349, 0.8850398659706116, 0.7251655757427216], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8631362020969391, 0.8444832861423492, 0.8191005885601044, 0.8094111382961273, 0.8263927102088928, 0.8233969211578369, 0.8200133144855499, 0.837225615978241], 'R2Score_Stream': [], 'Forgetting_Exp': [0.018652915954589844, 0.04403561353683472, 0.05372506380081177, 0.036743491888046265, 0.03973928093910217, 0.04312288761138916, 0.02591058611869812], 'Forgetting_Stream': [], 'BWT_Exp': [-0.018652915954589844, -0.04403561353683472, -0.05372506380081177, -0.036743491888046265, -0.03973928093910217, -0.04312288761138916, -0.02591058611869812], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 47.50097289402563, 'RelativeDistance_Exp': 0.9152268618345261, 'R2Score_Exp': 0.8445062786340714, 'Forgetting_Exp': 0.010169968008995056, 'BWT_Exp': -0.010169968008995056}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [37.302139009350405, 37.302139009350405, 41.42861076633425, 41.42861076633425, 43.077470737652185, 43.077470737652185, 41.340101270466825, 41.340101270466825, 39.85617710085681, 39.85617710085681, 42.9151045494358, 42.9151045494358, 47.50097289402563, 47.50097289402563], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.6545981019735336, 0.684063270688057, 0.7204217463731766, 0.6800203174352646, 0.6724816709756851, 0.6967852115631104, 0.9152268618345261], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8546762466430664, 0.8403755724430084, 0.8373089581727982, 0.8430605679750443, 0.8458533436059952, 0.8354551494121552, 0.8445062786340714], 'R2Score_Stream': [], 'Forgetting_Exp': [0.014300674200057983, 0.01736728847026825, 0.011615678668022156, 0.008822903037071228, 0.019221097230911255, 0.010169968008995056], 'Forgetting_Stream': [], 'BWT_Exp': [-0.014300674200057983, -0.01736728847026825, -0.011615678668022156, -0.008822903037071228, -0.019221097230911255, -0.010169968008995056], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 47.54557203209919, 'RelativeDistance_Exp': 0.779539167881012, 'R2Score_Exp': 0.8144498070081075, 'Forgetting_Exp': 0.026433130105336433, 'BWT_Exp': -0.026433130105336433}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [44.0985852197323, 44.0985852197323, 50.96405130748864, 50.96405130748864, 54.40596676193043, 54.40596676193043, 52.28079121924632, 52.28079121924632, 56.54939845682711, 56.54939845682711, 47.54557203209919, 47.54557203209919], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [1.1282796661059062, 1.090486745039622, 0.9975439508756002, 1.1411146521568298, 1.1841681996981304, 0.779539167881012], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.840882937113444, 0.8171953956286112, 0.8041108449300131, 0.8115353584289551, 0.7964852054913839, 0.8144498070081075], 'R2Score_Stream': [], 'Forgetting_Exp': [0.023687541484832764, 0.036772092183430916, 0.029347578684488895, 0.044397731622060066, 0.026433130105336433], 'Forgetting_Stream': [], 'BWT_Exp': [-0.023687541484832764, -0.036772092183430916, -0.029347578684488895, -0.044397731622060066, -0.026433130105336433], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 59.87004168174509, 'RelativeDistance_Exp': 0.7622843186060587, 'R2Score_Exp': 0.8099992672602335, 'Forgetting_Exp': 0.023940185705820793, 'BWT_Exp': -0.023940185705820793}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [42.902379538266715, 42.902379538266715, 46.120235530474716, 46.120235530474716, 50.81967052430597, 50.81967052430597, 60.322351848806136, 60.322351848806136, 59.87004168174509, 59.87004168174509], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.8575563033421835, 0.8156021237373352, 0.7950641314188639, 0.9994193514188131, 0.7622843186060587], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8339394529660543, 0.8008604844411215, 0.7835061152776083, 0.7539468208948771, 0.8099992672602335], 'R2Score_Stream': [], 'Forgetting_Exp': [0.03307896852493286, 0.050433337688446045, 0.07999263207117724, 0.023940185705820793], 'Forgetting_Stream': [], 'BWT_Exp': [-0.03307896852493286, -0.050433337688446045, -0.07999263207117724, -0.023940185705820793], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 36.45795440673828, 'RelativeDistance_Exp': 0.7834336757659912, 'R2Score_Exp': 0.8562419414520264, 'Forgetting_Exp': 0.026300042867660522, 'BWT_Exp': -0.026300042867660522}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [47.25499305242224, 47.25499305242224, 45.34056069924215, 45.34056069924215, 50.596076558339014, 50.596076558339014, 36.45795440673828, 36.45795440673828], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.587885171175003, 0.6185230016708374, 0.7319041788578033, 0.7834336757659912], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8825419843196869, 0.8819975852966309, 0.8570417761802673, 0.8562419414520264], 'R2Score_Stream': [], 'Forgetting_Exp': [0.0005443990230560303, 0.025500208139419556, 0.026300042867660522], 'Forgetting_Stream': [], 'BWT_Exp': [-0.0005443990230560303, -0.025500208139419556, -0.026300042867660522], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 51.828989542619404, 'RelativeDistance_Exp': 1.7064038515090942, 'R2Score_Exp': 0.8364278674125671, 'Forgetting_Exp': -0.026674389839172363, 'BWT_Exp': 0.026674389839172363}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [50.33783721923828, 50.33783721923828, 43.156565777667154, 43.156565777667154, 51.828989542619404, 51.828989542619404], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.805735781788826, 1.0086565166711807, 1.7064038515090942], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8097534775733948, 0.8418649435043335, 0.8364278674125671], 'R2Score_Stream': [], 'Forgetting_Exp': [-0.03211146593093872, -0.026674389839172363], 'Forgetting_Stream': [], 'BWT_Exp': [0.03211146593093872, 0.026674389839172363], 'BWT_Stream': []}
+MeanStdPlugin:
+{'Loss_Exp': 56.633089742495144, 'RelativeDistance_Exp': 0.8549018204212189, 'R2Score_Exp': 0.8456818163394928}
+Calling results() ...
+{'Loss_Epoch': [], 'Loss_Exp': [44.81702013433217, 44.81702013433217, 56.633089742495144, 56.633089742495144], 'Loss_Stream': [], 'RelativeDistance_Epoch': [], 'RelativeDistance_Exp': [0.8696818351745605, 0.8549018204212189], 'RelativeDistance_Stream': [], 'R2Score_Epoch': [], 'R2Score_Exp': [0.8747732937335968, 0.8456818163394928], 'R2Score_Stream': [], 'Forgetting_Exp': [], 'Forgetting_Stream': [], 'BWT_Exp': [], 'BWT_Stream': []}
+10
+10
+10
+10
+10
+10
