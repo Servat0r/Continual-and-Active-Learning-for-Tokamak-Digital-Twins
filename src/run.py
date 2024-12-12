@@ -1,13 +1,12 @@
 import json
 import sys
 import os
-import shutil
 from collections import defaultdict
 from datetime import datetime
 import argparse
 
 from avalanche.logging import InteractiveLogger
-from avalanche.evaluation.metrics import loss_metrics, accuracy_metrics
+from avalanche.evaluation.metrics import loss_metrics
 from avalanche.models import VAE_loss
 from avalanche.training import GenerativeReplay, VAETraining, JointTraining
 from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin, GenerativeReplayPlugin
@@ -20,12 +19,30 @@ from .utils import *
 from .configs import *
 
 
-METRIC_LIST = ['Loss_Exp', 'R2Score_Exp', 'RelativeDistance_Exp', 'Forgetting_Exp']
-TITLE_LIST = [
-    'Loss over each experience', 'R2 Score over each experience',
-    'Relative Distance over each experience', 'Forgetting over each experience'
-]
-YLABEL_LIST = ['Loss', 'R2 Score', 'Relative Distance', 'Forgetting']
+def get_metric_names_list(task):
+    if task == 'regression':
+        return ['Loss_Exp', 'R2Score_Exp', 'RelativeDistance_Exp', 'Forgetting_Exp']
+    else:
+        return ['Loss_Exp', 'BinaryAccuracy_Exp']
+
+
+def get_title_names_list(task):
+    if task == 'regression':
+        return [
+            'Loss over each experience', 'R2 Score over each experience',
+            'Relative Distance over each experience', 'Forgetting over each experience'
+        ]
+    else:
+        return [
+            'Loss over each experience', 'Binary Accuracy over each experience',
+        ]
+
+
+def get_ylabel_names_list(task):
+    if task == 'regression':
+        return ['Loss', 'R2 Score', 'Relative Distance', 'Forgetting']
+    else:
+        return ['Loss', 'BinaryAccuracy']
 
 
 def make_scheduler(scheduler_config, optimizer):
@@ -55,9 +72,10 @@ def get_metrics(loss_type):
     elif loss_type in ['BCE', 'bce', 'BCEWithLogits', 'bce_with_logits']:
         metrics = \
             loss_metrics(epoch=True, experience=True, stream=True) + \
-            accuracy_metrics(epoch=True, experience=True, stream=True) + \
-            renamed_forgetting_metrics(experience=True, stream=True) + \
-            renamed_bwt_metrics(experience=True, stream=True)
+            binary_accuracy_metrics(epoch=True, experience=True, stream=True) #+ \
+            #precision_metrics(epoch=True, experience=True, stream=True) + \
+            #recall_metrics(epoch=True, experience=True, stream=True) + \
+            #f1_metrics(epoch=True, experience=True, stream=True) + \
     else:
         metrics = \
             loss_metrics(epoch=True, experience=True, stream=True) + \
@@ -84,19 +102,22 @@ def evaluation_experiences_plots(log_folder, metric_list, title_list, ylabel_lis
         )
 
 
-def mean_std_evaluation_experiences_plots(file_paths, metric_list, title_list, ylabel_list):
+def mean_std_evaluation_experiences_plots(
+        file_paths, metric_list, title_list, ylabel_list, start_exp=0, end_exp=-1, num_exp=None,
+):
     save_folder = os.path.dirname(file_paths[0])
     for metric, title, ylabel in zip(metric_list, title_list, ylabel_list):
-        # Experiences 0-4
-        plot_metric_over_evaluation_experiences_multiple_runs(
-            file_paths, metric, title, 'Training Experience',
-            ylabel, show=False, start_exp=0, end_exp=4,
-            savepath=os.path.join(save_folder, f'mean_std_plot_of_first_5_experiences_{metric[:-4]}.png'),
-        )
+        if start_exp == 0 and end_exp >= 4:
+            # Experiences 0-4
+            plot_metric_over_evaluation_experiences_multiple_runs(
+                file_paths, metric, title, 'Training Experience',
+                ylabel, show=False, start_exp=0, end_exp=4, num_exp=num_exp,
+                savepath=os.path.join(save_folder, f'mean_std_plot_of_first_5_experiences_{metric[:-4]}.png'),
+            )
         # Plot over all experiences
         plot_metric_over_evaluation_experiences_multiple_runs(
-            file_paths, metric, title, 'Training Experience',
-            ylabel, show=False, start_exp=0, end_exp=9,
+            file_paths, metric, title, 'Training Experience', ylabel,
+            show=False, start_exp=start_exp, end_exp=end_exp, num_exp=num_exp,
             savepath=os.path.join(save_folder, f'mean_std_plot_of_all_10_experiences_{metric[:-4]}.png'),
         )
 
@@ -114,7 +135,7 @@ def process_test_results(final_test_results: dict):
     return results
 
 
-def task_training_loop(config_file_path: str, task_id: int):
+def task_training_loop(config_file_path: str, task_id: int, redirect_stdout=True, extra_log_folder=''):
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     config_parser = ConfigParser(config_file_path, task_id=task_id)
     debug_print(config_parser.parsing_dict)
@@ -198,13 +219,14 @@ def task_training_loop(config_file_path: str, task_id: int):
     output_columns_str = '_'.join(output_columns)
     log_folder = os.path.join(
         'logs', pow_type, cluster_type, task, dataset_type,
-        output_columns_str, strategy_type, folder_name
+        output_columns_str, strategy_type, extra_log_folder, folder_name,
     )
     os.makedirs(os.path.join(log_folder), exist_ok=True)
     stdout_file_path = os.path.join(log_folder, 'stdout.txt')
 
     with open(stdout_file_path, 'w') as stdout_file:
-        sys.stdout = stdout_file # Redirect outputs to file
+        if redirect_stdout:
+            sys.stdout = stdout_file # Redirect outputs to file
         print("[green]Configuration Loaded[/green]:")
         print(f"  Device: [cyan]{device}[/cyan]")
         for field_name, field_value in config_parser.get_config().items():
@@ -248,7 +270,7 @@ def task_training_loop(config_file_path: str, task_id: int):
             dtype=dtype, normalize_inputs=normalize_inputs, normalize_outputs=normalize_outputs,
             log_folder=log_folder, input_columns=input_columns, output_columns=output_columns,
             dataset_type=dataset_type, filter_by_geq=filters_by_geq, filter_by_leq=filters_by_leq,
-            transform=cl_strategy_transform_transform,
+            apply_subsampling=True, transform=cl_strategy_transform_transform,
             target_transform=cl_strategy_target_transform_transform,
         )
 
@@ -377,17 +399,17 @@ def task_training_loop(config_file_path: str, task_id: int):
             # Save model for future usage
             torch.save(model.state_dict(), os.path.join(log_folder, 'model.pt'))
             # Plots
-            evaluation_experiences_plots(log_folder, METRIC_LIST, TITLE_LIST, YLABEL_LIST)
+            metric_list = get_metric_names_list(task)
+            title_list = get_title_names_list(task)
+            ylabel_list = get_ylabel_names_list(task)
+            evaluation_experiences_plots(log_folder, metric_list, title_list, ylabel_list)
             mean_std_plugin.dump_results(os.path.join(log_folder, "mean_std_metric_dump.csv"))
-            return {'result': True, 'log_folder': log_folder}
+            return {
+                'result': True, 'log_folder': log_folder, 'task': task,
+                'is_joint_training': (cl_strategy_class == JointTraining)
+            }
         except Exception as ex:
-            debug_print("Caught Exception: ", ex)
-            try:
-                shutil.rmtree(log_folder)
-            except:
-                debug_print(f"[red]Failed to remove {log_folder}[/red]")
-            finally:
-                return None
+            raise ex
 
 
 def main():
@@ -413,11 +435,24 @@ def main():
         type=int,
         help="Number of tasks to execute (e.g., --num_tasks=16). If <= 0, it defaults to os.cpu_count().",
     )
+    cmd_arg_parser.add_argument(
+        '--extra-log-folder',
+        type=str,
+        help="Extra folder to be added to log_folder path, if necessary."
+    )
+    cmd_arg_parser.add_argument(
+        '--no-redirect-stdout',
+        action='store_true',
+        help='Disable standard output redirection to a file. Defaults to False (i.e., output is redirected).',
+    )
 
     # Parse arguments
     cmd_args = cmd_arg_parser.parse_args()
     config_file_path = cmd_args.config
+    to_redirect_stdout = True if not cmd_args.no_redirect_stdout else False
+    extra_log_folder = cmd_args.extra_log_folder or 'Base'
     print(f"Config file path: {config_file_path}")
+    print(f"To redirect stdout: {to_redirect_stdout}")
     if cmd_args.num_tasks <= 0:
         num_jobs = os.cpu_count()
     else:
@@ -427,11 +462,17 @@ def main():
         task_ids = range(num_jobs)
         results = \
             Parallel(n_jobs=num_jobs)(
-                delayed(task_training_loop)(config_file_path, task_id) for task_id in task_ids
+                delayed(task_training_loop)(config_file_path, task_id, to_redirect_stdout, extra_log_folder)
+                for task_id in task_ids
             )
         print(results)
     else:
-        results = task_training_loop(config_file_path, 0)
+        results = [
+            task_training_loop(
+                config_file_path, 0, redirect_stdout=to_redirect_stdout,
+                extra_log_folder=extra_log_folder,
+            )
+        ]
         print(results)
     # Plot means and standard deviations
     if num_jobs > 1:
@@ -446,7 +487,16 @@ def main():
             file_paths, os.path.join(save_folder, 'mean_values.csv'), os.path.join(save_folder, 'std_values.csv')
         )
         # Plot mean and std values
-        mean_std_evaluation_experiences_plots(file_paths, METRIC_LIST, TITLE_LIST, YLABEL_LIST)
+        task = results[0]['task']
+        metric_list = get_metric_names_list(task)
+        title_list = get_title_names_list(task)
+        ylabel_list = get_ylabel_names_list(task)
+        if results[0]['is_joint_training']:
+            mean_std_evaluation_experiences_plots(
+                file_paths, metric_list, title_list, ylabel_list, start_exp=0, end_exp=0, num_exp=1,
+            )
+        else:
+            mean_std_evaluation_experiences_plots(file_paths, metric_list, title_list, ylabel_list)
 
 
 if __name__ == '__main__':

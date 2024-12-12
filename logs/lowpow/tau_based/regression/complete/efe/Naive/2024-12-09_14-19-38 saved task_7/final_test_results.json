@@ -1,0 +1,97 @@
+{
+    "0": {
+        "Loss_Exp": 76.37263845406633,
+        "RelativeDistance_Exp": Infinity,
+        "R2Score_Exp": 0.60383380651474,
+        "Forgetting_Exp": 0.272687840461731,
+        "BWT_Exp": -0.272687840461731
+    },
+    "1": {
+        "Loss_Exp": 53.97478879503046,
+        "RelativeDistance_Exp": Infinity,
+        "R2Score_Exp": 0.6780083894729614,
+        "Forgetting_Exp": 0.22282683849334717,
+        "BWT_Exp": -0.22282683849334717
+    },
+    "2": {
+        "Loss_Exp": 53.85518226140662,
+        "RelativeDistance_Exp": Infinity,
+        "R2Score_Exp": 0.6812904104590416,
+        "Forgetting_Exp": 0.12069112062454224,
+        "BWT_Exp": -0.12069112062454224
+    },
+    "3": {
+        "Loss_Exp": 29.42100719580924,
+        "RelativeDistance_Exp": Infinity,
+        "R2Score_Exp": 0.7380560785531998,
+        "Forgetting_Exp": 0.07883406430482864,
+        "BWT_Exp": -0.07883406430482864
+    },
+    "4": {
+        "Loss_Exp": 22.54458843810362,
+        "RelativeDistance_Exp": Infinity,
+        "R2Score_Exp": 0.7832659979661306,
+        "Forgetting_Exp": 0.06356329222520185,
+        "BWT_Exp": -0.06356329222520185
+    },
+    "5": {
+        "Loss_Exp": 25.329254173755217,
+        "RelativeDistance_Exp": Infinity,
+        "R2Score_Exp": 0.7582890868186951,
+        "Forgetting_Exp": 0.06830796978690401,
+        "BWT_Exp": -0.06830796978690401
+    },
+    "6": {
+        "Loss_Exp": 36.00324075438308,
+        "RelativeDistance_Exp": Infinity,
+        "R2Score_Exp": 0.6840214505791664,
+        "Forgetting_Exp": 0.13147301971912384,
+        "BWT_Exp": -0.13147301971912384
+    },
+    "7": {
+        "Loss_Exp": 26.982134963898655,
+        "RelativeDistance_Exp": Infinity,
+        "R2Score_Exp": 0.7941349595785141,
+        "Forgetting_Exp": 0.0640256404876709,
+        "BWT_Exp": -0.0640256404876709
+    },
+    "8": {
+        "Loss_Exp": 24.98472443486417,
+        "RelativeDistance_Exp": Infinity,
+        "R2Score_Exp": 0.7975686073303223,
+        "Forgetting_Exp": 0.03838480710983272,
+        "BWT_Exp": -0.03838480710983272
+    },
+    "9": {
+        "Loss_Exp": 26.543462820364912,
+        "RelativeDistance_Exp": Infinity,
+        "R2Score_Exp": 0.8203398500170026
+    },
+    "stream": {
+        "Loss_Stream/eval_phase/test_stream": 35.39802988243224,
+        "RelativeDistance_Stream/eval_phase/test_stream": Infinity,
+        "R2Score_Stream/eval_phase/test_stream": 0.7378472106324302,
+        "Forgetting_Stream/eval_phase/test_stream": {
+            "0": 0.272687840461731,
+            "1": 0.22282683849334717,
+            "2": 0.12069112062454224,
+            "3": 0.07883406430482864,
+            "4": 0.06356329222520185,
+            "5": 0.06830796978690401,
+            "6": 0.13147301971912384,
+            "7": 0.0640256404876709,
+            "8": 0.03838480710983272
+        },
+        "BWT_Stream/eval_phase/test_stream": {
+            "0": 0.272687840461731,
+            "1": 0.22282683849334717,
+            "2": 0.12069112062454224,
+            "3": 0.07883406430482864,
+            "4": 0.06356329222520185,
+            "5": 0.06830796978690401,
+            "6": 0.13147301971912384,
+            "7": 0.0640256404876709,
+            "8": 0.03838480710983272
+        }
+    }
+}

@@ -1,0 +1,90 @@
+{
+    "general": {
+        "task": "regression",
+        "dtype": "float32",
+        "num_campaigns": 10,
+        "train_mb_size": 512,
+        "eval_mb_size": 1024,
+        "train_epochs": 200
+    },
+    "dataset": {
+        "pow_type": "lowpow",
+        "cluster_type": "tau_based",
+        "dataset_type": "not_null",
+        "input_columns": [
+            "ane",
+            "ate",
+            "x",
+            "q",
+            "smag",
+            "alpha",
+            "ani1",
+            "ati0",
+            "normni1",
+            "zeff",
+            "lognustar"
+        ],
+        "output_columns": [
+            "efe",
+            "efi",
+            "pfe",
+            "pfi"
+        ],
+        "input_size": 11,
+        "output_size": 4,
+        "normalize_inputs": true,
+        "normalize_outputs": false
+    },
+    "architecture": {
+        "name": "MLP",
+        "model_folder": "lowpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+        "model_name": "model",
+        "model_class_name": "MLP",
+        "parameters": {
+            "input_size": 11,
+            "output_size": 4,
+            "hidden_size": 1024,
+            "hidden_layers": 2,
+            "drop_rate": 0.5
+        }
+    },
+    "loss": {
+        "name": "MSE",
+        "parameters": {
+            "reduction": "mean"
+        }
+    },
+    "optimizer": {
+        "name": "Adam",
+        "parameters": {
+            "lr": 0.002,
+            "weight_decay": 0.0001
+        }
+    },
+    "scheduler": {
+        "name": "ReduceLROnPlateau",
+        "parameters": {
+            "factor": 0.25,
+            "patience": 10
+        }
+    },
+    "strategy": {
+        "name": "Naive",
+        "parameters": {}
+    },
+    "early_stopping": {
+        "patience": 50,
+        "delta": 0.1,
+        "val_stream_name": "eval_stream",
+        "min_epochs": 100
+    },
+    "validation_stream": {
+        "val_stream": "eval_stream"
+    },
+    "start_model_saving": {
+        "save_model": true,
+        "saved_model_folder": "lowpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+        "saved_model_name": "model",
+        "add_timestamp": false
+    }
+}

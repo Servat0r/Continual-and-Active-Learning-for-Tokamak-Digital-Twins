@@ -1,0 +1,13 @@
+{
+    "name": "MLP",
+    "model_folder": "lowpow_mlp_32_2_8runs_classification",
+    "model_name": "model",
+    "model_class_name": "MLP",
+    "parameters": {
+        "input_size": 11,
+        "output_size": 1,
+        "hidden_size": 32,
+        "hidden_layers": 2,
+        "drop_rate": 0.5
+    }
+}

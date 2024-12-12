@@ -15,20 +15,20 @@
       "ane", "ate", "x", "q", "smag", "alpha",
       "ani1", "ati0", "normni1", "zeff", "lognustar"
     ],
-    "output_columns": ["efe"],
+    "output_columns": ["efe", "efi", "pfe", "pfi"],
     "input_size": 11,
-    "output_size": 1,
+    "output_size": 4,
     "normalize_inputs": true,
     "normalize_outputs": false
   },
   "architecture": {
     "name": "saved",
-    "model_folder": "lowpow_mlp_1024_2_8runs",
+    "model_folder": "lowpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
     "model_name": "model",
     "model_class_name": "MLP",
     "parameters": {
       "input_size": 11,
-      "output_size": 1,
+      "output_size": 4,
       "hidden_size": 1024,
       "hidden_layers": 2,
       "drop_rate": 0.5
@@ -43,7 +43,7 @@
   "optimizer": {
     "name": "Adam",
     "parameters": {
-      "lr": 5e-3,
+      "lr": 2e-3,
       "weight_decay": 1e-4
     }
   },
@@ -57,11 +57,9 @@
     }
   },
   "strategy": {
-    "name": "EWCReplay",
+    "name": "GEM",
     "parameters": {
-      "mode": "separate",
-      "ewc_lambda": 10.0,
-      "mem_size": 2000
+      "patterns_per_exp": 200
     }
   },
   "early_stopping": {
@@ -75,7 +73,7 @@
   },
   "start_model_saving": {
     "save_model": false,
-    "saved_model_folder": "lowpow_mlp_1024_2_8runs",
+    "saved_model_folder": "lowpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
     "saved_model_name": "model",
     "add_timestamp": false
   }

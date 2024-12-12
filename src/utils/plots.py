@@ -8,11 +8,12 @@ from .misc import extract_metric_values_over_evaluation_experiences
 def plot_metric_over_evaluation_experiences(
         file_path_or_buf: str | pd.DataFrame, metric: str, title: str, xlabel: str, ylabel: str,
         grid: bool = True, legend: bool = True, show: bool = True, start_exp: int = 0, end_exp: int = -1,
-        save: bool = True, savepath: str = None,
+        save: bool = True, savepath: str = None, num_exp: int = None,
 ):
     df: pd.DataFrame = pd.read_csv(file_path_or_buf) if isinstance(file_path_or_buf, str) else file_path_or_buf
-    num_exp = len(df['eval_exp'].unique())
-    if (end_exp == -1) or (end_exp >= num_exp): end_exp = num_exp - 1
+    default_num_exp = len(df['eval_exp'].unique())
+    num_exp = default_num_exp if num_exp is None else num_exp
+    if (end_exp == -1) or (end_exp >= num_exp): end_exp = default_num_exp - 1
     dict_data = {}
     for eval_exp in range(start_exp, end_exp + 1):
         value = df[df['eval_exp'] == eval_exp][metric].to_numpy()
@@ -33,14 +34,15 @@ def plot_metric_over_evaluation_experiences(
 def plot_metrics_over_training_experiences(
         file_path_or_buf: str | pd.DataFrame, metric: str, title: str, xlabel: str, ylabel: str,
         grid: bool = True, legend: bool = True, show: bool = True, start_exp: int = 0, end_exp: int = -1,
-        save: bool = True, savepath: str = None,
+        save: bool = True, savepath: str = None, num_exp: int = None,
 ):
     df = pd.read_csv(file_path_or_buf) if isinstance(file_path_or_buf, str) else file_path_or_buf
-    num_exp = len(df['training_exp'].unique())
+    default_num_exp = len(df['eval_exp'].unique())
+    num_exp = default_num_exp if num_exp is None else num_exp
+    if (end_exp == -1) or (end_exp >= num_exp): end_exp = default_num_exp - 1
     num_epochs = len(df['epoch'].unique())
     print(num_exp, num_epochs)
     ddf = pd.DataFrame({'epoch': np.arange(num_epochs)})
-    if (end_exp == -1) or (end_exp >= num_exp): end_exp = num_exp - 1
     for training_exp in range(start_exp, end_exp + 1):
         selected_df = df[df['training_exp'] == training_exp][metric]
         ddf[f"Training Exp {training_exp}"] = selected_df
@@ -57,11 +59,12 @@ def plot_metrics_over_training_experiences(
 def plot_metric_over_evaluation_experiences_multiple_runs(
         file_paths_or_bufs: list[str | pd.DataFrame], metric: str, title: str, xlabel: str, ylabel: str,
         grid: bool = True, legend: bool = True, show: bool = True, start_exp: int = 0, end_exp: int = -1,
-        save: bool = True, savepath: str = None,
+        save: bool = True, savepath: str = None, num_exp: int = None,
 ):
     dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths_or_bufs]
-    num_exp = len(dfs[0]['eval_exp'].unique())
-    if (end_exp == -1) or (end_exp >= num_exp): end_exp = num_exp - 1
+    default_num_exp = len(dfs[0]['eval_exp'].unique())
+    num_exp = default_num_exp if num_exp is None else num_exp
+    if (end_exp == -1) or (end_exp >= num_exp): end_exp = default_num_exp - 1
     ddfs = []
     for df in dfs:
         dict_data = {}
