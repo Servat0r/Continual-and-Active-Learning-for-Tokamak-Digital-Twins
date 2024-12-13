@@ -1,6 +1,7 @@
 import json
 import os
-from typing import Callable
+from os import PathLike
+from typing import Callable, Any
 
 
 class ConfigParser:
@@ -48,9 +49,20 @@ class ConfigParser:
             return wrapper
         return decorator
 
-    def __init__(self, config_path: str = None, task_id: int = 0):
-        self.config_path = config_path
-        self.config = None
+    def __init__(
+            self, config_path_or_data: str | PathLike | dict[str, Any] = None,
+            task_id: int = 0
+    ):
+        if any([
+            isinstance(config_path_or_data, str), isinstance(config_path_or_data, PathLike)
+        ]):
+            self.config_path = config_path_or_data
+            self.config = None
+        elif isinstance(config_path_or_data, dict):
+            self.config_path = None
+            self.config = config_path_or_data
+        else:
+            raise TypeError(f"Invalid type for config_path: {type(config_path_or_data)}")
         self.task_id = task_id
 
     def reset(self):
@@ -58,6 +70,8 @@ class ConfigParser:
         self.config = None
 
     def load_config(self):
+        if self.config is not None:
+            return
         if self.config_path is None:
             raise ValueError("Configuration path is not set.")
         elif not os.path.exists(self.config_path):

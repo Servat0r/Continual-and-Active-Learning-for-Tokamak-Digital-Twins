@@ -1,6 +1,7 @@
 import json
 import sys
 import os
+from typing import Any
 from collections import defaultdict
 from datetime import datetime
 import argparse
@@ -135,10 +136,12 @@ def process_test_results(final_test_results: dict):
     return results
 
 
-def task_training_loop(config_file_path: str, task_id: int, redirect_stdout=True, extra_log_folder=''):
+def task_training_loop(
+        config_data: str | dict[str, Any], task_id: int,
+        redirect_stdout=True, extra_log_folder=''
+):
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    config_parser = ConfigParser(config_file_path, task_id=task_id)
-    debug_print(config_parser.parsing_dict)
+    config_parser = ConfigParser(config_data, task_id=task_id)
     config_parser.load_config()
 
     # Relevant config names
@@ -186,6 +189,7 @@ def task_training_loop(config_file_path: str, task_id: int, redirect_stdout=True
     cl_strategy_config = config_parser['strategy']
     cl_strategy_class = cl_strategy_config['class']
     cl_strategy_parameters = cl_strategy_config['parameters']
+    extra_log_folder = cl_strategy_config.get('extra_log_folder', extra_log_folder)
     # Filters
     filters_by_geq = None
     filters_by_leq = None
@@ -297,10 +301,7 @@ def task_training_loop(config_file_path: str, task_id: int, redirect_stdout=True
         loggers = ([InteractiveLogger()] if has_interactive_logger else []) + [csv_logger, mean_std_plugin]
 
         # Define the evaluation plugin with desired metrics
-        if task == 'regression':
-            eval_plugin = EvaluationPlugin(*metrics, loggers=loggers)
-        else:
-            eval_plugin = EvaluationPlugin(*metrics, loggers=loggers)
+        eval_plugin = EvaluationPlugin(*metrics, loggers=loggers)
 
         # Extra plugins
         plugins = [
@@ -410,6 +411,10 @@ def task_training_loop(config_file_path: str, task_id: int, redirect_stdout=True
             }
         except Exception as ex:
             raise ex
+        finally:
+            # Reset stdout
+            if redirect_stdout:
+                sys.stdout = sys.__stdout__
 
 
 def main():
@@ -458,45 +463,52 @@ def main():
     else:
         num_jobs = cmd_args.num_tasks
     print(f"Number of jobs: {num_jobs}")
-    if num_jobs > 1:
-        task_ids = range(num_jobs)
-        results = \
-            Parallel(n_jobs=num_jobs)(
-                delayed(task_training_loop)(config_file_path, task_id, to_redirect_stdout, extra_log_folder)
-                for task_id in task_ids
-            )
-        print(results)
-    else:
-        results = [
-            task_training_loop(
-                config_file_path, 0, redirect_stdout=to_redirect_stdout,
-                extra_log_folder=extra_log_folder,
-            )
-        ]
-        print(results)
-    # Plot means and standard deviations
-    if num_jobs > 1:
-        file_paths = [
-            os.path.join(result['log_folder'], 'eval_results_experience.csv') for result in results if result is not None
-        ]
-        if len(file_paths) != len(results):
-            raise RuntimeError(f"Something went wrong during training: {len(file_paths)} vs. {len(results)}")
-        save_folder = os.path.dirname(file_paths[0])
-        # Save csv files for mean and std values
-        get_means_std_over_evaluation_experiences_multiple_runs(
-            file_paths, os.path.join(save_folder, 'mean_values.csv'), os.path.join(save_folder, 'std_values.csv')
-        )
-        # Plot mean and std values
-        task = results[0]['task']
-        metric_list = get_metric_names_list(task)
-        title_list = get_title_names_list(task)
-        ylabel_list = get_ylabel_names_list(task)
-        if results[0]['is_joint_training']:
-            mean_std_evaluation_experiences_plots(
-                file_paths, metric_list, title_list, ylabel_list, start_exp=0, end_exp=0, num_exp=1,
-            )
+    # Config data preprocessing
+    config_data = json.load(open(config_file_path))
+    if not isinstance(config_data['strategy'], list):
+        config_data['strategy'] = [config_data['strategy']]
+    for strategy in config_data['strategy']:
+        single_config_data = config_data.copy()
+        single_config_data['strategy'] = strategy
+        if num_jobs > 1:
+            task_ids = range(num_jobs)
+            results = \
+                Parallel(n_jobs=num_jobs)(
+                    delayed(task_training_loop)(
+                        single_config_data, task_id, to_redirect_stdout, extra_log_folder
+                    ) for task_id in task_ids
+                )
         else:
-            mean_std_evaluation_experiences_plots(file_paths, metric_list, title_list, ylabel_list)
+            results = [
+                task_training_loop(
+                    single_config_data, 0, redirect_stdout=to_redirect_stdout,
+                    extra_log_folder=extra_log_folder,
+                )
+            ]
+        print(results)
+        # Plot means and standard deviations
+        if num_jobs > 1:
+            file_paths = [
+                os.path.join(result['log_folder'], 'eval_results_experience.csv') for result in results if result is not None
+            ]
+            if len(file_paths) != len(results):
+                raise RuntimeError(f"Something went wrong during training: {len(file_paths)} vs. {len(results)}")
+            save_folder = os.path.dirname(file_paths[0])
+            # Save csv files for mean and std values
+            get_means_std_over_evaluation_experiences_multiple_runs(
+                file_paths, os.path.join(save_folder, 'mean_values.csv'), os.path.join(save_folder, 'std_values.csv')
+            )
+            # Plot mean and std values
+            task = results[0]['task']
+            metric_list = get_metric_names_list(task)
+            title_list = get_title_names_list(task)
+            ylabel_list = get_ylabel_names_list(task)
+            if results[0]['is_joint_training']:
+                mean_std_evaluation_experiences_plots(
+                    file_paths, metric_list, title_list, ylabel_list, start_exp=0, end_exp=0, num_exp=1,
+                )
+            else:
+                mean_std_evaluation_experiences_plots(file_paths, metric_list, title_list, ylabel_list)
 
 
 if __name__ == '__main__':

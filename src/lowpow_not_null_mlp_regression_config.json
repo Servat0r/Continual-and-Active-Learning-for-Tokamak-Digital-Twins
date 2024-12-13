@@ -9,7 +9,7 @@
   },
   "dataset": {
     "pow_type": "lowpow",
-    "cluster_type": "tau_based",
+    "cluster_type": "Ip_Pin_based",
     "dataset_type": "not_null",
     "input_columns": [
       "ane", "ate", "x", "q", "smag", "alpha",
@@ -56,12 +56,55 @@
       "patience": 10
     }
   },
-  "strategy": {
-    "name": "GEM",
-    "parameters": {
-      "patterns_per_exp": 200
+  "strategy": [
+    {
+      "name": "EWC",
+      "extra_log_folder": "Lambda 10",
+      "parameters": {
+        "ewc_lambda": 10.0,
+        "mode": "separate"
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 10 Buffer 200",
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 10.0,
+        "mem_size": 200
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 10 Buffer 1000",
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 10.0,
+        "mem_size": 1000
+      }
+    },
+    {
+      "name": "GEM",
+      "extra_log_folder": "Patterns 200",
+      "parameters": {
+        "patterns_per_exp": 200
+      }
+    },
+    {
+      "name": "GEMReplay",
+      "extra_log_folder": "Patterns 200 Buffer 200",
+      "parameters": {
+        "patterns_per_exp": 200,
+        "mem_size": 200
+      }
+    },
+    {
+      "name": "JointTraining",
+      "parameters": {
+        "eval_every": 0
+      }
     }
-  },
+  ],
   "early_stopping": {
     "patience": 50,
     "delta": 0.1,

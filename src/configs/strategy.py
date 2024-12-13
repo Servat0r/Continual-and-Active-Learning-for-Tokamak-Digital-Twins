@@ -36,6 +36,7 @@ def strategy_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'parameters' not in data:
         raise ValueError(f"\"parameters\" field not present in configuration")
     name, parameters = data['name'], data['parameters']
+    extra_log_folder = data.get('extra_log_folder', None)
     if name not in __strategy_dict:
         raise ValueError(f"Invalid strategy name \"{name}\"")
     strategy_class = __strategy_dict[name]
@@ -75,6 +76,7 @@ def strategy_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     return {
         'class': strategy_class,
         'parameters': parameters,
+        'extra_log_folder': extra_log_folder,
     }
 
 
