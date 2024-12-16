@@ -5,6 +5,7 @@ from typing import Any
 from collections import defaultdict
 from datetime import datetime
 import argparse
+import torch
 
 from avalanche.logging import InteractiveLogger
 from avalanche.evaluation.metrics import loss_metrics
@@ -92,19 +93,19 @@ def evaluation_experiences_plots(log_folder, metric_list, title_list, ylabel_lis
         # Experiences 0-4
         plot_metric_over_evaluation_experiences(
             os.path.join(log_folder, 'eval_results_experience.csv'), metric,
-            title, 'Training Experience', ylabel, show=False, start_exp=0, end_exp=4,
+            title, 'Training Experience', ylabel, show=False, experiences=range(5),
             savepath=os.path.join(log_folder, f'plot_of_first_5_experiences_{metric[:-4]}.png'),
         )
         # Plot over all experiences
         plot_metric_over_evaluation_experiences(
             os.path.join(log_folder, 'eval_results_experience.csv'), metric,
-            title, 'Training Experience', ylabel, show=False, start_exp=0, end_exp=9,
+            title, 'Training Experience', ylabel, show=False, experiences=range(10),
             savepath=os.path.join(log_folder, f'plot_of_all_10_experiences_{metric[:-4]}.png'),
         )
 
 
 def mean_std_evaluation_experiences_plots(
-        file_paths, metric_list, title_list, ylabel_list, start_exp=0, end_exp=-1, num_exp=None,
+        file_paths, metric_list, title_list, ylabel_list, start_exp=0, end_exp=9, num_exp=None,
 ):
     save_folder = os.path.dirname(file_paths[0])
     for metric, title, ylabel in zip(metric_list, title_list, ylabel_list):
@@ -112,13 +113,13 @@ def mean_std_evaluation_experiences_plots(
             # Experiences 0-4
             plot_metric_over_evaluation_experiences_multiple_runs(
                 file_paths, metric, title, 'Training Experience',
-                ylabel, show=False, start_exp=0, end_exp=4, num_exp=num_exp,
+                ylabel, show=False, experiences=range(5), num_exp=num_exp,
                 savepath=os.path.join(save_folder, f'mean_std_plot_of_first_5_experiences_{metric[:-4]}.png'),
             )
         # Plot over all experiences
         plot_metric_over_evaluation_experiences_multiple_runs(
             file_paths, metric, title, 'Training Experience', ylabel,
-            show=False, start_exp=start_exp, end_exp=end_exp, num_exp=num_exp,
+            show=False, experiences=range(start_exp, end_exp+1), num_exp=num_exp,
             savepath=os.path.join(save_folder, f'mean_std_plot_of_all_10_experiences_{metric[:-4]}.png'),
         )
 

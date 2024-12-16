@@ -5,27 +5,31 @@
     "num_campaigns": 10,
     "train_mb_size": 512,
     "eval_mb_size": 1024,
-    "train_epochs": 1000
+    "train_epochs": 200
   },
   "dataset": {
     "pow_type": "highpow",
     "cluster_type": "tau_based",
     "dataset_type": "not_null",
     "input_columns": [
-      "ane", "ate", "autor", "machtor", "x", "zeff", "gammae", "q", "smag",
-      "alpha", "ani1", "ati0", "normni1", "ti_te0", "lognustar"
+      "ane", "ate", "autor", "machtor", "x",
+      "zeff", "gammae", "q", "smag", "alpha",
+      "ani1", "ati0", "normni1", "ti_te0", "lognustar"
     ],
-    "output_columns": ["efe"],
+    "output_columns": ["efe", "efi", "pfe", "pfi"],
     "input_size": 15,
-    "output_size": 1,
+    "output_size": 4,
     "normalize_inputs": true,
     "normalize_outputs": false
   },
   "architecture": {
-    "name": "MLP",
+    "name": "saved",
+    "model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "model_name": "model",
+    "model_class_name": "MLP",
     "parameters": {
       "input_size": 15,
-      "output_size": 1,
+      "output_size": 4,
       "hidden_size": 1024,
       "hidden_layers": 2,
       "drop_rate": 0.5
@@ -38,9 +42,9 @@
     }
   },
   "optimizer": {
-    "name": "SGD",
+    "name": "Adam",
     "parameters": {
-      "lr": 1e-3,
+      "lr": 2e-3,
       "weight_decay": 1e-4
     }
   },
@@ -53,28 +57,68 @@
       "patience": 10
     }
   },
-  "strategy": {
-    "name": "Naive",
-    "parameters": {
+  "strategy": [
+    {
+      "name": "EWC",
+      "extra_log_folder": "Lambda 10",
+      "parameters": {
+        "ewc_lambda": 10.0
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 10 Buffer 1000",
+      "parameters": {
+        "ewc_lambda": 10.0,
+        "mem_size": 1000
+      }
+    },
+    {
+      "name": "MAS",
+      "extra_log_folder": "Lambda 10 Alpha 0,5",
+      "parameters": {
+        "lambda_reg": 10.0,
+        "alpha": 0.5
+      }
+    },
+    {
+      "name": "MASReplay",
+      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 1000",
+      "parameters": {
+        "lambda_reg": 10.0,
+        "alpha": 0.5,
+        "mem_size": 1000
+      }
+    },
+    {
+      "name": "GEM",
+      "extra_log_folder": "Patterns 200",
+      "parameters": {
+        "patterns_per_exp": 200
+      }
+    },
+    {
+      "name": "GEMReplay",
+      "extra_log_folder": "Patterns 200 Buffer 1000",
+      "parameters": {
+        "patterns_per_exp": 200,
+        "mem_size": 1000
+      }
     }
-  },
+  ],
   "early_stopping": {
     "patience": 50,
-    "delta": 0.1
+    "delta": 0.1,
+    "val_stream_name": "eval_stream",
+    "min_epochs": 100
   },
   "validation_stream": {
-    "val_stream": "test_stream"
+    "val_stream": "eval_stream"
   },
-  "filters": {
-    "by_leq": {
-      "x": 0.6
-    }
-  },
-  "target_transform": {
-    "name": "LogarithmTransform",
-    "parameters": {
-      "log_shift": 0,
-      "final_shift": 0
-    }
+  "start_model_saving": {
+    "save_model": false,
+    "saved_model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "saved_model_name": "model",
+    "add_timestamp": false
   }
 }

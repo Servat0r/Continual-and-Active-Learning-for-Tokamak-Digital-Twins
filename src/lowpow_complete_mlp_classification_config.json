@@ -15,15 +15,15 @@
       "ane", "ate", "x", "q", "smag", "alpha",
       "ani1", "ati0", "normni1", "zeff", "lognustar"
     ],
-    "output_columns": ["efe"],
+    "output_columns": ["efe", "efi", "pfe", "pfi"],
     "input_size": 11,
-    "output_size": 1,
+    "output_size": 4,
     "normalize_inputs": true,
     "normalize_outputs": false
   },
   "architecture": {
-    "name": "saved",
-    "model_folder": "lowpow_mlp_256_2_8runs_classification",
+    "name": "MLP",
+    "model_folder": "lowpow_mlp_256_2_8runs_efe_efi_pfe_pfi_classification",
     "model_name": "model",
     "model_class_name": "ClassificationMLP",
     "parameters": {
@@ -55,12 +55,14 @@
       "patience": 10
     }
   },
-  "strategy": {
-    "name": "JointTraining",
-    "parameters": {
-      "eval_every": 0
+  "strategy": [
+    {
+      "name": "Naive",
+      "extra_log_folder": "Base",
+      "parameters": {
+      }
     }
-  },
+  ],
   "early_stopping": {
     "patience": 25,
     "delta": 0.05,
@@ -71,8 +73,8 @@
     "val_stream": "eval_stream"
   },
   "start_model_saving": {
-    "save_model": false,
-    "saved_model_folder": "lowpow_mlp_256_2_8runs_classification",
+    "save_model": true,
+    "saved_model_folder": "lowpow_mlp_256_2_8runs_efe_efi_pfe_pfi_classification",
     "saved_model_name": "model",
     "add_timestamp": false
   }

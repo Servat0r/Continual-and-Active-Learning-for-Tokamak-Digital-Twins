@@ -58,6 +58,48 @@
   },
   "strategy": [
     {
+      "name": "Naive",
+      "extra_log_folder": "Base",
+      "parameters": {
+      }
+    },
+    {
+      "name": "FromScratchTraining",
+      "extra_log_folder": "Base",
+      "parameters": {
+      }
+    },
+    {
+      "name": "Cumulative",
+      "extra_log_folder": "Base",
+      "parameters": {
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 250",
+      "parameters": {
+        "mem_size": 250
+      }
+    },
+    {
+      "name": "MAS",
+      "extra_log_folder": "Lambda 10 Alpha 0,5",
+      "parameters": {
+        "lambda_reg": 10.0,
+        "alpha": 0.5
+      }
+    },
+    {
+      "name": "MASReplay",
+      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 200",
+      "parameters": {
+        "lambda_reg": 10.0,
+        "alpha": 0.5,
+        "mem_size": 200
+      }
+    },
+    {
       "name": "EWC",
       "extra_log_folder": "Lambda 10",
       "parameters": {
@@ -100,6 +142,7 @@
     },
     {
       "name": "JointTraining",
+      "extra_log_folder": "Base",
       "parameters": {
         "eval_every": 0
       }

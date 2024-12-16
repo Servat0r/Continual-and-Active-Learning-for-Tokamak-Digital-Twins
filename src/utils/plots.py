@@ -1,3 +1,4 @@
+from typing import Iterable
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,20 +8,29 @@ from .misc import extract_metric_values_over_evaluation_experiences
 
 def plot_metric_over_evaluation_experiences(
         file_path_or_buf: str | pd.DataFrame, metric: str, title: str, xlabel: str, ylabel: str,
-        grid: bool = True, legend: bool = True, show: bool = True, start_exp: int = 0, end_exp: int = -1,
-        save: bool = True, savepath: str = None, num_exp: int = None,
+        grid: bool = True, legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
+        save: bool = True, savepath: str = None, num_exp: int = None, from_beginning: bool = True,
 ):
     df: pd.DataFrame = pd.read_csv(file_path_or_buf) if isinstance(file_path_or_buf, str) else file_path_or_buf
     default_num_exp = len(df['eval_exp'].unique())
     num_exp = default_num_exp if num_exp is None else num_exp
-    if (end_exp == -1) or (end_exp >= num_exp): end_exp = default_num_exp - 1
+    if experiences is None:
+        experiences = range(default_num_exp)
     dict_data = {}
-    for eval_exp in range(start_exp, end_exp + 1):
+    for eval_exp in experiences:
         value = df[df['eval_exp'] == eval_exp][metric].to_numpy()
         dict_data[f"Eval Experience {eval_exp}"] = value
     ddf = pd.DataFrame(dict_data)
     plt.figure(figsize=(12, 8))
-    ddf.plot(kind='line', marker='o', linestyle='-')
+    if from_beginning:
+        ddf.plot(kind='line', marker='o', linestyle='-')
+    else:
+        for eval_exp in experiences:
+            column = f"Eval Experience {eval_exp}"
+            plt.plot(
+                ddf.index[eval_exp:], ddf[column][eval_exp:], label=column,
+                kind='line', marker='o', linestyle='-'
+            )
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -33,20 +43,21 @@ def plot_metric_over_evaluation_experiences(
 
 def plot_metrics_over_training_experiences(
         file_path_or_buf: str | pd.DataFrame, metric: str, title: str, xlabel: str, ylabel: str,
-        grid: bool = True, legend: bool = True, show: bool = True, start_exp: int = 0, end_exp: int = -1,
+        grid: bool = True, legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
         save: bool = True, savepath: str = None, num_exp: int = None,
 ):
     df = pd.read_csv(file_path_or_buf) if isinstance(file_path_or_buf, str) else file_path_or_buf
     default_num_exp = len(df['eval_exp'].unique())
     num_exp = default_num_exp if num_exp is None else num_exp
-    if (end_exp == -1) or (end_exp >= num_exp): end_exp = default_num_exp - 1
+    if experiences is None:
+        experiences = range(default_num_exp)
     num_epochs = len(df['epoch'].unique())
     print(num_exp, num_epochs)
     ddf = pd.DataFrame({'epoch': np.arange(num_epochs)})
-    for training_exp in range(start_exp, end_exp + 1):
+    for training_exp in experiences:
         selected_df = df[df['training_exp'] == training_exp][metric]
         ddf[f"Training Exp {training_exp}"] = selected_df
-        plt.plot(np.arange(num_epochs), selected_df, label=f"Training Exp {training_exp}")
+        plt.plot(ddf.index, selected_df, label=f"Training Exp {training_exp}")
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -58,17 +69,18 @@ def plot_metrics_over_training_experiences(
 
 def plot_metric_over_evaluation_experiences_multiple_runs(
         file_paths_or_bufs: list[str | pd.DataFrame], metric: str, title: str, xlabel: str, ylabel: str,
-        grid: bool = True, legend: bool = True, show: bool = True, start_exp: int = 0, end_exp: int = -1,
-        save: bool = True, savepath: str = None, num_exp: int = None,
+        grid: bool = True, legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
+        save: bool = True, savepath: str = None, num_exp: int = None, from_beginning: bool = True,
 ):
     dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths_or_bufs]
     default_num_exp = len(dfs[0]['eval_exp'].unique())
     num_exp = default_num_exp if num_exp is None else num_exp
-    if (end_exp == -1) or (end_exp >= num_exp): end_exp = default_num_exp - 1
+    if experiences is None:
+        experiences = range(default_num_exp)
     ddfs = []
     for df in dfs:
         dict_data = {}
-        for eval_exp in range(start_exp, end_exp + 1):
+        for eval_exp in experiences:
             value = df[df['eval_exp'] == eval_exp][metric].to_numpy()
             dict_data[f"Eval Experience {eval_exp}"] = value
         ddf = pd.DataFrame(dict_data)
@@ -77,17 +89,19 @@ def plot_metric_over_evaluation_experiences_multiple_runs(
     plt.figure(figsize=(12, 8))
     means = {}
     stds = {}
-    for column in ddfs[0].columns[start_exp:end_exp + 1]:
+    for column in ddfs[0].columns:
         stacked = np.vstack([ ddf[column] for ddf in ddfs ])
         means[column] = stacked.mean(axis=0)
         stds[column] = stacked.std(axis=0)
-    for column, mean_values in means.items():
+    for idx, (column, mean_values) in enumerate(means.items()):
         std_vals = stds[column]
+        index = 0 if from_beginning else idx
         plt.plot(
-            x_values, mean_values, label=column, marker='o', linestyle='-'
+            x_values[index:], mean_values[index:], label=column, marker='o', linestyle='-'
         )
         plt.fill_between(
-            x_values, mean_values - std_vals, mean_values + std_vals, alpha=0.2
+            x_values[index:], (mean_values - std_vals)[index:],
+            (mean_values + std_vals)[index:], alpha=0.2
         )
     plt.title(title)
     plt.xlabel(xlabel)
