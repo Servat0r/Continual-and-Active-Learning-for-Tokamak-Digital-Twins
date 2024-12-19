@@ -11,12 +11,30 @@ from .misc import debug_print, extract_metric_info, extract_metric_type
 
 
 ########################### Helpers
-
-
 def get_log_folder(
-        pow_type, cluster_type, task, dataset_type, strategy, folder_name,
-        hour, minute, seconds, day, month, year=2024
-):
+        pow_type: str, cluster_type: str, task: str, dataset_type: str, outputs: str | list[str],
+        strategy: str, extra_log_folder: str, hour: int | str, minute: int | str, seconds: int | str,
+        day: int | str, month: int | str, year: int = 2024, task_id: int = 0,
+) -> str:
+    """
+    Retrieves the EXACT log folder path according to the given parameters.
+    :param pow_type: One of {"highpow", "lowpow"}.
+    :param cluster_type: One of {"Ip_Pin_based", "tau_based", "pca_based"}.
+    :param task: One of {"classification", "regression"}.
+    :param dataset_type: One of {"complete", "not_null"}.
+    :param outputs: Either a string or a list of strings, each per output columns. If a string, it must
+    be of the form of the output of "_".join(outputs_list).
+    :param strategy: Strategy name, e.g. "Naive" or "Replay".
+    :param extra_log_folder: Extra log folder path (see README).
+    :param hour: Hour of the day when run started.
+    :param minute: Minute of the day when run started.
+    :param seconds: Seconds of the day when run started.
+    :param day: Day of the month when run started.
+    :param month: Month of the year when run started.
+    :param year: Year when run started.
+    :param task_id: Run id, in {0, ..., N-1}.
+    :return: Log folder path.
+    """
     params = {
         'hour': hour, 'minute': minute, 'seconds': seconds,
         'day': day, 'month': month, 'year': year
@@ -41,14 +59,24 @@ def get_log_folder(
 
 
 class CustomCSVLogger(BaseLogger):
+    """
+    Custom CSV logger, used to log all needed metrics. For each <type> of train/eval/test, it creates
+    three files: <type>_results_epoch.csv, <type>_results_experience.csv, <type>_results_stream.csv,
+    collecting metric values at the end of each epoch or experience, or at the end of the whole stream.
+    """
 
     VAL = 'val'
     TEST = 'test'
 
     def __init__(
-            self, log_folder=None, metrics: list[GenericPluginMetric] = None,
+            self, log_folder: str = None, metrics: list[GenericPluginMetric] = None,
             val_stream=None,
     ):
+        """
+        :param log_folder: Directory in which to create log files.
+        :param metrics: Which metrics to track.
+        :param val_stream: An object in CLScenario().streams representing validation stream.
+        """
         super().__init__()
         self.log_folder = log_folder if log_folder is not None else "csvlogs"
         os.makedirs(self.log_folder, exist_ok=True)

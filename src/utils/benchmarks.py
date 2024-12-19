@@ -25,6 +25,13 @@ def build_normalization_transforms(data, columns, dtype, transform=None):
 
 
 def subsample(data, column='has_turbulence'):
+    """
+    Subsampling utility, in particular it performs down-sampling to the minimum subset size across
+    all column values.
+    :param data: DataFrame to subsample.
+    :param column: Column to use for subsampling.
+    :return: Down-sampled DataFrame.
+    """
     positives = data[data[column] == 1]
     negatives = data[data[column] == 0]
     positives_len = len(positives)
@@ -38,15 +45,47 @@ def subsample(data, column='has_turbulence'):
 
 
 def make_benchmark(
-        csv_file, train_datasets, eval_datasets, test_datasets, task='regression',
-        input_columns=BASELINE_HIGHPOW_INPUTS, output_columns=BASELINE_HIGHPOW_OUTPUTS,
-        NUM_CAMPAIGNS=5, dtype='float64', *, test_size=0.2, eval_size=0.25,
-        normalize_inputs=False, normalize_outputs=False, log_folder=None,
+        csv_file: str | os.PathLike, train_datasets: list[CSVRegressionDataset],
+        eval_datasets: list[CSVRegressionDataset], test_datasets: list[CSVRegressionDataset],
+        task='regression', input_columns=BASELINE_HIGHPOW_INPUTS, output_columns=BASELINE_HIGHPOW_OUTPUTS,
+        NUM_CAMPAIGNS=5, dtype='float32', *, test_size=0.2, eval_size=0.25,
+        normalize_inputs=True, normalize_outputs=False, log_folder=None,
         dataset_type='complete', filter_by_leq: dict[str, int | float] = None,
         filter_by_geq: dict[str, int | float] = None,
         transform=None, target_transform=None, apply_subsampling=False,
         load_saved_final_data: bool = False,
-):
+) -> CLScenario:
+    """
+    Utility to build Continual Learning benchmark. It can be used either with dynamic building of
+    train/validation/test sets from an original dataset, or by loading already saved datasets. The
+    requirement of train_datasets, eval_datasets and test_datasets is for allowing internal inspections
+    after the benchmark has been built, mainly for debugging purposes.
+    :param csv_file: CSV file to use for loading data.
+    :param train_datasets: List to be used for appending train datasets.
+    :param eval_datasets: List to be used for appending validation datasets.
+    :param test_datasets: List to be used for appending test datasets.
+    :param task: One of {"classification", "regression"}.
+    :param input_columns: Input columns, defaults to BASELINE_HIGHPOW_INPUTS (15 columns for high-power case).
+    :param output_columns: Output columns, defaults to BASELINE_HIGHPOW_OUTPUTS (4 columns for high-power case).
+    :param NUM_CAMPAIGNS: Number of experiences (called "campaigns").
+    :param dtype: Datatype to be used for loading floating-point data. Defaults to 'float32'.
+    :param test_size: Test size w.r.t. the whole dataset. Defaults to 0.2.
+    :param eval_size: Validation size w.r.t. the couple (train, validation). Defaults to 0.25 (i.e., it will be
+    0.25 * 0.8 = 20% of whole dataset).
+    :param normalize_inputs: If True, normalizes inputs. Defaults to True.
+    :param normalize_outputs: If True, normalizes outputs. Defaults to False.
+    :param log_folder: Log folder to be used for saving (mean, std) couples.
+    :param dataset_type: One of {"complete", "not_null"}.
+    :param filter_by_leq: A dictionary used to filter out values in the dataset according to given parameters.
+    Specifically, for each couple (column, value), every row such that row[column] > value will be excluded.
+    :param filter_by_geq: A dictionary used to filter out values in the dataset according to given parameters.
+    Specifically, for each couple (column, value), every row such that row[column] < value will be excluded.
+    :param transform: Extra input transform(s).
+    :param target_transform: Extra output transform(s).
+    :param apply_subsampling: If True, down-samples data. Defaults to False.
+    :param load_saved_final_data: If True, loads already saved and preprocessed datasets. Defaults to False.
+    :return: A CLScenario object representing Continual Learning benchmark.
+    """
     float_precision = dtype
     dtype = get_dtype_from_str(dtype)
     if output_columns is None:

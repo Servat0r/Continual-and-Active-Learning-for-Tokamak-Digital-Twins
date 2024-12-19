@@ -1,3 +1,4 @@
+import gc
 import json
 import sys
 import os
@@ -95,12 +96,14 @@ def evaluation_experiences_plots(log_folder, metric_list, title_list, ylabel_lis
             os.path.join(log_folder, 'eval_results_experience.csv'), metric,
             title, 'Training Experience', ylabel, show=False, experiences=range(5),
             savepath=os.path.join(log_folder, f'plot_of_first_5_experiences_{metric[:-4]}.png'),
+            from_beginning=False,
         )
         # Plot over all experiences
         plot_metric_over_evaluation_experiences(
             os.path.join(log_folder, 'eval_results_experience.csv'), metric,
             title, 'Training Experience', ylabel, show=False, experiences=range(10),
             savepath=os.path.join(log_folder, f'plot_of_all_10_experiences_{metric[:-4]}.png'),
+            from_beginning=False,
         )
 
 
@@ -115,12 +118,14 @@ def mean_std_evaluation_experiences_plots(
                 file_paths, metric, title, 'Training Experience',
                 ylabel, show=False, experiences=range(5), num_exp=num_exp,
                 savepath=os.path.join(save_folder, f'mean_std_plot_of_first_5_experiences_{metric[:-4]}.png'),
+                from_beginning=False,
             )
         # Plot over all experiences
         plot_metric_over_evaluation_experiences_multiple_runs(
             file_paths, metric, title, 'Training Experience', ylabel,
             show=False, experiences=range(start_exp, end_exp+1), num_exp=num_exp,
             savepath=os.path.join(save_folder, f'mean_std_plot_of_all_10_experiences_{metric[:-4]}.png'),
+            from_beginning=False,
         )
 
 
@@ -381,6 +386,10 @@ def task_training_loop(
                     model.train()
             return results
 
+        # garbage collect before running
+        print("[#aa0000]Garbage collecting ...[/#aa0000]")
+        gc.collect()
+
         # train and test loop over the stream of experiences
         print("[#aa0000]Starting ...[/#aa0000]")
         try:
@@ -475,6 +484,8 @@ def main():
         if ignore_strategy:
             debug_print(f"[red]Ignoring {strategy['name']} ... [/red]")
             continue
+        else:
+            debug_print(f"[red]Running strategy {strategy['name']} ... [/red]")
         single_config_data = config_data.copy()
         single_config_data['strategy'] = strategy
         if num_jobs > 1:

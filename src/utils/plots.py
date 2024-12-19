@@ -13,6 +13,31 @@ def plot_metric_over_evaluation_experiences(
         title_size=None, xlabel_size=None, ylabel_size=None, legend_size=None,
         ylim_max=None, xlim_max=None, axes_size=16, base_label = 'Eval Experience',
 ):
+    """
+    Plots the values of a given tracked metric on each evaluation experience data across all training experiences.
+    :param file_path_or_buf: Either file path or DataFrame containing metric values.
+    :param metric: Metric name.
+    :param title: Title of the plot.
+    :param xlabel: X-axis label.
+    :param ylabel: Y-axis label.
+    :param grid: If True, shows grid. Default is True.
+    :param legend: If True, shows legend. Default is True.
+    :param show: If True, shows plot. Default is True.
+    :param experiences: An Iterable representing the evaluation experiences to be used.
+    :param save: If True, saves plot. Default is True.
+    :param savepath: Path to save plot. Default is None.
+    :param num_exp: Number of training experiences to consider for the plot.
+    :param from_beginning: If True, for each evaluation experience i it plots also metric values *before*
+    reaching training experience i, otherwise it plots data only from experience i. Default is True.
+    :param title_size: Size of the title of the plot.
+    :param xlabel_size: Size of the x-axis label of the plot.
+    :param ylabel_size: Size of the y-axis label of the plot.
+    :param legend_size: Size of the legend labels of the plot.
+    :param ylim_max: If not None, fixes the maximum value to be shown on the y-axis. Default is None.
+    :param xlim_max: If not None, fixes the maximum value to be shown on the x-axis. Default is None.
+    :param axes_size: If not None, fixes the size of the numbers to be shown on the axes. Default is None.
+    :param base_label: Legend will use a label of the form f"{base_label} {exp_id}" for each experience.
+    """
     df: pd.DataFrame = pd.read_csv(file_path_or_buf) if isinstance(file_path_or_buf, str) else file_path_or_buf
     default_num_exp = len(df['eval_exp'].unique())
     num_exp = default_num_exp if num_exp is None else num_exp

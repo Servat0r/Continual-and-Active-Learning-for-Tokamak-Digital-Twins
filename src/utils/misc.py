@@ -40,6 +40,10 @@ def get_dtype_from_str(dtype: str):
 
 
 def time_logger(log_file=None):
+    """
+    Utility decorator to track execution time of a given function.
+    :param log_file: Path in which to log final result.
+    """
     def decorator(func):
         def wrapper(*args, **kwargs):
             start_time = datetime.now()
@@ -58,6 +62,15 @@ def time_logger(log_file=None):
 
 
 def extract_metric_info(metric_name: str) -> dict[str, str]:
+    """
+    Breaks a metric name string that follows Avalanche naming convention into its components.
+    Avalanche names metrics according to the pattern: <metric_name>/<phase>/<stream>/Exp<exp_id>,
+    with <phase> in {'Train_Phase', 'Eval_Phase'} and <stream> being the name of the stream (e.g.,
+    'train_stream', 'eval_stream' or 'test_stream').
+    :param metric_name: Full metric name according to Avalanche naming convention.
+    :return: A dict of the form `parameter -> value`, with `parameter` being one of {"name", "phase",
+    "stream", "exp", "exp_number"}, and `value` its corresponding value.
+    """
     values = metric_name.split("/")
     results = {
         'name': values[0],
@@ -79,7 +92,14 @@ def extract_metric_info(metric_name: str) -> dict[str, str]:
     return results
 
 
-def extract_metric_type(metric_name: str):
+def extract_metric_type(metric_name: str) -> tuple[str, str]:
+    """
+    From a metric name expressed according to the convention <metric_name>_<metric_level>, with
+    <metric_level> in {"MB", "Epoch", "Exp", "Stream"}, returns (<metric_name>, <metric_level>)
+    with <metric_level> in {"minibatch", "epoch", "exp", "stream"}.
+    :param metric_name: Metric name.
+    :return: (<metric_name>, <metric_level>).
+    """
     if metric_name.endswith('MB'):
         return metric_name[:-6], 'minibatch'
     elif metric_name.endswith('Epoch'):
@@ -94,7 +114,15 @@ def extract_metric_type(metric_name: str):
 
 def get_means_std_over_evaluation_experiences_multiple_runs(
         file_paths_or_bufs: list[str | pd.DataFrame], mean_savepath: str, std_savepath: str
-):
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Builds DataFrames of mean and std values of given metrics across multiple runs.
+    :param file_paths_or_bufs: List of either strings (file paths) or DataFrame objects, each one
+    typically being the outputs in "eval_results_experience.csv" files produced by CustomCSVLogger.
+    :param mean_savepath: Path to save mean values.
+    :param std_savepath: Path to save std values.
+    :return: The couple (mean, std) DataFrames.
+    """
     dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths_or_bufs]
     columns = dfs[0].columns
     mean_df = pd.DataFrame(columns=columns)
@@ -111,7 +139,14 @@ def get_means_std_over_evaluation_experiences_multiple_runs(
 
 def extract_metric_values_over_evaluation_experiences(
     file_paths_or_bufs: list[str | pd.DataFrame], metric: str, num_exp: int = None,
-):
+) -> list[pd.DataFrame]:
+    """
+    Retrieves all values of a metric over evaluation experiences from a sequence of files.
+    :param file_paths_or_bufs: List of either strings (file paths) or DataFrame objects.
+    :param metric: Metric name whose values will be extracted.
+    :param num_exp: Number of experiences to extract.
+    :return: A list of DataFrames, each one for each file.
+    """
     dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths_or_bufs]
     num_exp = num_exp if num_exp is not None else len(dfs[0]['eval_exp'].unique())
     result_dfs = []
@@ -124,7 +159,7 @@ def extract_metric_values_over_evaluation_experiences(
     return result_dfs
 
 
-def get_all_tasks_paths(base_path: str):
+def get_all_tasks_paths(base_path: str) -> dict[str, str]:
     path = Path(base_path)
     directories = [os.path.join(base_path, d.name) for d in path.iterdir() if d.is_dir()]
     # Order as task_0, task_1, task_2 etc

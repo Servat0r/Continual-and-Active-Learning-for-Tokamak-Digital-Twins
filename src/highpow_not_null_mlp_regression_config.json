@@ -9,7 +9,7 @@
   },
   "dataset": {
     "pow_type": "highpow",
-    "cluster_type": "tau_based",
+    "cluster_type": "Ip_Pin_based",
     "dataset_type": "not_null",
     "input_columns": [
       "ane", "ate", "autor", "machtor", "x",
@@ -60,18 +60,58 @@
   },
   "strategy": [
     {
-      "name": "EWCReplay",
-      "extra_log_folder": "Lambda 10 Buffer 1000 (normalized)",
+      "name": "Naive",
+      "extra_log_folder": "Base (4096 batch size)",
       "ignore": true,
       "parameters": {
+      }
+    },
+    {
+      "name": "FromScratchTraining",
+      "extra_log_folder": "Base (4096 batch size)",
+      "ignore": true,
+      "parameters": {
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 2000 (4096 batch size)",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 2000
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 10000 (4096 batch size)",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 10000
+      }
+    },
+    {
+      "name": "EWC",
+      "extra_log_folder": "Lambda 10 (4096 batch size)",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 10.0
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 10 Buffer 1000 (4096 batch size)",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
         "ewc_lambda": 10.0,
         "mem_size": 1000
       }
     },
     {
       "name": "MAS",
-      "extra_log_folder": "Lambda 10 Alpha 0,5 (normalized)",
-      "ignore": true,
+      "extra_log_folder": "Lambda 10 Alpha 0,5 (4096 batch size)",
+      "ignore": false,
       "parameters": {
         "lambda_reg": 10.0,
         "alpha": 0.5
@@ -79,8 +119,8 @@
     },
     {
       "name": "MASReplay",
-      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 1000 (normalized)",
-      "ignore": true,
+      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 1000 (4096 batch size)",
+      "ignore": false,
       "parameters": {
         "lambda_reg": 10.0,
         "alpha": 0.5,
@@ -89,16 +129,16 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "Patterns 100 (normalized)",
-      "ignore": true,
+      "extra_log_folder": "Patterns 100 (4096 batch size)",
+      "ignore": false,
       "parameters": {
         "patterns_per_exp": 100
       }
     },
     {
       "name": "GEMReplay",
-      "extra_log_folder": "Patterns 100 Buffer 1000 (normalized)",
-      "ignore": true,
+      "extra_log_folder": "Patterns 100 Buffer 1000 (4096 batch size)",
+      "ignore": false,
       "parameters": {
         "patterns_per_exp": 100,
         "mem_size": 1000
@@ -106,23 +146,16 @@
     },
     {
       "name": "JointTraining",
-      "extra_log_folder": "Base (normalized)",
-      "ignore": false,
+      "extra_log_folder": "Base (4096 batch size)",
+      "ignore": true,
       "parameters": {
         "eval_every": 0
       }
     },
     {
-      "name": "FromScratchTraining",
-      "extra_log_folder": "Base (normalized)",
-      "ignore": false,
-      "parameters": {
-      }
-    },
-    {
       "name": "Cumulative",
-      "extra_log_folder": "Base (normalized)",
-      "ignore": false,
+      "extra_log_folder": "Base (4096 batch size)",
+      "ignore": true,
       "parameters": {
       }
     }
