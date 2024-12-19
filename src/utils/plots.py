@@ -11,7 +11,7 @@ def plot_metric_over_evaluation_experiences(
         grid: bool = True, legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
         save: bool = True, savepath: str = None, num_exp: int = None, from_beginning: bool = True,
         title_size=None, xlabel_size=None, ylabel_size=None, legend_size=None,
-        ylim_max=None, xlim_max=None, axes_size=16,
+        ylim_max=None, xlim_max=None, axes_size=16, base_label = 'Eval Experience',
 ):
     df: pd.DataFrame = pd.read_csv(file_path_or_buf) if isinstance(file_path_or_buf, str) else file_path_or_buf
     default_num_exp = len(df['eval_exp'].unique())
@@ -21,14 +21,14 @@ def plot_metric_over_evaluation_experiences(
     dict_data = {}
     for eval_exp in experiences:
         value = df[df['eval_exp'] == eval_exp][metric].to_numpy()
-        dict_data[f"Eval Experience {eval_exp}"] = value
+        dict_data[f"{base_label} {eval_exp}"] = value
     ddf = pd.DataFrame(dict_data)
     plt.figure(figsize=(12, 8))
     if from_beginning:
         ddf.plot(kind='line', marker='o', linestyle='-')
     else:
         for eval_exp in experiences:
-            column = f"Eval Experience {eval_exp}"
+            column = f"{base_label} {eval_exp}"
             plt.plot(
                 ddf.index[eval_exp:], ddf[column][eval_exp:], label=column,
                 marker='o', linestyle='-'
@@ -51,7 +51,7 @@ def plot_metric_over_evaluation_experiences(
 def plot_metrics_over_training_experiences(
         file_path_or_buf: str | pd.DataFrame, metric: str, title: str, xlabel: str, ylabel: str,
         grid: bool = True, legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
-        save: bool = True, savepath: str = None, num_exp: int = None,
+        save: bool = True, savepath: str = None, num_exp: int = None, base_label: str = 'Training Experience'
 ):
     df = pd.read_csv(file_path_or_buf) if isinstance(file_path_or_buf, str) else file_path_or_buf
     default_num_exp = len(df['eval_exp'].unique())
@@ -63,8 +63,8 @@ def plot_metrics_over_training_experiences(
     ddf = pd.DataFrame({'epoch': np.arange(num_epochs)})
     for training_exp in experiences:
         selected_df = df[df['training_exp'] == training_exp][metric]
-        ddf[f"Training Exp {training_exp}"] = selected_df
-        plt.plot(ddf.index, selected_df, label=f"Training Exp {training_exp}")
+        ddf[f"{base_label} {training_exp}"] = selected_df
+        plt.plot(ddf.index, selected_df, label=f"{base_label} {training_exp}")
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -78,6 +78,7 @@ def plot_metric_over_evaluation_experiences_multiple_runs(
         file_paths_or_bufs: list[str | pd.DataFrame], metric: str, title: str, xlabel: str, ylabel: str,
         grid: bool = True, legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
         save: bool = True, savepath: str = None, num_exp: int = None, from_beginning: bool = True,
+        base_label: str = 'Eval Experience'
 ):
     dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths_or_bufs]
     default_num_exp = len(dfs[0]['eval_exp'].unique())
@@ -89,7 +90,7 @@ def plot_metric_over_evaluation_experiences_multiple_runs(
         dict_data = {}
         for eval_exp in experiences:
             value = df[df['eval_exp'] == eval_exp][metric].to_numpy()
-            dict_data[f"Eval Experience {eval_exp}"] = value
+            dict_data[f"{base_label} {eval_exp}"] = value
         ddf = pd.DataFrame(dict_data)
         ddfs.append(ddf)
     x_values = list(range(num_exp))
@@ -123,6 +124,7 @@ def plot_metric_over_evaluation_experiences_multiple_runs(
 def plot_forgetting_over_multiple_strategies(
     file_paths_or_bufs: dict[str, str | pd.DataFrame], experience_id: int, grid: bool = True,
     legend: bool = True, show: bool = True, save: bool = True, savepath: str = None,
+    title: str = None, xlabel: str = None, ylabel: str = None,
 ):
     keys, values = [], []
     for k, v in file_paths_or_bufs.items():
@@ -134,10 +136,12 @@ def plot_forgetting_over_multiple_strategies(
     series = [df[experience_id].to_numpy() for df in result_dfs]
     dict_data = {key: data for key, data in zip(keys, series)}
     df = pd.DataFrame(dict_data)
+    base_title = title if title is not None else f"Forgetting on Evaluation Data of Experience"
+    xlabel = xlabel if xlabel is not None else "Evaluation Experience"
+    ylabel = ylabel if ylabel is not None else "Forgetting"
     df.plot(
-        kind='line', figsize=(12, 8),
-        title=f"Forgetting over CL Strategies on Evaluation Data of Experience {experience_id}",
-        xlabel="Evaluation Experience", ylabel="Forgetting", grid=grid, legend=legend
+        kind='line', figsize=(12, 8), title=f"{base_title} {experience_id}",
+        xlabel=xlabel, ylabel=ylabel, grid=grid, legend=legend
     )
     if save: plt.savefig(savepath)
     if show: plt.show()
