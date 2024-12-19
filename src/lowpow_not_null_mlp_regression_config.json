@@ -3,13 +3,13 @@
     "task": "regression",
     "dtype": "float32",
     "num_campaigns": 10,
-    "train_mb_size": 512,
-    "eval_mb_size": 1024,
-    "train_epochs": 200
+    "train_mb_size": 4096,
+    "eval_mb_size": 16384,
+    "train_epochs": 250
   },
   "dataset": {
     "pow_type": "lowpow",
-    "cluster_type": "Ip_Pin_based",
+    "cluster_type": "tau_based",
     "dataset_type": "not_null",
     "input_columns": [
       "ane", "ate", "x", "q", "smag", "alpha",
@@ -19,7 +19,8 @@
     "input_size": 11,
     "output_size": 4,
     "normalize_inputs": true,
-    "normalize_outputs": false
+    "normalize_outputs": false,
+    "load_saved_final_data": true
   },
   "architecture": {
     "name": "saved",
@@ -59,32 +60,40 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "Base",
+      "extra_log_folder": "Base (normalized)",
       "parameters": {
       }
     },
     {
       "name": "FromScratchTraining",
-      "extra_log_folder": "Base",
-      "parameters": {
-      }
-    },
-    {
-      "name": "Cumulative",
-      "extra_log_folder": "Base",
+      "extra_log_folder": "Base (normalized)",
       "parameters": {
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 250",
+      "extra_log_folder": "Buffer 1000 (normalized)",
       "parameters": {
-        "mem_size": 250
+        "mem_size": 1000
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 2000 (normalized)",
+      "parameters": {
+        "mem_size": 2000
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 10000 (normalized)",
+      "parameters": {
+        "mem_size": 10000
       }
     },
     {
       "name": "MAS",
-      "extra_log_folder": "Lambda 10 Alpha 0,5",
+      "extra_log_folder": "Lambda 10 Alpha 0,5 (normalized)",
       "parameters": {
         "lambda_reg": 10.0,
         "alpha": 0.5
@@ -92,7 +101,7 @@
     },
     {
       "name": "MASReplay",
-      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 200",
+      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 200 (normalized)",
       "parameters": {
         "lambda_reg": 10.0,
         "alpha": 0.5,
@@ -101,7 +110,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "Lambda 10",
+      "extra_log_folder": "Lambda 10 (normalized)",
       "parameters": {
         "ewc_lambda": 10.0,
         "mode": "separate"
@@ -109,16 +118,7 @@
     },
     {
       "name": "EWCReplay",
-      "extra_log_folder": "Lambda 10 Buffer 200",
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 10.0,
-        "mem_size": 200
-      }
-    },
-    {
-      "name": "EWCReplay",
-      "extra_log_folder": "Lambda 10 Buffer 1000",
+      "extra_log_folder": "Lambda 10 Buffer 1000 (normalized)",
       "parameters": {
         "mode": "separate",
         "ewc_lambda": 10.0,
@@ -127,24 +127,30 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "Patterns 200",
+      "extra_log_folder": "Patterns 100 (normalized)",
       "parameters": {
-        "patterns_per_exp": 200
+        "patterns_per_exp": 100
       }
     },
     {
       "name": "GEMReplay",
-      "extra_log_folder": "Patterns 200 Buffer 200",
+      "extra_log_folder": "Patterns 100 Buffer 200 (normalized)",
       "parameters": {
-        "patterns_per_exp": 200,
+        "patterns_per_exp": 100,
         "mem_size": 200
       }
     },
     {
       "name": "JointTraining",
-      "extra_log_folder": "Base",
+      "extra_log_folder": "Base (normalized)",
       "parameters": {
         "eval_every": 0
+      }
+    },
+    {
+      "name": "Cumulative",
+      "extra_log_folder": "Base (normalized)",
+      "parameters": {
       }
     }
   ],

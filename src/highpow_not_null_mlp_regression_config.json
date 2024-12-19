@@ -3,8 +3,8 @@
     "task": "regression",
     "dtype": "float32",
     "num_campaigns": 10,
-    "train_mb_size": 512,
-    "eval_mb_size": 1024,
+    "train_mb_size": 4096,
+    "eval_mb_size": 16384,
     "train_epochs": 200
   },
   "dataset": {
@@ -20,7 +20,8 @@
     "input_size": 15,
     "output_size": 4,
     "normalize_inputs": true,
-    "normalize_outputs": false
+    "normalize_outputs": false,
+    "load_saved_final_data": true
   },
   "architecture": {
     "name": "saved",
@@ -59,15 +60,9 @@
   },
   "strategy": [
     {
-      "name": "EWC",
-      "extra_log_folder": "Lambda 10",
-      "parameters": {
-        "ewc_lambda": 10.0
-      }
-    },
-    {
       "name": "EWCReplay",
-      "extra_log_folder": "Lambda 10 Buffer 1000",
+      "extra_log_folder": "Lambda 10 Buffer 1000 (normalized)",
+      "ignore": true,
       "parameters": {
         "ewc_lambda": 10.0,
         "mem_size": 1000
@@ -75,7 +70,8 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "Lambda 10 Alpha 0,5",
+      "extra_log_folder": "Lambda 10 Alpha 0,5 (normalized)",
+      "ignore": true,
       "parameters": {
         "lambda_reg": 10.0,
         "alpha": 0.5
@@ -83,7 +79,8 @@
     },
     {
       "name": "MASReplay",
-      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 1000",
+      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 1000 (normalized)",
+      "ignore": true,
       "parameters": {
         "lambda_reg": 10.0,
         "alpha": 0.5,
@@ -92,17 +89,41 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "Patterns 200",
+      "extra_log_folder": "Patterns 100 (normalized)",
+      "ignore": true,
       "parameters": {
-        "patterns_per_exp": 200
+        "patterns_per_exp": 100
       }
     },
     {
       "name": "GEMReplay",
-      "extra_log_folder": "Patterns 200 Buffer 1000",
+      "extra_log_folder": "Patterns 100 Buffer 1000 (normalized)",
+      "ignore": true,
       "parameters": {
-        "patterns_per_exp": 200,
+        "patterns_per_exp": 100,
         "mem_size": 1000
+      }
+    },
+    {
+      "name": "JointTraining",
+      "extra_log_folder": "Base (normalized)",
+      "ignore": false,
+      "parameters": {
+        "eval_every": 0
+      }
+    },
+    {
+      "name": "FromScratchTraining",
+      "extra_log_folder": "Base (normalized)",
+      "ignore": false,
+      "parameters": {
+      }
+    },
+    {
+      "name": "Cumulative",
+      "extra_log_folder": "Base (normalized)",
+      "ignore": false,
+      "parameters": {
       }
     }
   ],

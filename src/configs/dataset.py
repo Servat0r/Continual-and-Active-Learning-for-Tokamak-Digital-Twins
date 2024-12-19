@@ -15,6 +15,7 @@ def dataset_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         'dataset_type': 'not_null',
         'normalize_inputs': False,
         'normalize_outputs': False,
+        'load_saved_final_data': False,
     }
     default_config.update(data)
     assert isinstance(default_config['input_columns'], list)

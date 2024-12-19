@@ -13,11 +13,12 @@ def get_normalization_transforms(
         data, input_columns, output_columns, transform=None, target_transform=None, dtype=float32,
         normalize_inputs: bool = True, normalize_outputs: bool = False,
 ):
+    first_exp_data = data[data.campaign == 0]
     if normalize_inputs:
-        norm_transform, (mean, std) = build_normalization_transforms(data, input_columns, dtype)
+        norm_transform, (mean, std) = build_normalization_transforms(first_exp_data, input_columns, dtype)
         transform = transforms.Compose([norm_transform, transform]) if transform else norm_transform
     if normalize_outputs:
-        norm_target_transform, (mean, std) = build_normalization_transforms(data, output_columns, dtype)
+        norm_target_transform, (mean, std) = build_normalization_transforms(first_exp_data, output_columns, dtype)
         target_transform = transforms.Compose([norm_target_transform, target_transform]) \
             if target_transform else norm_target_transform
     return transform, target_transform

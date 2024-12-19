@@ -10,6 +10,8 @@ def plot_metric_over_evaluation_experiences(
         file_path_or_buf: str | pd.DataFrame, metric: str, title: str, xlabel: str, ylabel: str,
         grid: bool = True, legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
         save: bool = True, savepath: str = None, num_exp: int = None, from_beginning: bool = True,
+        title_size=None, xlabel_size=None, ylabel_size=None, legend_size=None,
+        ylim_max=None, xlim_max=None, axes_size=16,
 ):
     df: pd.DataFrame = pd.read_csv(file_path_or_buf) if isinstance(file_path_or_buf, str) else file_path_or_buf
     default_num_exp = len(df['eval_exp'].unique())
@@ -29,13 +31,18 @@ def plot_metric_over_evaluation_experiences(
             column = f"Eval Experience {eval_exp}"
             plt.plot(
                 ddf.index[eval_exp:], ddf[column][eval_exp:], label=column,
-                kind='line', marker='o', linestyle='-'
+                marker='o', linestyle='-'
             )
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    if ylim_max is not None:
+        plt.ylim(0, ylim_max)
+    if xlim_max is not None:
+        plt.xlim(0, xlim_max)
+    plt.tick_params(axis='both', labelsize=axes_size)
+    plt.title(title, fontsize=title_size)
+    plt.xlabel(xlabel, fontsize=xlabel_size)
+    plt.ylabel(ylabel, fontsize=ylabel_size)
     plt.grid(grid)
-    if legend: plt.legend()
+    if legend: plt.legend(fontsize=legend_size)
     if show: plt.show()
     if save: plt.savefig(savepath)
     plt.close()

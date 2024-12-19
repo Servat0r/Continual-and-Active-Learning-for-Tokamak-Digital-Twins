@@ -45,63 +45,76 @@ def make_benchmark(
         dataset_type='complete', filter_by_leq: dict[str, int | float] = None,
         filter_by_geq: dict[str, int | float] = None,
         transform=None, target_transform=None, apply_subsampling=False,
+        load_saved_final_data: bool = False,
 ):
     float_precision = dtype
     dtype = get_dtype_from_str(dtype)
     if output_columns is None:
         output_columns = BASELINE_HIGHPOW_OUTPUTS
     debug_print(output_columns)
-    data = pd.read_csv(csv_file)
-    debug_print(f"There are {len(data)} items in the dataset in {csv_file}.")
-    filter_function = lambda x: 1 if any([x[column] for column in output_columns]) else 0
-    data['has_turbulence'] = data.apply(filter_function, axis=1)
-    def stratification_function(x):
-        mult = 1 if x['has_turbulence'] == 1 else -1
-        return x['campaign'] * mult
-    data['stratify'] = data.apply(stratification_function, axis=1)
-    # Split the data into train and test sets with stratification
-    dev_data, test_data = train_test_split(
-        data, test_size=test_size, random_state=42, shuffle=True, stratify=data.stratify
-    )
-    train_data, eval_data = train_test_split(
-        dev_data, test_size=eval_size, random_state=42, shuffle=True, stratify=dev_data.stratify
-    )
     dirname = os.path.dirname(csv_file)
-    train_data.to_csv(f'{dirname}/raw_train_data_{task}.csv', index=False)
-    eval_data.to_csv(f'{dirname}/raw_eval_data_{task}.csv', index=False)
-    test_data.to_csv(f'{dirname}/raw_test_data_{task}.csv', index=False)
-    train_data = train_data.drop(columns=['stratify'])
-    eval_data = eval_data.drop(columns=['stratify'])
-    test_data = test_data.drop(columns=['stratify'])
-    print(
-        f"After stratification: ",
-        f"train_data has {len(train_data[train_data.has_turbulence == 1])} positives and {len(train_data[train_data.has_turbulence == 0])} negatives.",
-        f"eval_data has {len(eval_data[eval_data.has_turbulence == 1])} positives and {len(eval_data[eval_data.has_turbulence == 0])} negatives.",
-        f"test_data has {len(test_data[test_data.has_turbulence == 1])} positives and {len(test_data[test_data.has_turbulence == 0])} negatives.",
-        sep='\n', end='\n', flush=True,
-    )
-    # Subsampling and Stratification
-    if apply_subsampling:
-        train_data = subsample(train_data, column='has_turbulence')
-        eval_data = subsample(eval_data, column='has_turbulence')
-        test_data = subsample(test_data, column='has_turbulence')
-        total_data = len(train_data) + len(eval_data) + len(test_data)
-        debug_print(
-            f"There are {total_data} items in the dataset after subsampling:"
-            f"{len(train_data)} train, {len(eval_data)} eval, and {len(test_data)} test items."
+    if not load_saved_final_data:
+        data = pd.read_csv(csv_file)
+        debug_print(f"There are {len(data)} items in the dataset in {csv_file}.")
+        filter_function = lambda x: 1 if any([x[column] for column in output_columns]) else 0
+        data['has_turbulence'] = data.apply(filter_function, axis=1)
+        def stratification_function(x):
+            mult = 1 if x['has_turbulence'] == 1 else -1
+            return x['campaign'] * mult
+        data['stratify'] = data.apply(stratification_function, axis=1)
+        # Split the data into train and test sets with stratification
+        dev_data, test_data = train_test_split(
+            data, test_size=test_size, random_state=42, shuffle=True, stratify=data.stratify
         )
-    if dataset_type == 'not_null':
-        train_data = train_data[train_data.has_turbulence != 0]
-        eval_data = eval_data[eval_data.has_turbulence != 0]
-        test_data = test_data[test_data.has_turbulence != 0]
-        total_data = len(train_data) + len(eval_data) + len(test_data)
-        debug_print(
-            f"There are {total_data} items in the dataset after filtering:"
-            f"{len(train_data)} train, {len(eval_data)} eval, and {len(test_data)} test items."
+        train_data, eval_data = train_test_split(
+            dev_data, test_size=eval_size, random_state=42, shuffle=True, stratify=dev_data.stratify
         )
+        train_data.to_csv(f'{dirname}/raw_train_data_{task}_{dataset_type}.csv', index=False)
+        eval_data.to_csv(f'{dirname}/raw_eval_data_{task}_{dataset_type}.csv', index=False)
+        test_data.to_csv(f'{dirname}/raw_test_data_{task}_{dataset_type}.csv', index=False)
+        train_data = train_data.drop(columns=['stratify'])
+        eval_data = eval_data.drop(columns=['stratify'])
+        test_data = test_data.drop(columns=['stratify'])
+        print(
+            f"After stratification: ",
+            f"train_data has {len(train_data[train_data.has_turbulence == 1])} positives and {len(train_data[train_data.has_turbulence == 0])} negatives.",
+            f"eval_data has {len(eval_data[eval_data.has_turbulence == 1])} positives and {len(eval_data[eval_data.has_turbulence == 0])} negatives.",
+            f"test_data has {len(test_data[test_data.has_turbulence == 1])} positives and {len(test_data[test_data.has_turbulence == 0])} negatives.",
+            sep='\n', end='\n', flush=True,
+        )
+        # Subsampling and Stratification
+        if apply_subsampling:
+            train_data = subsample(train_data, column='has_turbulence')
+            eval_data = subsample(eval_data, column='has_turbulence')
+            test_data = subsample(test_data, column='has_turbulence')
+            total_data = len(train_data) + len(eval_data) + len(test_data)
+            debug_print(
+                f"There are {total_data} items in the dataset after subsampling:"
+                f"{len(train_data)} train, {len(eval_data)} eval, and {len(test_data)} test items."
+            )
+        if dataset_type == 'not_null':
+            train_data = train_data[train_data.has_turbulence != 0]
+            eval_data = eval_data[eval_data.has_turbulence != 0]
+            test_data = test_data[test_data.has_turbulence != 0]
+            total_data = len(train_data) + len(eval_data) + len(test_data)
+            debug_print(
+                f"There are {total_data} items in the dataset after filtering:"
+                f"{len(train_data)} train, {len(eval_data)} eval, and {len(test_data)} test items."
+            )
+        train_data.to_csv(f'{dirname}/final_train_data_{task}_{dataset_type}.csv', index=False)
+        eval_data.to_csv(f'{dirname}/final_eval_data_{task}_{dataset_type}.csv', index=False)
+        test_data.to_csv(f'{dirname}/final_test_data_{task}_{dataset_type}.csv', index=False)
+    else:
+        train_data = pd.read_csv(f'{dirname}/final_train_data_{task}_{dataset_type}.csv')
+        eval_data = pd.read_csv(f'{dirname}/final_eval_data_{task}_{dataset_type}.csv')
+        test_data = pd.read_csv(f'{dirname}/final_test_data_{task}_{dataset_type}.csv')
+
     if task == 'classification':
         output_columns = ['has_turbulence']
+
+    # Handling normalizations
     first_exp_train_data = train_data[train_data.campaign == 0]
+    print(len(first_exp_train_data))
     if normalize_inputs:
         norm_transform, (mean, std) = build_normalization_transforms(first_exp_train_data, input_columns, dtype)
         if log_folder:
@@ -116,9 +129,7 @@ def make_benchmark(
         target_transform = transforms.Compose([norm_target_transform, target_transform]) \
             if target_transform else norm_target_transform
         # todo be careful on the fact that normalization is not included for inverse()-based preprocess_* methods
-    train_data.to_csv(f'{dirname}/final_train_data_{task}.csv', index=False)
-    eval_data.to_csv(f'{dirname}/final_eval_data_{task}.csv', index=False)
-    test_data.to_csv(f'{dirname}/final_test_data_{task}.csv', index=False)
+
     for campaign in range(NUM_CAMPAIGNS):
         print(f"[yellow]Loading data for campaign {campaign} ...[/yellow]")
         train_dataset, eval_dataset, test_dataset = get_avalanche_csv_regression_datasets(

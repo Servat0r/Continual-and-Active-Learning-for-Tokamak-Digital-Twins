@@ -172,6 +172,7 @@ def task_training_loop(
     dataset_type = config_parser['dataset_type']
     normalize_inputs = config_parser['normalize_inputs']
     normalize_outputs = config_parser['normalize_outputs']
+    load_saved_final_data = config_parser['load_saved_final_data']
     # Architecture
     model = config_parser['architecture']
     # Loss
@@ -277,6 +278,7 @@ def task_training_loop(
             dataset_type=dataset_type, filter_by_geq=filters_by_geq, filter_by_leq=filters_by_leq,
             apply_subsampling=True, transform=cl_strategy_transform_transform,
             target_transform=cl_strategy_target_transform_transform,
+            load_saved_final_data=load_saved_final_data,
         )
 
         train_stream = benchmark.train_stream
@@ -469,6 +471,10 @@ def main():
     if not isinstance(config_data['strategy'], list):
         config_data['strategy'] = [config_data['strategy']]
     for strategy in config_data['strategy']:
+        ignore_strategy = strategy.get('ignore', False)
+        if ignore_strategy:
+            debug_print(f"[red]Ignoring {strategy['name']} ... [/red]")
+            continue
         single_config_data = config_data.copy()
         single_config_data['strategy'] = strategy
         if num_jobs > 1:
