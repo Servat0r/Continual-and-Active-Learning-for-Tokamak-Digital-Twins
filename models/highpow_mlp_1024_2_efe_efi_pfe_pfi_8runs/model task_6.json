@@ -1,0 +1,13 @@
+{
+    "name": "MLP",
+    "model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "model_name": "model",
+    "model_class_name": "MLP",
+    "parameters": {
+        "input_size": 15,
+        "output_size": 4,
+        "hidden_size": 1024,
+        "hidden_layers": 2,
+        "drop_rate": 0.5
+    }
+}
