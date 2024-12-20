@@ -49,10 +49,13 @@ def get_log_folder(
     month = params['month']
     year = params['year']
     basepath = f"{year}-{month}-{day}_{hour}-{minute}-{seconds}"
-    index_dir = os.path.join('logs', pow_type, cluster_type, task, dataset_type, strategy)
+    outputs_string = outputs if isinstance(outputs, str) else '_'.join(outputs)
+    index_dir = os.path.join(
+        'logs', pow_type, cluster_type, task, dataset_type, outputs_string, strategy, extra_log_folder
+    )
     print(index_dir)
     for dirname in os.listdir(index_dir):
-        if dirname.startswith(basepath):
+        if dirname.startswith(basepath) and dirname.endswith(f"task_{task_id}"):
             return os.path.join(index_dir, dirname)
     raise ValueError(f"Not found any directory starting with \"{basepath}\"")
 ############################à
@@ -131,6 +134,7 @@ class CustomCSVLogger(BaseLogger):
             print(
                 "training_exp",
                 "epoch",
+                "lr",
                 *self.metric_names[filetype],
                 sep=",",
                 file=file,
@@ -141,6 +145,7 @@ class CustomCSVLogger(BaseLogger):
                 print(
                     "training_exp",
                     "epoch",
+                    "lr",
                     *self.metric_names[filetype],
                     sep=",",
                     file=file,
@@ -181,7 +186,7 @@ class CustomCSVLogger(BaseLogger):
             return str(m_val)
 
     def print_train_metrics(
-        self, training_exp, epoch, metric_values, type,
+        self, training_exp, epoch, lr, metric_values, type,
     ):
         file = self.training_files[type]
         metric_names = self.metric_names[type]
@@ -195,6 +200,7 @@ class CustomCSVLogger(BaseLogger):
         print(
             training_exp,
             epoch,
+            lr,
             *metric_raw_values,
             sep=",",
             file=file,
@@ -202,7 +208,7 @@ class CustomCSVLogger(BaseLogger):
         )
 
     def print_eval_metrics(
-        self, eval_exp, training_exp, metric_values, out_type, in_type, epoch=None,
+        self, eval_exp, training_exp, metric_values, out_type, in_type, epoch=None, lr=None,
     ):
         if self.stream_type == self.VAL:
             file = self.eval_files[out_type]
@@ -222,6 +228,7 @@ class CustomCSVLogger(BaseLogger):
             print(
                 training_exp,
                 epoch,
+                lr,
                 *metric_raw_values,
                 sep=",",
                 file=file,
@@ -254,6 +261,7 @@ class CustomCSVLogger(BaseLogger):
         self.print_train_metrics(
             self.training_exp_id,
             strategy.clock.train_exp_epochs,
+            strategy.optimizer.param_groups[0]['lr'],
             metric_values,
             type='epoch',
         )
@@ -280,6 +288,7 @@ class CustomCSVLogger(BaseLogger):
                 out_type='epoch',
                 in_type='exp',
                 epoch=strategy.clock.train_exp_epochs,
+                lr=strategy.optimizer.param_groups[0]['lr'],
             )
         else:
             self.print_eval_metrics(

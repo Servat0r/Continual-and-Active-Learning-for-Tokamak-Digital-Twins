@@ -482,10 +482,10 @@ def main():
     for strategy in config_data['strategy']:
         ignore_strategy = strategy.get('ignore', False)
         if ignore_strategy:
-            debug_print(f"[red]Ignoring {strategy['name']} ... [/red]")
+            debug_print(f"[red]Ignoring strategy: {strategy['name']} ... [/red]")
             continue
         else:
-            debug_print(f"[red]Running strategy {strategy['name']} ... [/red]")
+            debug_print(f"[red]Running strategy: {strategy['name']} ... [/red]")
         single_config_data = config_data.copy()
         single_config_data['strategy'] = strategy
         if num_jobs > 1:

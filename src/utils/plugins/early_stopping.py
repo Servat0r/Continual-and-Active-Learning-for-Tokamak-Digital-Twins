@@ -27,7 +27,7 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
         self.delta = delta
         self.best_metric = None
         self.wait = 0
-        self.metric = metric if metric.endswith('_Exp') else metric + '_Exp'
+        self.metric = metric if metric.endswith('_Epoch') else metric + '_Epoch'
         self.stopped_epoch = 0
         self.current_epoch = 0
         self.type = type

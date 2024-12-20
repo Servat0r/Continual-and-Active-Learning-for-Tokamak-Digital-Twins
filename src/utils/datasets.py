@@ -158,12 +158,12 @@ BASELINE_HIGHPOW_INPUTS = [
     'ane', 'ate', 'autor', 'machtor', 'x', 'zeff', 'gammae', 'q', 'smag',
     'alpha', 'ani1', 'ati0', 'normni1', 'ti_te0', 'lognustar'
 ]
-BASELINE_HIGHPOW_OUTPUTS = ['efi', 'efe', 'pfi', 'pfe']
+BASELINE_HIGHPOW_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
 # Low Power
 BASELINE_LOWPOW_INPUTS = [
     'ane', 'ate', 'x', 'q', 'smag', 'alpha', 'ani1', 'ati0', 'normni1', 'zeff', 'lognustar'
 ]
-BASELINE_LOWPOW_OUTPUTS = ['efi', 'efe', 'pfi', 'pfe']
+BASELINE_LOWPOW_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
 
 
 __all__ = [

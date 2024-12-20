@@ -60,40 +60,46 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "Base (normalized)",
+      "ignore": false,
+      "extra_log_folder": "Base (4096 batch size)",
       "parameters": {
       }
     },
     {
       "name": "FromScratchTraining",
-      "extra_log_folder": "Base (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Base (4096 batch size)",
       "parameters": {
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 1000 (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Buffer 1000 (4096 batch size)",
       "parameters": {
         "mem_size": 1000
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 2000 (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Buffer 2000 (4096 batch size)",
       "parameters": {
         "mem_size": 2000
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 10000 (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Buffer 10000 (4096 batch size)",
       "parameters": {
         "mem_size": 10000
       }
     },
     {
       "name": "MAS",
-      "extra_log_folder": "Lambda 10 Alpha 0,5 (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Lambda 10 Alpha 0,5 (4096 batch size)",
       "parameters": {
         "lambda_reg": 10.0,
         "alpha": 0.5
@@ -101,7 +107,8 @@
     },
     {
       "name": "MASReplay",
-      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 200 (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 200 (4096 batch size)",
       "parameters": {
         "lambda_reg": 10.0,
         "alpha": 0.5,
@@ -110,7 +117,8 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "Lambda 10 (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Lambda 10 (4096 batch size)",
       "parameters": {
         "ewc_lambda": 10.0,
         "mode": "separate"
@@ -118,7 +126,8 @@
     },
     {
       "name": "EWCReplay",
-      "extra_log_folder": "Lambda 10 Buffer 1000 (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Lambda 10 Buffer 1000 (4096 batch size)",
       "parameters": {
         "mode": "separate",
         "ewc_lambda": 10.0,
@@ -127,14 +136,16 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "Patterns 100 (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Patterns 100 (4096 batch size)",
       "parameters": {
         "patterns_per_exp": 100
       }
     },
     {
       "name": "GEMReplay",
-      "extra_log_folder": "Patterns 100 Buffer 200 (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Patterns 100 Buffer 200 (4096 batch size)",
       "parameters": {
         "patterns_per_exp": 100,
         "mem_size": 200
@@ -142,14 +153,16 @@
     },
     {
       "name": "JointTraining",
-      "extra_log_folder": "Base (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Base (4096 batch size)",
       "parameters": {
         "eval_every": 0
       }
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "Base (normalized)",
+      "ignore": true,
+      "extra_log_folder": "Base (4096 batch size)",
       "parameters": {
       }
     }
