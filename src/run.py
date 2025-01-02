@@ -68,20 +68,15 @@ def make_scheduler(scheduler_config, optimizer):
 def get_metrics(loss_type):
     if loss_type == 'GaussianNLL':
         metrics = \
-            loss_metrics(epoch=True, experience=True, stream=True) + \
             gaussian_mse_metrics(epoch=True, experience=True, stream=True) + \
             renamed_forgetting_metrics(experience=True, stream=True) + \
             renamed_bwt_metrics(experience=True, stream=True)
     elif loss_type in ['BCE', 'bce', 'BCEWithLogits', 'bce_with_logits']:
         metrics = \
-            loss_metrics(epoch=True, experience=True, stream=True) + \
-            binary_accuracy_metrics(epoch=True, experience=True, stream=True) #+ \
-            #precision_metrics(epoch=True, experience=True, stream=True) + \
-            #recall_metrics(epoch=True, experience=True, stream=True) + \
-            #f1_metrics(epoch=True, experience=True, stream=True) + \
+            binary_accuracy_metrics(epoch=True, experience=True, stream=True) + \
+            f1_metrics(epoch=True, experience=True, stream=True)
     else:
         metrics = \
-            loss_metrics(epoch=True, experience=True, stream=True) + \
             relative_distance_metrics(epoch=True, experience=True, stream=True) + \
             r2_score_metrics(epoch=True, experience=True, stream=True) + \
             renamed_forgetting_metrics(experience=True, stream=True) + \
@@ -144,7 +139,9 @@ def process_test_results(final_test_results: dict):
 
 def task_training_loop(
         config_data: str | dict[str, Any], task_id: int,
-        redirect_stdout=True, extra_log_folder=''
+        redirect_stdout=True, extra_log_folder='',
+        write_intermediate_models=False,
+        plot_single_runs=False,
 ):
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     config_parser = ConfigParser(config_data, task_id=task_id)
@@ -301,6 +298,7 @@ def task_training_loop(
                 metrics, preprocess_ytrue=cl_strategy_target_transform_preprocess_ytrue,
                 preprocess_ypred=cl_strategy_target_transform_preprocess_ypred
             )
+        metrics = loss_metrics(epoch=True, experience=True, stream=True) + metrics
 
         # Build logger
         mean_std_plugin = MeanStdPlugin([str(metric) for metric in metrics], num_experiences=num_campaigns)
@@ -363,7 +361,7 @@ def task_training_loop(
         )
 
         @time_logger(log_file=f'{log_folder}/timing.txt')
-        def run(train_stream, eval_stream, cl_strategy, model, log_folder):
+        def run(train_stream, eval_stream, cl_strategy, model, log_folder, write_intermediate_models):
             results = []
             if isinstance(cl_strategy, JointTraining):
                 print(f"Starting [red]JointTraining[/red]training experience: ")
@@ -380,10 +378,11 @@ def task_training_loop(
                     cl_strategy.train(train_exp)
                     print(f"Starting testing experience [red]{idx}[/red]: ")
                     results.append(cl_strategy.eval(eval_stream))
-                    print(f"Saving model after experience [red]{idx}[/red]: ")
-                    model.eval()
-                    torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
-                    model.train()
+                    if write_intermediate_models:
+                        print(f"Saving model after experience [red]{idx}[/red]: ")
+                        model.eval()
+                        torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
+                        model.train()
             return results
 
         # garbage collect before running
@@ -393,7 +392,7 @@ def task_training_loop(
         # train and test loop over the stream of experiences
         print("[#aa0000]Starting ...[/#aa0000]")
         try:
-            results = run(train_stream, eval_stream, cl_strategy, model, log_folder)
+            results = run(train_stream, eval_stream, cl_strategy, model, log_folder, write_intermediate_models)
             with open(os.path.join(log_folder, 'results.json'), 'w') as fp:
                 json.dump(results, fp, indent=4)
 
@@ -415,7 +414,8 @@ def task_training_loop(
             metric_list = get_metric_names_list(task)
             title_list = get_title_names_list(task)
             ylabel_list = get_ylabel_names_list(task)
-            evaluation_experiences_plots(log_folder, metric_list, title_list, ylabel_list)
+            if plot_single_runs:
+                evaluation_experiences_plots(log_folder, metric_list, title_list, ylabel_list)
             mean_std_plugin.dump_results(os.path.join(log_folder, "mean_std_metric_dump.csv"))
             return {
                 'result': True, 'log_folder': log_folder, 'task': task,
@@ -462,14 +462,29 @@ def main():
         action='store_true',
         help='Disable standard output redirection to a file. Defaults to False (i.e., output is redirected).',
     )
+    cmd_arg_parser.add_argument(
+        '--write-intermediate-models',
+        action='store_true',
+        help='Allows to save checkpoints of intermediate models after each experience.',
+    )
+    cmd_arg_parser.add_argument(
+        '--plot-single-runs',
+        action='store_true',
+        help='Allows to plot graphs for each single run.',
+    )
 
     # Parse arguments
     cmd_args = cmd_arg_parser.parse_args()
     config_file_path = cmd_args.config
     to_redirect_stdout = True if not cmd_args.no_redirect_stdout else False
     extra_log_folder = cmd_args.extra_log_folder or 'Base'
+    write_intermediate_models = cmd_args.write_intermediate_models
+    plot_single_runs = cmd_args.plot_single_runs
     print(f"Config file path: {config_file_path}")
     print(f"To redirect stdout: {to_redirect_stdout}")
+    print(f"Extra log folder: {extra_log_folder}")
+    print(f"Write intermediate models: {write_intermediate_models}")
+    print(f"Plot single runs: {plot_single_runs}")
     if cmd_args.num_tasks <= 0:
         num_jobs = os.cpu_count()
     else:
@@ -493,7 +508,8 @@ def main():
             results = \
                 Parallel(n_jobs=num_jobs)(
                     delayed(task_training_loop)(
-                        single_config_data, task_id, to_redirect_stdout, extra_log_folder
+                        single_config_data, task_id, to_redirect_stdout, extra_log_folder,
+                        write_intermediate_models, plot_single_runs
                     ) for task_id in task_ids
                 )
         else:
@@ -501,6 +517,8 @@ def main():
                 task_training_loop(
                     single_config_data, 0, redirect_stdout=to_redirect_stdout,
                     extra_log_folder=extra_log_folder,
+                    write_intermediate_models=write_intermediate_models,
+                    plot_single_runs=plot_single_runs
                 )
             ]
         print(results)

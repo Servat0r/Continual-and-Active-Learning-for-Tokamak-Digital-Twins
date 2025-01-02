@@ -13,8 +13,7 @@ from .misc import debug_print, extract_metric_info, extract_metric_type
 ########################### Helpers
 def get_log_folder(
         pow_type: str, cluster_type: str, task: str, dataset_type: str, outputs: str | list[str],
-        strategy: str, extra_log_folder: str, hour: int | str, minute: int | str, seconds: int | str,
-        day: int | str, month: int | str, year: int = 2024, task_id: int = 0,
+        strategy: str, extra_log_folder: str, *, count: int = None, task_id: int = 0,
 ) -> str:
     """
     Retrieves the EXACT log folder path according to the given parameters.
@@ -22,42 +21,27 @@ def get_log_folder(
     :param cluster_type: One of {"Ip_Pin_based", "tau_based", "pca_based"}.
     :param task: One of {"classification", "regression"}.
     :param dataset_type: One of {"complete", "not_null"}.
-    :param outputs: Either a string or a list of strings, each per output columns. If a string, it must
-    be of the form of the output of "_".join(outputs_list).
+    :param outputs: Either a string or a list of strings, each per output columns.
+    If a string, it must be of the form of the output of "_".join(outputs_list).
     :param strategy: Strategy name, e.g. "Naive" or "Replay".
     :param extra_log_folder: Extra log folder path (see README).
-    :param hour: Hour of the day when run started.
-    :param minute: Minute of the day when run started.
-    :param seconds: Seconds of the day when run started.
-    :param day: Day of the month when run started.
-    :param month: Month of the year when run started.
-    :param year: Year when run started.
+    :param count: The ordinal - chronologically - at which the folder appears in the
+    ordered sequence (e.g., 1 for retrieving 2nd string that ends with f"task_{task_id}").
     :param task_id: Run id, in {0, ..., N-1}.
     :return: Log folder path.
     """
-    params = {
-        'hour': hour, 'minute': minute, 'seconds': seconds,
-        'day': day, 'month': month, 'year': year
-    }
-    for name, value in params.items():
-        if isinstance(value, int) and value < 10:
-            params[name] = '0' + str(value)
-    hour = params['hour']
-    minute = params['minute']
-    seconds = params['seconds']
-    day = params['day']
-    month = params['month']
-    year = params['year']
-    basepath = f"{year}-{month}-{day}_{hour}-{minute}-{seconds}"
     outputs_string = outputs if isinstance(outputs, str) else '_'.join(outputs)
     index_dir = os.path.join(
         'logs', pow_type, cluster_type, task, dataset_type, outputs_string, strategy, extra_log_folder
     )
-    print(index_dir)
+    current_count = 0
     for dirname in os.listdir(index_dir):
-        if dirname.startswith(basepath) and dirname.endswith(f"task_{task_id}"):
-            return os.path.join(index_dir, dirname)
-    raise ValueError(f"Not found any directory starting with \"{basepath}\"")
+        if dirname.endswith(f"task_{task_id}"):
+            if current_count >= count:
+                return os.path.join(index_dir, dirname)
+            else:
+                current_count += 1
+    raise ValueError(f"Not found any directory in \"{index_dir}\" ending with \"task_{task_id}\"")
 ############################à
 
 

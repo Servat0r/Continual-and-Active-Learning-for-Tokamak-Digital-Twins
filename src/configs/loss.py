@@ -1,7 +1,7 @@
 from typing import Any
 from .parser import *
 from torch.nn import MSELoss, HuberLoss, BCELoss, BCEWithLogitsLoss
-from ..utils import GaussianNLLLoss
+from ..utils import GaussianNLLLoss, MSECosineSimilarityLoss
 
 
 @ConfigParser.register_handler('loss')
@@ -21,6 +21,8 @@ def loss_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         return BCEWithLogitsLoss(**parameters)
     elif (name == 'GaussianNLL') or (name == 'gaussian_nll'):
         return GaussianNLLLoss(**parameters)
+    elif (name == 'MSECosineSimilarity') or (name == 'mse_cosine_similarity'):
+        return MSECosineSimilarityLoss(**parameters)
     else:
         raise ValueError(f"Invalid loss name \"{name}\"")
 
