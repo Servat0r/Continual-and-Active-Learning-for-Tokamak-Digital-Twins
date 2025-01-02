@@ -1,0 +1,1431 @@
+[
+  {
+    "mean": {
+      "Loss_Exp": 24.315292358398438,
+      "RelativeDistance_Exp": 0.5836701989173889,
+      "R2Score_Exp": 0.8991385698318481
+    },
+    "std": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 24.354252815246582,
+      "RelativeDistance_Exp": 0.6093564331531525,
+      "R2Score_Exp": 0.8986895084381104,
+      "Forgetting_Exp": 0.0008981227874755859,
+      "BWT_Exp": -0.0008981227874755859
+    },
+    "std": {
+      "Loss_Exp": 0.03896045684814453,
+      "RelativeDistance_Exp": 0.02568623423576355,
+      "R2Score_Exp": 0.00044906139373779297,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.03896045684814453,
+      "RelativeDistance_Exp": 0.02568623423576355,
+      "R2Score_Exp": 0.00044906139373779297,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 45.983978271484375,
+      "RelativeDistance_Exp": 0.8628178238868713,
+      "R2Score_Exp": 0.814919114112854
+    },
+    "std": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 25.052829106648762,
+      "RelativeDistance_Exp": 0.6415071288744608,
+      "R2Score_Exp": 0.8949007590611776,
+      "Forgetting_Exp": 0.006356716156005859,
+      "BWT_Exp": -0.006356716156005859
+    },
+    "std": {
+      "Loss_Exp": 0.9884480839260066,
+      "RelativeDistance_Exp": 0.050071843953177146,
+      "R2Score_Exp": 0.005370631350779987,
+      "Forgetting_Exp": 0.0054585933685302734,
+      "BWT_Exp": 0.0054585933685302734
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.7375367482503243,
+      "RelativeDistance_Exp": 0.0578369299570719,
+      "R2Score_Exp": 0.007577498753865597,
+      "Forgetting_Exp": 0.0054585933685302734,
+      "BWT_Exp": 0.0054585933685302734
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 45.100624084472656,
+      "RelativeDistance_Exp": 0.8885895013809204,
+      "R2Score_Exp": 0.8191260695457458,
+      "Forgetting_Exp": -0.008413910865783691,
+      "BWT_Exp": 0.008413910865783691
+    },
+    "std": {
+      "Loss_Exp": 0.8833541870117188,
+      "RelativeDistance_Exp": 0.025771677494049072,
+      "R2Score_Exp": 0.004206955432891846,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.8833541870117188,
+      "RelativeDistance_Exp": 0.025771677494049072,
+      "R2Score_Exp": 0.004206955432891846,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 51.709068298339844,
+      "RelativeDistance_Exp": 1.068289875984192,
+      "R2Score_Exp": 0.7866689562797546
+    },
+    "std": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 25.392144680023193,
+      "RelativeDistance_Exp": 0.6415888369083405,
+      "R2Score_Exp": 0.8934803605079651,
+      "Forgetting_Exp": 0.007544279098510742,
+      "BWT_Exp": -0.007544279098510742
+    },
+    "std": {
+      "Loss_Exp": 1.0383532086751601,
+      "RelativeDistance_Exp": 0.04336371981578487,
+      "R2Score_Exp": 0.0052616876550580245,
+      "Forgetting_Exp": 0.0047628534017746995,
+      "BWT_Exp": 0.0047628534017746995
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.0768523216247559,
+      "RelativeDistance_Exp": 0.05791863799095154,
+      "R2Score_Exp": 0.006157100200653076,
+      "Forgetting_Exp": 0.006646156311035156,
+      "BWT_Exp": 0.004271030426025391
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.57990392049154,
+      "RelativeDistance_Exp": 0.8590111335118612,
+      "R2Score_Exp": 0.8214128414789835,
+      "Forgetting_Exp": -0.009740591049194336,
+      "BWT_Exp": 0.009740591049194336
+    },
+    "std": {
+      "Loss_Exp": 1.0307806385585336,
+      "RelativeDistance_Exp": 0.046824629546493045,
+      "R2Score_Exp": 0.00471779974410879,
+      "Forgetting_Exp": 0.0013266801834106445,
+      "BWT_Exp": 0.0013266801834106445
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.041440327962242,
+      "RelativeDistance_Exp": 0.05915673573811853,
+      "R2Score_Exp": 0.00649372736612952,
+      "Forgetting_Exp": 0.0013266801834106445,
+      "BWT_Exp": 0.0013266801834106445
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 51.260738372802734,
+      "RelativeDistance_Exp": 0.9771046936511993,
+      "R2Score_Exp": 0.7888639271259308,
+      "Forgetting_Exp": -0.004389941692352295,
+      "BWT_Exp": 0.004389941692352295
+    },
+    "std": {
+      "Loss_Exp": 0.4483299255371094,
+      "RelativeDistance_Exp": 0.09118518233299255,
+      "R2Score_Exp": 0.0021949708461761475,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.4483299255371094,
+      "RelativeDistance_Exp": 0.09118518233299255,
+      "R2Score_Exp": 0.0021949708461761475,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 38.704742431640625,
+      "RelativeDistance_Exp": 0.8790748715400696,
+      "R2Score_Exp": 0.8310021162033081
+    },
+    "std": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 25.909017944335936,
+      "RelativeDistance_Exp": 0.6646779298782348,
+      "R2Score_Exp": 0.8912510991096496,
+      "Forgetting_Exp": 0.009859338402748108,
+      "BWT_Exp": -0.009859338402748108
+    },
+    "std": {
+      "Loss_Exp": 1.3896667925146833,
+      "RelativeDistance_Exp": 0.060305510641227675,
+      "R2Score_Exp": 0.006482801177854297,
+      "Forgetting_Exp": 0.0057525714373231045,
+      "BWT_Exp": 0.0057525714373231045
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.5937255859374986,
+      "RelativeDistance_Exp": 0.0810077309608459,
+      "R2Score_Exp": 0.008917045593261674,
+      "Forgetting_Exp": 0.008961215615272522,
+      "BWT_Exp": 0.006945177912712097
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.01443862915039,
+      "RelativeDistance_Exp": 0.8627967089414597,
+      "R2Score_Exp": 0.8236301839351654,
+      "Forgetting_Exp": -0.011614759763081869,
+      "BWT_Exp": 0.011614759763081869
+    },
+    "std": {
+      "Loss_Exp": 1.3251922618076724,
+      "RelativeDistance_Exp": 0.041077989156289914,
+      "R2Score_Exp": 0.005607410144005369,
+      "Forgetting_Exp": 0.002863285457116125,
+      "BWT_Exp": 0.002863285457116125
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.6963958740234375,
+      "RelativeDistance_Exp": 0.06294231116771698,
+      "R2Score_Exp": 0.008711069822311401,
+      "Forgetting_Exp": 0.0037483374277750645,
+      "BWT_Exp": 0.0032008488972981777
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 50.47266515096029,
+      "RelativeDistance_Exp": 0.9806843400001526,
+      "R2Score_Exp": 0.7913384636243185,
+      "Forgetting_Exp": -0.007004261016845703,
+      "BWT_Exp": 0.007004261016845703
+    },
+    "std": {
+      "Loss_Exp": 1.1730808244639463,
+      "RelativeDistance_Exp": 0.07462429935372625,
+      "R2Score_Exp": 0.003931741739663745,
+      "Forgetting_Exp": 0.002614319324493408,
+      "BWT_Exp": 0.002614319324493408
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.5761464436848982,
+      "RelativeDistance_Exp": 0.0947648286819458,
+      "R2Score_Exp": 0.004669507344563839,
+      "Forgetting_Exp": 0.002614319324493408,
+      "BWT_Exp": 0.002614319324493408
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 39.05597496032715,
+      "RelativeDistance_Exp": 0.9301469922065735,
+      "R2Score_Exp": 0.8291512429714203,
+      "Forgetting_Exp": 0.0037017464637756348,
+      "BWT_Exp": -0.0037017464637756348
+    },
+    "std": {
+      "Loss_Exp": 0.35123252868652344,
+      "RelativeDistance_Exp": 0.051072120666503906,
+      "R2Score_Exp": 0.0018508732318878174,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.35123252868652344,
+      "RelativeDistance_Exp": 0.051072120666503906,
+      "R2Score_Exp": 0.0018508732318878174,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.74429702758789,
+      "RelativeDistance_Exp": 1.0324864387512207,
+      "R2Score_Exp": 0.8413728475570679
+    },
+    "std": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 26.162273089090984,
+      "RelativeDistance_Exp": 0.6772568623224894,
+      "R2Score_Exp": 0.8902313709259033,
+      "Forgetting_Exp": 0.01068863868713379,
+      "BWT_Exp": -0.01068863868713379
+    },
+    "std": {
+      "Loss_Exp": 1.3892452400156718,
+      "RelativeDistance_Exp": 0.061820518858506465,
+      "R2Score_Exp": 0.006342041241058795,
+      "Forgetting_Exp": 0.005405979870470586,
+      "BWT_Exp": 0.005405979870470586
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.8469807306925468,
+      "RelativeDistance_Exp": 0.09358666340510047,
+      "R2Score_Exp": 0.00789731740951538,
+      "Forgetting_Exp": 0.009790515899658203,
+      "BWT_Exp": 0.006115877628326416
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 43.46436309814453,
+      "RelativeDistance_Exp": 0.8644805431365967,
+      "R2Score_Exp": 0.8255845546722412,
+      "Forgetting_Exp": -0.013331800699234009,
+      "BWT_Exp": 0.013331800699234009
+    },
+    "std": {
+      "Loss_Exp": 1.6171703632732886,
+      "RelativeDistance_Exp": 0.03689528621499322,
+      "R2Score_Exp": 0.006358671144997857,
+      "Forgetting_Exp": 0.0038721430030367134,
+      "BWT_Exp": 0.0038721430030367134
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 2.2003021240234375,
+      "RelativeDistance_Exp": 0.06462614536285405,
+      "R2Score_Exp": 0.01066544055938723,
+      "Forgetting_Exp": 0.005151122808456421,
+      "BWT_Exp": 0.004917889833450317
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 49.71342468261719,
+      "RelativeDistance_Exp": 0.9816652536392212,
+      "R2Score_Exp": 0.7945229262113571,
+      "Forgetting_Exp": -0.010471959908803305,
+      "BWT_Exp": 0.010471959908803305
+    },
+    "std": {
+      "Loss_Exp": 1.661754263377502,
+      "RelativeDistance_Exp": 0.06464886785727839,
+      "R2Score_Exp": 0.006482002062272715,
+      "Forgetting_Exp": 0.00534848715970361,
+      "BWT_Exp": 0.00534848715970361
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 2.277721405029297,
+      "RelativeDistance_Exp": 0.0957457423210144,
+      "R2Score_Exp": 0.007853969931602478,
+      "Forgetting_Exp": 0.006935397783915201,
+      "BWT_Exp": 0.00608201821645101
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 39.74590047200521,
+      "RelativeDistance_Exp": 0.9318323135375977,
+      "R2Score_Exp": 0.8268627723058065,
+      "Forgetting_Exp": 0.006209015846252441,
+      "BWT_Exp": -0.006209015846252441
+    },
+    "std": {
+      "Loss_Exp": 1.0169745733302047,
+      "RelativeDistance_Exp": 0.0417682689238322,
+      "R2Score_Exp": 0.0035718366594460053,
+      "Forgetting_Exp": 0.0025072693824768066,
+      "BWT_Exp": 0.0025072693824768066
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.0411580403645857,
+      "RelativeDistance_Exp": 0.052757441997528076,
+      "R2Score_Exp": 0.0045769413312276575,
+      "Forgetting_Exp": 0.0025072693824768066,
+      "BWT_Exp": 0.0025072693824768066
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 46.66033172607422,
+      "RelativeDistance_Exp": 1.0273807048797607,
+      "R2Score_Exp": 0.8345487713813782,
+      "Forgetting_Exp": 0.013648152351379395,
+      "BWT_Exp": -0.013648152351379395
+    },
+    "std": {
+      "Loss_Exp": 1.9160346984863281,
+      "RelativeDistance_Exp": 0.005105733871459961,
+      "R2Score_Exp": 0.006824076175689697,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.9160346984863281,
+      "RelativeDistance_Exp": 0.005105733871459961,
+      "R2Score_Exp": 0.006824076175689697,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 41.73997497558594,
+      "RelativeDistance_Exp": 0.8902972936630249,
+      "R2Score_Exp": 0.8475745320320129
+    },
+    "std": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 26.440154484340123,
+      "RelativeDistance_Exp": 0.6877302612577166,
+      "R2Score_Exp": 0.8891885791506086,
+      "Forgetting_Exp": 0.011608322461446127,
+      "BWT_Exp": -0.011608322461446127
+    },
+    "std": {
+      "Loss_Exp": 1.4551962535348366,
+      "RelativeDistance_Exp": 0.0627212961012893,
+      "R2Score_Exp": 0.006403128024175594,
+      "Forgetting_Exp": 0.00534630151197485,
+      "BWT_Exp": 0.00534630151197485
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 2.1248621259416858,
+      "RelativeDistance_Exp": 0.10406006234032772,
+      "R2Score_Exp": 0.006854525634220621,
+      "Forgetting_Exp": 0.010710199673970541,
+      "BWT_Exp": 0.005196193854014078
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 43.225568771362305,
+      "RelativeDistance_Exp": 0.8692952493826548,
+      "R2Score_Exp": 0.8269397815068563,
+      "Forgetting_Exp": -0.014424800872802734,
+      "BWT_Exp": 0.014424800872802734
+    },
+    "std": {
+      "Loss_Exp": 1.5698663337127678,
+      "RelativeDistance_Exp": 0.035359469762960435,
+      "R2Score_Exp": 0.0065480618869118495,
+      "Forgetting_Exp": 0.004095533013718483,
+      "BWT_Exp": 0.004095533013718483
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.961507797241211,
+      "RelativeDistance_Exp": 0.06944085160891211,
+      "R2Score_Exp": 0.012020667394002316,
+      "Forgetting_Exp": 0.004372000694274902,
+      "BWT_Exp": 0.006010890007019043
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 49.51318893432617,
+      "RelativeDistance_Exp": 0.982127594947815,
+      "R2Score_Exp": 0.7954411387443543,
+      "Forgetting_Exp": -0.010965228080749512,
+      "BWT_Exp": 0.010965228080749512
+    },
+    "std": {
+      "Loss_Exp": 1.5393242689756097,
+      "RelativeDistance_Exp": 0.05783109829602756,
+      "R2Score_Exp": 0.0060815736130756665,
+      "Forgetting_Exp": 0.0047100612141989465,
+      "BWT_Exp": 0.0047100612141989465
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 2.0774856567382827,
+      "RelativeDistance_Exp": 0.0962080836296082,
+      "R2Score_Exp": 0.008772182464599654,
+      "Forgetting_Exp": 0.006442129611968994,
+      "BWT_Exp": 0.006575286388397217
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 40.53818607330322,
+      "RelativeDistance_Exp": 0.9334378689527512,
+      "R2Score_Exp": 0.823569729924202,
+      "Forgetting_Exp": 0.00990984837214152,
+      "BWT_Exp": -0.00990984837214152
+    },
+    "std": {
+      "Loss_Exp": 1.6305911149557335,
+      "RelativeDistance_Exp": 0.036279121285438566,
+      "R2Score_Exp": 0.006488520418589461,
+      "Forgetting_Exp": 0.005619898214400995,
+      "BWT_Exp": 0.005619898214400995
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.8334436416625977,
+      "RelativeDistance_Exp": 0.05436299741268158,
+      "R2Score_Exp": 0.009879127144813538,
+      "Forgetting_Exp": 0.006208101908365885,
+      "BWT_Exp": 0.007401665051778158
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 47.96022160847982,
+      "RelativeDistance_Exp": 1.0338571071624756,
+      "R2Score_Exp": 0.8302942117055258,
+      "Forgetting_Exp": 0.016617953777313232,
+      "BWT_Exp": -0.016617953777313232
+    },
+    "std": {
+      "Loss_Exp": 2.413894513705314,
+      "RelativeDistance_Exp": 0.010063129995146827,
+      "R2Score_Exp": 0.008200481683323447,
+      "Forgetting_Exp": 0.002969801425933838,
+      "BWT_Exp": 0.002969801425933838
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 3.2159245808919295,
+      "RelativeDistance_Exp": 0.011582136154174805,
+      "R2Score_Exp": 0.008509119351704952,
+      "Forgetting_Exp": 0.002969801425933838,
+      "BWT_Exp": 0.002969801425933838
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 43.16437530517578,
+      "RelativeDistance_Exp": 0.9009082317352295,
+      "R2Score_Exp": 0.8417571783065796,
+      "Forgetting_Exp": 0.0116347074508667,
+      "BWT_Exp": -0.0116347074508667
+    },
+    "std": {
+      "Loss_Exp": 1.4244003295898438,
+      "RelativeDistance_Exp": 0.01061093807220459,
+      "R2Score_Exp": 0.00581735372543335,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.4244003295898438,
+      "RelativeDistance_Exp": 0.01061093807220459,
+      "R2Score_Exp": 0.00581735372543335,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 43.184688568115234,
+      "RelativeDistance_Exp": 0.7819814085960388,
+      "R2Score_Exp": 0.8518729209899902
+    },
+    "std": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 26.722678899765015,
+      "RelativeDistance_Exp": 0.6918725594878197,
+      "R2Score_Exp": 0.8881168812513351,
+      "Forgetting_Exp": 0.012596215520586287,
+      "BWT_Exp": -0.012596215520586287
+    },
+    "std": {
+      "Loss_Exp": 1.5529446018587834,
+      "RelativeDistance_Exp": 0.059685226848335035,
+      "R2Score_Exp": 0.006626824061598821,
+      "Forgetting_Exp": 0.005509560682332825,
+      "BWT_Exp": 0.005509560682332825
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 2.407386541366577,
+      "RelativeDistance_Exp": 0.10820236057043076,
+      "R2Score_Exp": 0.007501885294914246,
+      "Forgetting_Exp": 0.0116980927331107,
+      "BWT_Exp": 0.005927358354840959
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 43.03968811035156,
+      "RelativeDistance_Exp": 0.8714903763362339,
+      "R2Score_Exp": 0.8279413666043963,
+      "Forgetting_Exp": -0.015192627906799316,
+      "BWT_Exp": 0.015192627906799316
+    },
+    "std": {
+      "Loss_Exp": 1.5230631672547177,
+      "RelativeDistance_Exp": 0.03317514790554633,
+      "R2Score_Exp": 0.006539942557292093,
+      "Forgetting_Exp": 0.00411407551292652,
+      "BWT_Exp": 0.00411407551292652
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.7756271362304688,
+      "RelativeDistance_Exp": 0.07163597856249126,
+      "R2Score_Exp": 0.013022252491542319,
+      "Forgetting_Exp": 0.00383913516998291,
+      "BWT_Exp": 0.006778717041015625
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 49.10341135660807,
+      "RelativeDistance_Exp": 0.9823937018712362,
+      "R2Score_Exp": 0.7972077429294586,
+      "Forgetting_Exp": -0.012646543979644775,
+      "BWT_Exp": 0.012646543979644775
+    },
+    "std": {
+      "Loss_Exp": 1.677554068741246,
+      "RelativeDistance_Exp": 0.05279568170072371,
+      "R2Score_Exp": 0.00681364315743469,
+      "Forgetting_Exp": 0.005390272156460466,
+      "BWT_Exp": 0.005390272156460466
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 2.0488878885904924,
+      "RelativeDistance_Exp": 0.09647419055302942,
+      "R2Score_Exp": 0.01053878664970398,
+      "Forgetting_Exp": 0.006725263595581055,
+      "BWT_Exp": 0.00825660228729248
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 40.870173645019534,
+      "RelativeDistance_Exp": 0.9378698706626892,
+      "R2Score_Exp": 0.8221670031547547,
+      "Forgetting_Exp": 0.011043891310691833,
+      "BWT_Exp": -0.011043891310691833
+    },
+    "std": {
+      "Loss_Exp": 1.602474617095207,
+      "RelativeDistance_Exp": 0.03363792903290011,
+      "R2Score_Exp": 0.006446028803601364,
+      "Forgetting_Exp": 0.005248390430846214,
+      "BWT_Exp": 0.005248390430846214
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 2.165431213378909,
+      "RelativeDistance_Exp": 0.05879499912261965,
+      "R2Score_Exp": 0.008476400375366233,
+      "Forgetting_Exp": 0.007342144846916199,
+      "BWT_Exp": 0.006267622113227844
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 48.1339693069458,
+      "RelativeDistance_Exp": 1.0419579148292542,
+      "R2Score_Exp": 0.8298186808824539,
+      "Forgetting_Exp": 0.015405555566151937,
+      "BWT_Exp": -0.015405555566151937
+    },
+    "std": {
+      "Loss_Exp": 2.1120439935378092,
+      "RelativeDistance_Exp": 0.016517239283149982,
+      "R2Score_Exp": 0.007149427499455222,
+      "Forgetting_Exp": 0.0029697866114992153,
+      "BWT_Exp": 0.0029697866114992153
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 3.38967227935791,
+      "RelativeDistance_Exp": 0.01968294382095337,
+      "R2Score_Exp": 0.008033588528633118,
+      "Forgetting_Exp": 0.0024247964223225917,
+      "BWT_Exp": 0.004182199637095133
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 43.46688461303711,
+      "RelativeDistance_Exp": 0.9141246875127157,
+      "R2Score_Exp": 0.8409233887990316,
+      "Forgetting_Exp": 0.009976714849472046,
+      "BWT_Exp": -0.009976714849472046
+    },
+    "std": {
+      "Loss_Exp": 1.2392072581463454,
+      "RelativeDistance_Exp": 0.020601231625429633,
+      "R2Score_Exp": 0.004894024873625984,
+      "Forgetting_Exp": 0.0016579926013946533,
+      "BWT_Exp": 0.0016579926013946533
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.7269096374511719,
+      "RelativeDistance_Exp": 0.023827393849690792,
+      "R2Score_Exp": 0.004983564217885372,
+      "Forgetting_Exp": 0.0016579926013946533,
+      "BWT_Exp": 0.0016579926013946533
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 43.625606536865234,
+      "RelativeDistance_Exp": 0.8842964470386505,
+      "R2Score_Exp": 0.8497662544250488,
+      "Forgetting_Exp": 0.0042133331298828125,
+      "BWT_Exp": -0.0042133331298828125
+    },
+    "std": {
+      "Loss_Exp": 0.44091796875,
+      "RelativeDistance_Exp": 0.1023150384426117,
+      "R2Score_Exp": 0.0021066665649414062,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.44091796875,
+      "RelativeDistance_Exp": 0.1023150384426117,
+      "R2Score_Exp": 0.0021066665649414062,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.528072357177734,
+      "RelativeDistance_Exp": 1.0175222158432007,
+      "R2Score_Exp": 0.8236156702041626
+    },
+    "std": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 27.01819970872667,
+      "RelativeDistance_Exp": 0.6919476985931396,
+      "R2Score_Exp": 0.8870556685659621,
+      "Forgetting_Exp": 0.013593263924121857,
+      "BWT_Exp": -0.013593263924121857
+    },
+    "std": {
+      "Loss_Exp": 1.6859233864777026,
+      "RelativeDistance_Exp": 0.05627217284988734,
+      "R2Score_Exp": 0.0069314323301420695,
+      "Forgetting_Exp": 0.005789610537956684,
+      "BWT_Exp": 0.005789610537956684
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 2.702907350328232,
+      "RelativeDistance_Exp": 0.10827749967575073,
+      "R2Score_Exp": 0.00848970148298478,
+      "Forgetting_Exp": 0.01269514113664627,
+      "BWT_Exp": 0.006979338824748993
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 43.003015995025635,
+      "RelativeDistance_Exp": 0.8686732724308968,
+      "R2Score_Exp": 0.8283015489578247,
+      "Forgetting_Exp": -0.015294211251395089,
+      "BWT_Exp": 0.015294211251395089
+    },
+    "std": {
+      "Loss_Exp": 1.4279951482110584,
+      "RelativeDistance_Exp": 0.031915030230751436,
+      "R2Score_Exp": 0.006191333609582342,
+      "Forgetting_Exp": 0.003817012843725139,
+      "BWT_Exp": 0.003817012843725139
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.738955020904541,
+      "RelativeDistance_Exp": 0.06881887465715408,
+      "R2Score_Exp": 0.013382434844970703,
+      "Forgetting_Exp": 0.0037375518253871375,
+      "BWT_Exp": 0.006880300385611398
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 48.99934550694057,
+      "RelativeDistance_Exp": 0.9763240899358477,
+      "R2Score_Exp": 0.7975529687745231,
+      "Forgetting_Exp": -0.012698014577229818,
+      "BWT_Exp": 0.012698014577229818
+    },
+    "std": {
+      "Loss_Exp": 1.5738929608783379,
+      "RelativeDistance_Exp": 0.05109038486196459,
+      "R2Score_Exp": 0.00636463438062637,
+      "Forgetting_Exp": 0.0049219685471708985,
+      "BWT_Exp": 0.0049219685471708985
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.944822038922993,
+      "RelativeDistance_Exp": 0.09040457861764095,
+      "R2Score_Exp": 0.010884012494768447,
+      "Forgetting_Exp": 0.006673792997996012,
+      "BWT_Exp": 0.008308072884877523
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 41.76831245422363,
+      "RelativeDistance_Exp": 0.9312644302845001,
+      "R2Score_Exp": 0.8183487057685852,
+      "Forgetting_Exp": 0.01518409252166748,
+      "BWT_Exp": -0.01518409252166748
+    },
+    "std": {
+      "Loss_Exp": 2.484593330578434,
+      "RelativeDistance_Exp": 0.03407468910546958,
+      "R2Score_Exp": 0.01036933206271537,
+      "Forgetting_Exp": 0.00951848443614504,
+      "BWT_Exp": 0.00951848443614504
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 3.063570022583008,
+      "RelativeDistance_Exp": 0.05218955874443054,
+      "R2Score_Exp": 0.019091486930847168,
+      "Forgetting_Exp": 0.011482346057891845,
+      "BWT_Exp": 0.01656080484390259
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 48.78024597167969,
+      "RelativeDistance_Exp": 1.0360928535461427,
+      "R2Score_Exp": 0.8276351809501648,
+      "Forgetting_Exp": 0.017172083258628845,
+      "BWT_Exp": -0.017172083258628845
+    },
+    "std": {
+      "Loss_Exp": 2.2889469137639558,
+      "RelativeDistance_Exp": 0.018864016811063433,
+      "R2Score_Exp": 0.00774352236861234,
+      "Forgetting_Exp": 0.003997072010014751,
+      "BWT_Exp": 0.003997072010014751
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 4.0359489440918,
+      "RelativeDistance_Exp": 0.023460245132446378,
+      "R2Score_Exp": 0.00873399972915645,
+      "Forgetting_Exp": 0.0041913241147994995,
+      "BWT_Exp": 0.005299583077430725
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.63938617706299,
+      "RelativeDistance_Exp": 0.9066035151481628,
+      "R2Score_Exp": 0.8369161635637283,
+      "Forgetting_Exp": 0.014211157957712809,
+      "BWT_Exp": -0.014211157957712809
+    },
+    "std": {
+      "Loss_Exp": 2.2969557515135843,
+      "RelativeDistance_Exp": 0.02209099725171751,
+      "R2Score_Exp": 0.008132476366833523,
+      "Forgetting_Exp": 0.00613951489815835,
+      "BWT_Exp": 0.00613951489815835
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 2.899411201477051,
+      "RelativeDistance_Exp": 0.022563517093658447,
+      "R2Score_Exp": 0.012021675705909729,
+      "Forgetting_Exp": 0.005892435709635416,
+      "BWT_Exp": 0.008468886216481527
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.687127431233726,
+      "RelativeDistance_Exp": 0.9019731481870016,
+      "R2Score_Exp": 0.8459724386533102,
+      "Forgetting_Exp": 0.008850723505020142,
+      "BWT_Exp": -0.008850723505020142
+    },
+    "std": {
+      "Loss_Exp": 1.5437807449482066,
+      "RelativeDistance_Exp": 0.08720001675067673,
+      "R2Score_Exp": 0.005634249926152352,
+      "Forgetting_Exp": 0.004637390375137329,
+      "BWT_Exp": 0.004637390375137329
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.502438863118492,
+      "RelativeDistance_Exp": 0.11999173959096276,
+      "R2Score_Exp": 0.007587631543477413,
+      "Forgetting_Exp": 0.004637390375137329,
+      "BWT_Exp": 0.004637390375137329
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.742759704589844,
+      "RelativeDistance_Exp": 0.9837379455566406,
+      "R2Score_Exp": 0.8215397000312805,
+      "Forgetting_Exp": 0.00415194034576416,
+      "BWT_Exp": -0.00415194034576416
+    },
+    "std": {
+      "Loss_Exp": 0.21468734741210938,
+      "RelativeDistance_Exp": 0.03378427028656006,
+      "R2Score_Exp": 0.00207597017288208,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.21468734741210938,
+      "RelativeDistance_Exp": 0.03378427028656006,
+      "R2Score_Exp": 0.00207597017288208,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 48.5115966796875,
+      "RelativeDistance_Exp": 0.8443441987037659,
+      "R2Score_Exp": 0.8494780659675598
+    },
+    "std": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 27.324338722229005,
+      "RelativeDistance_Exp": 0.692532342672348,
+      "R2Score_Exp": 0.8856917142868042,
+      "Forgetting_Exp": 0.014940950605604384,
+      "BWT_Exp": -0.014940950605604384
+    },
+    "std": {
+      "Loss_Exp": 1.8443410093740351,
+      "RelativeDistance_Exp": 0.053413275239560236,
+      "R2Score_Exp": 0.007744909309559535,
+      "Forgetting_Exp": 0.006657722313506162,
+      "BWT_Exp": 0.006657722313506162
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 3.009046363830567,
+      "RelativeDistance_Exp": 0.10886214375495906,
+      "R2Score_Exp": 0.01227558851242061,
+      "Forgetting_Exp": 0.014042827818128798,
+      "BWT_Exp": 0.010781493451860216
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 42.93082512749566,
+      "RelativeDistance_Exp": 0.8660959866311815,
+      "R2Score_Exp": 0.8286958667967055,
+      "Forgetting_Exp": -0.015498846769332886,
+      "BWT_Exp": 0.015498846769332886
+    },
+    "std": {
+      "Loss_Exp": 1.361722384990387,
+      "RelativeDistance_Exp": 0.03096020059467751,
+      "R2Score_Exp": 0.005942838146331557,
+      "Forgetting_Exp": 0.0036113042705411894,
+      "BWT_Exp": 0.0036113042705411894
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.6667641533745652,
+      "RelativeDistance_Exp": 0.0662415888574388,
+      "R2Score_Exp": 0.013776752683851479,
+      "Forgetting_Exp": 0.003532916307449341,
+      "BWT_Exp": 0.007084935903549194
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 48.80389213562012,
+      "RelativeDistance_Exp": 0.9722905084490776,
+      "R2Score_Exp": 0.7984417229890823,
+      "Forgetting_Exp": -0.01345459052494594,
+      "BWT_Exp": 0.01345459052494594
+    },
+    "std": {
+      "Loss_Exp": 1.5604200759052984,
+      "RelativeDistance_Exp": 0.048967718493397296,
+      "R2Score_Exp": 0.006401108327973213,
+      "Forgetting_Exp": 0.004919287799669853,
+      "BWT_Exp": 0.004919287799669853
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.749368667602539,
+      "RelativeDistance_Exp": 0.08637099713087082,
+      "R2Score_Exp": 0.011772766709327698,
+      "Forgetting_Exp": 0.00591721705027989,
+      "BWT_Exp": 0.009064648832593645
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 42.20484379359654,
+      "RelativeDistance_Exp": 0.9266315443175179,
+      "R2Score_Exp": 0.816487329346793,
+      "Forgetting_Exp": 0.016933917999267578,
+      "BWT_Exp": -0.016933917999267578
+    },
+    "std": {
+      "Loss_Exp": 2.5366661963188326,
+      "RelativeDistance_Exp": 0.033526064883257996,
+      "R2Score_Exp": 0.010627838217708529,
+      "Forgetting_Exp": 0.00952946663309328,
+      "BWT_Exp": 0.00952946663309328
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 3.500101361955913,
+      "RelativeDistance_Exp": 0.04755667277744835,
+      "R2Score_Exp": 0.017230110509054986,
+      "Forgetting_Exp": 0.013232171535491943,
+      "BWT_Exp": 0.01481097936630249
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 49.051514307657875,
+      "RelativeDistance_Exp": 1.0320935448010762,
+      "R2Score_Exp": 0.8265772958596548,
+      "Forgetting_Exp": 0.01775466203689575,
+      "BWT_Exp": -0.01775466203689575
+    },
+    "std": {
+      "Loss_Exp": 2.175775155865107,
+      "RelativeDistance_Exp": 0.019403993422280108,
+      "R2Score_Exp": 0.0074541299437258495,
+      "Forgetting_Exp": 0.003760167530063327,
+      "BWT_Exp": 0.003760167530063327
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 4.307217280069985,
+      "RelativeDistance_Exp": 0.01999654372533155,
+      "R2Score_Exp": 0.007676114638646481,
+      "Forgetting_Exp": 0.0047739028930664056,
+      "BWT_Exp": 0.004717004299163819
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.982811737060544,
+      "RelativeDistance_Exp": 0.9025292038917542,
+      "R2Score_Exp": 0.8358656883239746,
+      "Forgetting_Exp": 0.014636054635047913,
+      "BWT_Exp": -0.014636054635047913
+    },
+    "std": {
+      "Loss_Exp": 2.166233837924155,
+      "RelativeDistance_Exp": 0.021373108723737565,
+      "R2Score_Exp": 0.0075712436496937,
+      "Forgetting_Exp": 0.0053676665272502245,
+      "BWT_Exp": 0.0053676665272502245
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 3.2428367614746065,
+      "RelativeDistance_Exp": 0.018489205837249778,
+      "R2Score_Exp": 0.010971200466155961,
+      "Forgetting_Exp": 0.00631733238697052,
+      "BWT_Exp": 0.008043989539146423
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.835320472717285,
+      "RelativeDistance_Exp": 0.9179646074771881,
+      "R2Score_Exp": 0.845520481467247,
+      "Forgetting_Exp": 0.008469919363657633,
+      "BWT_Exp": -0.008469919363657633
+    },
+    "std": {
+      "Loss_Exp": 1.3613698152915965,
+      "RelativeDistance_Exp": 0.08043669872438705,
+      "R2Score_Exp": 0.004941798768349754,
+      "Forgetting_Exp": 0.003824519566660441,
+      "BWT_Exp": 0.003824519566660441
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.6506319046020508,
+      "RelativeDistance_Exp": 0.1359831988811493,
+      "R2Score_Exp": 0.007135674357414246,
+      "Forgetting_Exp": 0.00425658623377482,
+      "BWT_Exp": 0.005018194516499838
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.229058583577476,
+      "RelativeDistance_Exp": 0.968392570813497,
+      "R2Score_Exp": 0.8239766756693522,
+      "Forgetting_Exp": -0.0005415081977844238,
+      "BWT_Exp": 0.0005415081977844238
+    },
+    "std": {
+      "Loss_Exp": 0.7473317792105209,
+      "RelativeDistance_Exp": 0.03509813382330448,
+      "R2Score_Exp": 0.003840677278845569,
+      "Forgetting_Exp": 0.004693448543548584,
+      "BWT_Exp": 0.004693448543548584
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.027402242024742,
+      "RelativeDistance_Exp": 0.030690749486287472,
+      "R2Score_Exp": 0.004512945810953739,
+      "Forgetting_Exp": 0.004693448543548584,
+      "BWT_Exp": 0.004693448543548584
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 48.06736946105957,
+      "RelativeDistance_Exp": 0.8484021723270416,
+      "R2Score_Exp": 0.85074183344841,
+      "Forgetting_Exp": -0.0025275349617004395,
+      "BWT_Exp": 0.0025275349617004395
+    },
+    "std": {
+      "Loss_Exp": 0.4442272186279297,
+      "RelativeDistance_Exp": 0.004057973623275757,
+      "R2Score_Exp": 0.0012637674808502197,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.4442272186279297,
+      "RelativeDistance_Exp": 0.004057973623275757,
+      "R2Score_Exp": 0.0012637674808502197,
+      "Forgetting_Exp": 0.0,
+      "BWT_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 35.1175651550293,
+      "RelativeDistance_Exp": 1.1403404474258423,
+      "R2Score_Exp": 0.8418440818786621
+    },
+    "std": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.0,
+      "RelativeDistance_Exp": 0.0,
+      "R2Score_Exp": 0.0
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 27.755070252852008,
+      "RelativeDistance_Exp": 0.6947234272956848,
+      "R2Score_Exp": 0.8840236284516074,
+      "Forgetting_Exp": 0.01662643551826477,
+      "BWT_Exp": -0.01662643551826477
+    },
+    "std": {
+      "Loss_Exp": 2.224332366650111,
+      "RelativeDistance_Exp": 0.05139673974370068,
+      "R2Score_Exp": 0.009075002334220915,
+      "Forgetting_Exp": 0.008090764752520876,
+      "BWT_Exp": 0.008090764752520876
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 3.43977789445357,
+      "RelativeDistance_Exp": 0.1110532283782959,
+      "R2Score_Exp": 0.01668085835196753,
+      "Forgetting_Exp": 0.015728312730789184,
+      "BWT_Exp": 0.015169364213943482
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 42.980062866210936,
+      "RelativeDistance_Exp": 0.8638396918773651,
+      "R2Score_Exp": 0.8286002576351166,
+      "Forgetting_Exp": -0.015201270580291748,
+      "BWT_Exp": 0.015201270580291748
+    },
+    "std": {
+      "Loss_Exp": 1.3002608440730892,
+      "RelativeDistance_Exp": 0.03014130741891096,
+      "R2Score_Exp": 0.005645162771449705,
+      "Forgetting_Exp": 0.003507260130895119,
+      "BWT_Exp": 0.003507260130895119
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.7160018920898423,
+      "RelativeDistance_Exp": 0.06398529410362241,
+      "R2Score_Exp": 0.013681143522262573,
+      "Forgetting_Exp": 0.0038304924964904785,
+      "BWT_Exp": 0.006787359714508057
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 48.79289669460721,
+      "RelativeDistance_Exp": 0.9712878730561998,
+      "R2Score_Exp": 0.7992350922690498,
+      "Forgetting_Exp": -0.014136902987957,
+      "BWT_Exp": 0.014136902987957
+    },
+    "std": {
+      "Loss_Exp": 1.4715068348981337,
+      "RelativeDistance_Exp": 0.04625422459051054,
+      "R2Score_Exp": 0.006438709405256936,
+      "Forgetting_Exp": 0.004943007230345169,
+      "BWT_Exp": 0.004943007230345169
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.73837322658963,
+      "RelativeDistance_Exp": 0.085368361737993,
+      "R2Score_Exp": 0.012566135989295124,
+      "Forgetting_Exp": 0.005234904587268829,
+      "BWT_Exp": 0.009746961295604706
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 42.59304761886597,
+      "RelativeDistance_Exp": 0.9242480620741844,
+      "R2Score_Exp": 0.8151867389678955,
+      "Forgetting_Exp": 0.01807471684047154,
+      "BWT_Exp": -0.01807471684047154
+    },
+    "std": {
+      "Loss_Exp": 2.5855862850193243,
+      "RelativeDistance_Exp": 0.031988502801270274,
+      "R2Score_Exp": 0.010520115226071837,
+      "Forgetting_Exp": 0.009254528850423958,
+      "BWT_Exp": 0.009254528850423958
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 3.888305187225342,
+      "RelativeDistance_Exp": 0.04517319053411484,
+      "R2Score_Exp": 0.01592952013015747,
+      "Forgetting_Exp": 0.014372970376695906,
+      "BWT_Exp": 0.013670180525098528
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 49.413058689662385,
+      "RelativeDistance_Exp": 1.029631495475769,
+      "R2Score_Exp": 0.825680068561009,
+      "Forgetting_Exp": 0.018308242162068684,
+      "BWT_Exp": -0.018308242162068684
+    },
+    "std": {
+      "Loss_Exp": 2.200454091446905,
+      "RelativeDistance_Exp": 0.01894986096202916,
+      "R2Score_Exp": 0.007242681290950374,
+      "Forgetting_Exp": 0.0036489228529413787,
+      "BWT_Exp": 0.0036489228529413787
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 4.668761662074495,
+      "RelativeDistance_Exp": 0.017534494400024414,
+      "R2Score_Exp": 0.00677888734000065,
+      "Forgetting_Exp": 0.005327483018239338,
+      "BWT_Exp": 0.004163424173990887
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 45.074541091918945,
+      "RelativeDistance_Exp": 0.9055757522583008,
+      "R2Score_Exp": 0.8356089691321055,
+      "Forgetting_Exp": 0.014358675479888916,
+      "BWT_Exp": -0.014358675479888916
+    },
+    "std": {
+      "Loss_Exp": 1.9881009967269525,
+      "RelativeDistance_Exp": 0.020665964737037128,
+      "R2Score_Exp": 0.006935365819711719,
+      "Forgetting_Exp": 0.00483293202322119,
+      "BWT_Exp": 0.00483293202322119
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 3.334566116333008,
+      "RelativeDistance_Exp": 0.021535754203796387,
+      "R2Score_Exp": 0.010714481274286869,
+      "Forgetting_Exp": 0.006039953231811524,
+      "BWT_Exp": 0.00832136869430542
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 44.43345413208008,
+      "RelativeDistance_Exp": 0.91374831199646,
+      "R2Score_Exp": 0.843535578250885,
+      "Forgetting_Exp": 0.01042167842388153,
+      "BWT_Exp": -0.01042167842388153
+    },
+    "std": {
+      "Loss_Exp": 1.4589888423624833,
+      "RelativeDistance_Exp": 0.07243727349690546,
+      "R2Score_Exp": 0.005941082659481129,
+      "Forgetting_Exp": 0.004732684515613167,
+      "BWT_Exp": 0.004732684515613167
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.6074653625488295,
+      "RelativeDistance_Exp": 0.1317669034004212,
+      "R2Score_Exp": 0.007939612865447976,
+      "Forgetting_Exp": 0.006208345293998718,
+      "BWT_Exp": 0.005855277180671692
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 43.45822525024414,
+      "RelativeDistance_Exp": 0.9460744708776474,
+      "R2Score_Exp": 0.8298661112785339,
+      "Forgetting_Exp": -0.008333921432495117,
+      "BWT_Exp": 0.008333921432495117
+    },
+    "std": {
+      "Loss_Exp": 1.4837218993115944,
+      "RelativeDistance_Exp": 0.0491752173624951,
+      "R2Score_Exp": 0.010729373553673741,
+      "Forgetting_Exp": 0.011667435344936819,
+      "BWT_Exp": 0.011667435344936819
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 2.3125,
+      "RelativeDistance_Exp": 0.06695429980754852,
+      "R2Score_Exp": 0.010402381420135498,
+      "Forgetting_Exp": 0.015584826469421387,
+      "BWT_Exp": 0.012485861778259277
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 48.74620056152344,
+      "RelativeDistance_Exp": 0.8162423968315125,
+      "R2Score_Exp": 0.8444070418675741,
+      "Forgetting_Exp": 0.007606536149978638,
+      "BWT_Exp": -0.007606536149978638
+    },
+    "std": {
+      "Loss_Exp": 1.0262464975631216,
+      "RelativeDistance_Exp": 0.04560132037339648,
+      "R2Score_Exp": 0.009017976911463964,
+      "Forgetting_Exp": 0.010134071111679077,
+      "BWT_Exp": 0.010134071111679077
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 1.1230583190917969,
+      "RelativeDistance_Exp": 0.06431955099105835,
+      "R2Score_Exp": 0.012669583161671993,
+      "Forgetting_Exp": 0.010134071111679077,
+      "BWT_Exp": 0.010134071111679077
+    }
+  },
+  {
+    "mean": {
+      "Loss_Exp": 34.43111610412598,
+      "RelativeDistance_Exp": 1.1624611020088196,
+      "R2Score_Exp": 0.859785795211792
+    },
+    "std": {
+      "Loss_Exp": 0.6864490509033203,
+      "RelativeDistance_Exp": 0.022120654582977295,
+      "R2Score_Exp": 0.017941713333129883
+    },
+    "adjusted_mean": {
+      "Loss_Exp": 0.6864490509033203,
+      "RelativeDistance_Exp": 0.022120654582977295,
+      "R2Score_Exp": 0.017941713333129883
+    }
+  }
+]
