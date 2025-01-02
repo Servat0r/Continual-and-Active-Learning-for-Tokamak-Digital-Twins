@@ -4,11 +4,10 @@ import torch
 from avalanche.models import MlpVAE
 from torch.optim import Adam
 from avalanche.training import Naive, Replay, EWC, SynapticIntelligence, GenerativeReplay, \
-    GEM, MAS, Cumulative, JointTraining, FromScratchTraining
+    GEM, MAS, Cumulative, JointTraining, FromScratchTraining, LFL
 
 from .parser import *
 from ..utils.strategies import *
-
 
 __strategy_dict = {
     'Naive': Naive,
@@ -17,11 +16,13 @@ __strategy_dict = {
     'FromScratch': FromScratchTraining,
     'FromScratchTraining': FromScratchTraining,
     'Replay': Replay,
+    'PercentageReplay': PercentageReplay,
     'EWC': EWC,
     'SI': SynapticIntelligence,
     'GenerativeReplay': GenerativeReplay,
     'GEM': GEM,
     'MAS': MAS,
+    'LFL': LFL,
     'EWCReplay': EWCReplay,
     'MASReplay': MASReplay,
     'GEMReplay': GEMReplay,

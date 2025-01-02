@@ -45,10 +45,12 @@ def subsample(data, column='has_turbulence'):
 
 
 def make_benchmark(
-        csv_file: str | os.PathLike, train_datasets: list[CSVRegressionDataset],
-        eval_datasets: list[CSVRegressionDataset], test_datasets: list[CSVRegressionDataset],
-        task='regression', input_columns=BASELINE_HIGHPOW_INPUTS, output_columns=BASELINE_HIGHPOW_OUTPUTS,
-        NUM_CAMPAIGNS=5, dtype='float32', *, test_size=0.2, eval_size=0.25,
+        csv_file: str | os.PathLike, train_datasets: list[CSVRegressionDataset | AvalancheDataset],
+        eval_datasets: list[CSVRegressionDataset | AvalancheDataset],
+        test_datasets: list[CSVRegressionDataset | AvalancheDataset],
+        task='regression', input_columns=BASELINE_HIGHPOW_INPUTS,
+        output_columns=BASELINE_HIGHPOW_OUTPUTS, NUM_CAMPAIGNS=5,
+        dtype='float32', *, test_size=0.2, eval_size=0.25,
         normalize_inputs=True, normalize_outputs=False, log_folder=None,
         dataset_type='complete', filter_by_leq: dict[str, int | float] = None,
         filter_by_geq: dict[str, int | float] = None,

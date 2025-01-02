@@ -30,7 +30,10 @@ def mlp_config(parameters: dict[str, Any], gaussian=False, task='regression', ta
     assert isinstance(default_config['drop_rate'], float) and 0 <= default_config['drop_rate'] <= 1
     assert default_config['dtype'] in ['float16', 'float32', 'float64']
     for key in default_config:
-        assert key in ['hidden_size', 'hidden_layers', 'input_size', 'output_size', 'drop_rate', 'dtype']
+        assert key in [
+            'hidden_size', 'hidden_layers', 'input_size', 'output_size',
+            'drop_rate', 'dtype', 'include_softplus', 'activation'
+        ]
     print(task)
     if task == 'regression':
         if gaussian:

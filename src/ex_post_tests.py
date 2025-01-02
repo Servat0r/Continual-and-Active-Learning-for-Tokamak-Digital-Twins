@@ -6,6 +6,7 @@ from pathlib import Path
 
 import torch
 import pandas as pd
+from torch.nn.functional import cosine_similarity
 
 from src.utils import *
 
@@ -80,7 +81,7 @@ def load_models(
         pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
         task: str = 'regression', outputs: str = 'efe_efi_pfe_pfi',
         strategy: str = 'Naive', extra_log_folder: str = 'Base',
-        task_ids: int | list[int] = 0,
+        task_ids: int | list[int] = 0, params_to_remove: list[str] = None,
 ) -> dict[int, torch.nn.Module]:
     """
     Loads saved models according to experiment data.
@@ -92,6 +93,8 @@ def load_models(
     :param strategy: Strategy class name, e.g. "Naive" or "Replay"
     :param extra_log_folder: Extra log folder name (see README), e.g. "Base" or "Buffer 2000"
     :param task_ids: For which run(s) we want to load final model(s).
+    :param params_to_remove: Parameters to remove from the configuration (for backward
+    compatibility).
     :return: A dictionary of the form `task_id -> model`.
     """
     base_log_folder = \
@@ -111,6 +114,8 @@ def load_models(
         config_filename = os.path.join(directories[task_id], 'config.json')
         config = json.load(open(config_filename))
         model_parameters = config['architecture']['parameters']
+        for param in params_to_remove:
+            model_parameters.pop(param, None)
         model_class = SimpleRegressionMLP if task == 'regression' else SimpleClassificationMLP # TODO REWORK TO INCLUDE OTHER MODELS
         model = model_class(**model_parameters)
         model.load_state_dict(state_dict)
@@ -216,7 +221,25 @@ def build_experience_datasets(
     return experience_train_datasets, experience_eval_datasets, experience_test_datasets
 
 
+def outputs_direction_report(model, inputs, targets, ef_columns=None):
+    predicted = model(inputs)
+    mse = ((predicted - targets)**2).mean()
+    cos_sim = cosine_similarity(predicted, targets).mean()
+    ef_columns = ef_columns or [0, 1]
+    ef_length = len(ef_columns)
+    ef_targets, ef_predicted = targets[:, ef_columns], predicted[:, ef_columns]
+    negatives = (ef_predicted < 0.0).int().sum(axis=0)
+    print(
+        f"The Mean Square Error is: {mse}",
+        f"The Cosine Similarity is: {cos_sim}",
+        f"Negative outputs are: {list(negatives)}",
+        f"Negative percentages are: {list(negatives / len(ef_targets) * 100 / ef_length)}%",
+        sep='\n', end='\n'
+    )
+
+
 __all__ = [
     'load_models', 'load_baseline_csv_data',
     'build_full_datasets', 'build_experience_datasets',
+    'outputs_direction_report',
 ]
