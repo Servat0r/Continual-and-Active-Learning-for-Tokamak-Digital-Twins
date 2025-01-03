@@ -1,0 +1,110 @@
+{
+  "general": {
+    "task": "classification",
+    "dtype": "float32",
+    "num_campaigns": 10,
+    "train_mb_size": 4096,
+    "eval_mb_size": 1024,
+    "train_epochs": 200
+  },
+  "dataset": {
+    "pow_type": "highpow",
+    "cluster_type": "tau_based",
+    "dataset_type": "complete",
+    "input_columns": [
+      "ane", "ate", "autor", "machtor", "x",
+      "zeff", "gammae", "q", "smag", "alpha",
+      "ani1", "ati0", "normni1", "ti_te0", "lognustar"
+    ],
+    "output_columns": ["efe", "efi", "pfe", "pfi"],
+    "input_size": 15,
+    "output_size": 4,
+    "normalize_inputs": true,
+    "normalize_outputs": false
+  },
+  "architecture": {
+    "name": "saved",
+    "model_folder": "highpow_classification_mlp_256_2_efe_efi_pfe_pfi_8runs",
+    "model_name": "model",
+    "model_class_name": "ClassificationMLP",
+    "parameters": {
+      "input_size": 15,
+      "output_size": 1,
+      "hidden_size": 256,
+      "hidden_layers": 2,
+      "drop_rate": 0.5
+    }
+  },
+  "loss": {
+    "name": "BCE",
+    "parameters": {
+    }
+  },
+  "optimizer": {
+    "name": "Adam",
+    "parameters": {
+      "lr": 2e-3,
+      "weight_decay": 1e-5
+    }
+  },
+  "scheduler": {
+    "name": "ReduceLROnPlateau",
+    "parameters": {
+      "metric": "train_loss",
+      "first_exp_only": false,
+      "factor": 0.5,
+      "patience": 11,
+      "mode": "min"
+    }
+  },
+  "strategy": [
+    {
+      "name": "Naive",
+      "extra_log_folder": "Base (256 hidden size) (4096 batch size)",
+      "ignore": false,
+      "parameters": {
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 10000 (256 hidden size) (4096 batch size)",
+      "ignore": false,
+      "parameters": {
+        "mem_size": 10000
+      }
+    },
+    {
+      "name": "EWC",
+      "extra_log_folder": "Lambda 10.0 (256 hidden size) (4096 batch size)",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 10.0
+      }
+    },
+    {
+      "name": "MAS",
+      "extra_log_folder": "Lambda 10 Alpha 0,5 (256 hidden size) (4096 batch size)",
+      "ignore": true,
+      "parameters": {
+        "lambda_reg": 10.0,
+        "alpha": 0.5
+      }
+    }
+  ],
+  "early_stopping": {
+    "patience": 25,
+    "delta": 0.05,
+    "val_stream_name": "eval_stream",
+    "min_epochs": 50
+  },
+  "validation_stream": {
+    "val_stream": "eval_stream"
+  },
+  "start_model_saving": {
+    "save_model": false,
+    "saved_model_folder": "highpow_classification_mlp_256_2_efe_efi_pfe_pfi_8runs",
+    "saved_model_name": "model",
+    "add_timestamp": false
+  }
+}
