@@ -218,7 +218,7 @@
     {
       "name": "GEM",
       "extra_log_folder": "Patterns 1000 (4096 batch size) (256 hidden size)",
-      "ignore": false,
+      "ignore": true,
       "parameters": {
         "patterns_per_exp": 1000
       }
@@ -246,6 +246,14 @@
       "ignore": true,
       "parameters": {
         "lambda_e": 1.0
+      }
+    },
+    {
+      "name": "LFL",
+      "extra_log_folder": "Lambda 10 (4096 batch size) (256 hidden size)",
+      "ignore": false,
+      "parameters": {
+        "lambda_e": 10.0
       }
     },
     {
