@@ -66,17 +66,6 @@ def load_baseline_csv_data(
     return train_data, eval_data, test_data
 
 
-def get_baseline_tensor_data(
-        data: pd.DataFrame | dict[str, pd.DataFrame],
-        input_columns: list[str], output_columns: list[str],
-):
-    if not isinstance(data, dict):
-        data = {'default': data}
-    tensor_data = {}
-    for key, df in data.items():
-        ...
-
-
 def load_models(
         pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
         task: str = 'regression', outputs: str = 'efe_efi_pfe_pfi',
