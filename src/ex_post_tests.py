@@ -6,6 +6,7 @@ from pathlib import Path
 
 import torch
 import pandas as pd
+import numpy as np
 from torch.nn.functional import cosine_similarity
 
 from src.utils import *
@@ -227,8 +228,57 @@ def outputs_direction_report(model, inputs, targets, ef_columns=None):
     )
 
 
+def get_mean_std_metric_values(
+    dataset, log_folder, mean_filename='mean_values.csv', std_filename='std_values.csv',
+    metric='Forgetting_Exp', num_exp=10
+):
+    mean_file_path = os.path.join(log_folder, mean_filename)
+    std_file_path = os.path.join(log_folder, std_filename)
+    mean_df = pd.read_csv(mean_file_path)
+    std_df = pd.read_csv(std_file_path)
+    weights = np.array([
+        len(dataset[dataset.campaign == i]) / len(dataset) for i in range(num_exp)
+    ])
+    mean_data = []
+    std_data = []
+    for i in range(num_exp):
+        exp_mean_series = mean_df[(mean_df['training_exp'] == i) & (mean_df['eval_exp'] <= i)][metric].to_numpy()
+        exp_std_series = std_df[num_exp*i:num_exp*i+i+1][metric].to_numpy()
+        print("Means: ", exp_mean_series, "Stds: ", exp_std_series, sep='\n')
+        combined_mean = exp_mean_series.mean()
+        exp_mean_series = (exp_mean_series - combined_mean)
+        exp_std_series = exp_std_series**2 + exp_mean_series**2
+        exp_std_series = weights[:i+1] * exp_std_series
+        combined_std = exp_std_series.sum()
+        mean_data.append(combined_mean)
+        std_data.append(combined_std)
+    return pd.DataFrame({
+        'Experience': list(range(num_exp)),
+        f'Mean {metric}': mean_data,
+        f'Std {metric}': std_data
+    })
+
+
+def wrapper(
+    pow_type, cluster_type, dataset_type, task, outputs,
+    strategy, extra_log_folder, metric='Forgetting_Exp'
+):
+    try:
+        log_folder = get_log_folder(
+            pow_type, cluster_type, task, dataset_type, outputs, strategy, extra_log_folder, count=0, task_id=0
+        )
+        train_data, eval_data, test_data = load_baseline_csv_data(
+            pow_type, cluster_type, dataset_type, raw_or_final='final', task=task
+        )
+        mean_std_df = get_mean_std_metric_values(eval_data, log_folder, metric=metric)
+        return mean_std_df
+    except Exception as ex:
+        print(ex)
+        return None
+
+
 __all__ = [
     'load_models', 'load_baseline_csv_data',
     'build_full_datasets', 'build_experience_datasets',
-    'outputs_direction_report',
+    'outputs_direction_report', 'get_mean_std_metric_values', 'wrapper',
 ]

@@ -1,4 +1,7 @@
+from typing import Literal
+
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -8,24 +11,35 @@ class GaussianNLLLoss(nn.Module):
     Gaussian Negative Log-Likelihood Loss.
 
     This loss assumes the predicted outputs are the mean (mu) and
-    log variance (log_var) of a Gaussian distribution. The target
+    the std (sigma) of a Gaussian distribution. The target
     is assumed to follow the predicted Gaussian distribution.
     """
 
-    def __init__(self, reduction='mean'):
+    def __init__(
+            self,
+            reduction: Literal["mean", "sum", "none"] = 'mean',
+            constant: float = np.log(2 * np.pi), nll_lambda: float = 0.0,
+    ):
+        """
+        :param reduction: Reduction type to apply. Either "mean", "sum" or "none".
+        :param constant: Constant term to add to the loss.
+        :param nll_lambda: Weight of the term that penalizes sigma magnitude.
+        """
         super(GaussianNLLLoss, self).__init__()
         self.reduction = reduction
+        self.constant = constant
+        self.nll_lambda = nll_lambda
         if reduction not in ['mean', 'sum', 'none']:
             raise ValueError(f"Invalid reduction mode: {reduction}")
 
     def forward(self, outputs, targets):
         num_features = outputs.shape[1] // 2
-        # Split predictions into mean and log_variance
+        # Split predictions into mean and variance
         mean = outputs[:, :num_features]
-        #log_variance = outputs[:, num_features:]
-        variance = outputs[:, num_features:]
-        #variance = torch.exp(log_variance)
-        nll = 0.5 * (torch.log(2 * torch.pi * variance) + (targets - mean) ** 2 / variance)
+        variance = outputs[:, num_features:] ** 2
+        nll = 0.5 * (torch.log(variance) + (targets - mean) ** 2 / variance + self.constant)
+        #nll = 0.5 * (log_variance + (targets - mean) ** 2 / torch.exp(log_variance) + self.constant)
+        nll += self.nll_lambda * variance
         if self.reduction == 'mean':
             return nll.mean()
         elif self.reduction == 'sum':

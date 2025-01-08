@@ -15,9 +15,10 @@ def r2_score_batch(y_true, y_pred, batch_dim=0):
     Returns:
         torch.Tensor: R² values for each batch element.
     """
+    size = y_true.shape[batch_dim + 1] # for the case of Gaussian NLL
     # Ensure we're computing R² across the batch dimension
     ss_total = torch.sum((y_true - y_true.mean(dim=batch_dim, keepdim=True)) ** 2, dim=batch_dim)
-    ss_residual = torch.sum((y_true - y_pred) ** 2, dim=batch_dim)
+    ss_residual = torch.sum((y_true - y_pred[:, 0:size]) ** 2, dim=batch_dim) # mean for Gaussian NLL
 
     # Compute R²
     r2 = 1 - (ss_residual / ss_total)

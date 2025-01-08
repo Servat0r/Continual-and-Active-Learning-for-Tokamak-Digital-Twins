@@ -5,7 +5,7 @@
     "num_campaigns": 10,
     "train_mb_size": 4096,
     "eval_mb_size": 1024,
-    "train_epochs": 200
+    "train_epochs": 400
   },
   "dataset": {
     "pow_type": "highpow",
@@ -33,17 +33,17 @@
       "output_size": 4,
       "hidden_size": 256,
       "hidden_layers": 2,
-      "drop_rate": 0.5
+      "drop_rate": 0.3
     }
   },
   "loss": {
     "name": "MSE",
     "parameters": {
-      "reduction":  "mean"
+      "reduction": "mean"
     }
   },
   "optimizer": {
-    "name": "Adam",
+    "name": "AdamW",
     "parameters": {
       "lr": 2e-3,
       "weight_decay": 1e-5
@@ -58,28 +58,28 @@
       "patience": 11,
       "mode": "min",
       "threshold_mode": "abs",
-      "threshold": 0.5,
+      "threshold": 0.05,
       "min_lr": 1e-4
     }
   },
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "Base (4096 batch size) (256 hidden size)",
-      "ignore": true,
+      "extra_log_folder": "MSE/Base (4096 batch size) (256 hidden size)",
+      "ignore": false,
       "parameters": {
       }
     },
     {
       "name": "FromScratchTraining",
-      "extra_log_folder": "Base (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Base (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "Percentage 5% (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Percentage 5% (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "mem_percentage": 0.05
@@ -87,7 +87,7 @@
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "Percentage 10% (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Percentage 10% (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "mem_percentage": 0.1
@@ -95,7 +95,7 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 2000 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Buffer 2000 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "mem_size": 2000
@@ -103,7 +103,7 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 10000 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Buffer 10000 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "mem_size": 10000
@@ -111,7 +111,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "Lambda 10 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Lambda 10 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -120,7 +120,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "Lambda 1 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Lambda 1 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -128,17 +128,8 @@
       }
     },
     {
-      "name": "EWC",
-      "extra_log_folder": "Lambda 0.1 (4096 batch size) (256 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 0.1
-      }
-    },
-    {
       "name": "EWCReplay",
-      "extra_log_folder": "Lambda 10 Buffer 1000 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Lambda 10 Buffer 1000 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -148,7 +139,7 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "Lambda 10 Alpha 0,5 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Lambda 10 Alpha 0,5 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "lambda_reg": 10.0,
@@ -157,7 +148,7 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "Lambda 1 Alpha 0,5 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Lambda 1 Alpha 0,5 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "lambda_reg": 1.0,
@@ -165,17 +156,8 @@
       }
     },
     {
-      "name": "MAS",
-      "extra_log_folder": "Lambda 10 Alpha 1,0 (4096 batch size) (256 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "lambda_reg": 10.0,
-        "alpha": 1.0
-      }
-    },
-    {
       "name": "MASReplay",
-      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 1000 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Lambda 10 Alpha 0,5 Buffer 1000 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "lambda_reg": 10.0,
@@ -184,48 +166,24 @@
       }
     },
     {
-      "name": "AGEM",
-      "extra_log_folder": "Patterns 200 (4096 batch size) (256 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 200
-      }
-    },
-    {
       "name": "GEM",
-      "extra_log_folder": "Patterns 100 (4096 batch size) (256 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 100
-      }
-    },
-    {
-      "name": "GEM",
-      "extra_log_folder": "Patterns 200 (4096 batch size) (256 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 200
-      }
-    },
-    {
-      "name": "GEM",
-      "extra_log_folder": "Patterns 400 (4096 batch size) (256 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 400
-      }
-    },
-    {
-      "name": "GEM",
-      "extra_log_folder": "Patterns 1000 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Patterns 1000 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 1000
       }
     },
     {
+      "name": "GEM",
+      "extra_log_folder": "Gaussian NLL/Patterns 2000 (4096 batch size) (256 hidden size)",
+      "ignore": true,
+      "parameters": {
+        "patterns_per_exp": 2000
+      }
+    },
+    {
       "name": "GEMReplay",
-      "extra_log_folder": "Patterns 100 Buffer 1000 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Patterns 100 Buffer 1000 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 100,
@@ -234,15 +192,7 @@
     },
     {
       "name": "LFL",
-      "extra_log_folder": "Lambda 0.1 (4096 batch size) (256 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "lambda_e": 0.1
-      }
-    },
-    {
-      "name": "LFL",
-      "extra_log_folder": "Lambda 1 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Lambda 1 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "lambda_e": 1.0
@@ -250,31 +200,15 @@
     },
     {
       "name": "LFL",
-      "extra_log_folder": "Lambda 10 (4096 batch size) (256 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "Gaussian NLL/Lambda 10 (4096 batch size) (256 hidden size)",
+      "ignore": true,
       "parameters": {
         "lambda_e": 10.0
       }
     },
     {
       "name": "SI",
-      "extra_log_folder": "Lambda 10 (4096 batch size) (256 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "si_lambda": 10.0
-      }
-    },
-    {
-      "name": "SI",
-      "extra_log_folder": "Lambda 100 (4096 batch size) (256 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "si_lambda": 100.0
-      }
-    },
-    {
-      "name": "SI",
-      "extra_log_folder": "Lambda 1 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Lambda 1 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "si_lambda": 1.0
@@ -282,23 +216,15 @@
     },
     {
       "name": "SI",
-      "extra_log_folder": "Lambda 0.1 (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Lambda 0.1 (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "si_lambda": 0.1
       }
     },
     {
-      "name": "GDumb",
-      "extra_log_folder": "Buffer 2000 (4096 batch size) (256 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "mem_size": 2000
-      }
-    },
-    {
       "name": "JointTraining",
-      "extra_log_folder": "Base (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Base (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
         "eval_every": 0
@@ -306,7 +232,7 @@
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "Base (4096 batch size) (256 hidden size)",
+      "extra_log_folder": "Gaussian NLL/Base (4096 batch size) (256 hidden size)",
       "ignore": true,
       "parameters": {
       }
@@ -314,9 +240,10 @@
   ],
   "early_stopping": {
     "patience": 50,
-    "delta": 0.1,
+    "delta": 1.0,
     "val_stream_name": "eval_stream",
-    "min_epochs": 100
+    "min_epochs": 50,
+    "immediate_stop_delta": 1.0
   },
   "validation_stream": {
     "val_stream": "eval_stream"

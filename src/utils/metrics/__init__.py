@@ -4,6 +4,8 @@ from .precision_recall_f1 import *
 from .relative_distance import *
 from .r2_score import *
 from .gaussian_mse import *
+from .gaussian_nll import *
+from .gaussian_variance import *
 from .forgetting_bwt_fwt import *
 from .mean_std import *
 from .metric_preprocess import *

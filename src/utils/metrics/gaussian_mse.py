@@ -8,11 +8,7 @@ def gaussian_mse_batch(y_true, y_pred, confidence_coefficient=0, batch_dim=0):
     # Split predictions into mean and log_variance
     mean = y_pred[:, :num_features]
     variance = y_pred[:, num_features:]
-    lower_bound = mean - confidence_coefficient * variance
-    upper_bound = mean + confidence_coefficient * variance
-    sizes = torch.rand_like(upper_bound - lower_bound)
-    results = sizes * (upper_bound - lower_bound) + lower_bound
-    mse_total = torch.sum((y_true - results) ** 2, dim=batch_dim+1)
+    mse_total = torch.sum((y_true - mean) ** 2, dim=batch_dim+1) / num_features
     return mse_total  # Unreduced
 
 

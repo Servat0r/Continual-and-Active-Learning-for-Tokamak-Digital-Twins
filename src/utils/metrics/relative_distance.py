@@ -20,11 +20,12 @@ class RelativeDistance(Metric[float]):
         :param predicted: Predicted vector (batch of predictions)
         :param actual: Actual (ground truth) vector (batch of targets)
         """
+        size = actual.shape[1] # For the Gaussian NLL case
         # Calculate the relative distance for each sample in the batch
         actual_norm = torch.norm(actual, dim=1)
         if actual_norm.sum() == 0:
             actual_norm = torch.ones_like(actual_norm)
-        relative_distances = torch.norm(predicted - actual, dim=1) / actual_norm
+        relative_distances = torch.norm(predicted[:, 0:size] - actual, dim=1) / actual_norm
 
         # Update the mean relative distance
         self._mean_relative_distance.update(relative_distances.mean().item())

@@ -1,5 +1,6 @@
 from torch import float32, float64, float16
 from torch import equal as torch_equal
+import torch.nn as nn
 
 
 def get_dtype_from_str(dtype_str: str):
@@ -40,4 +41,13 @@ def are_models_equal(model1, model2):
     return True
 
 
-__all__ = ['get_model_size', 'get_dtype_from_str', 'are_models_equal']
+def initialize_weights_low(module, scale=1e-2):
+    if isinstance(module, nn.Linear):
+        nn.init.uniform_(module.weight, -scale, scale)  # Small uniform values
+        if module.bias is not None:
+            nn.init.uniform_(module.bias, -scale, scale)  # Small bias values
+
+
+__all__ = [
+    'get_model_size', 'get_dtype_from_str', 'are_models_equal', 'initialize_weights_low'
+]

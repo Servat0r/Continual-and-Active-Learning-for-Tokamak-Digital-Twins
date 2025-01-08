@@ -69,8 +69,9 @@ def get_metrics(loss_type):
     if loss_type == 'GaussianNLL':
         metrics = \
             gaussian_mse_metrics(epoch=True, experience=True, stream=True) + \
-            renamed_forgetting_metrics(experience=True, stream=True) + \
-            renamed_bwt_metrics(experience=True, stream=True)
+            r2_score_metrics(epoch=True, experience=True, stream=True) + \
+            renamed_forgetting_metrics(experience=True, stream=True)
+            # gaussian_variance_metrics(epoch=True, experience=True, stream=True) + \
     elif loss_type in ['BCE', 'bce', 'BCEWithLogits', 'bce_with_logits']:
         metrics = \
             binary_accuracy_metrics(epoch=True, experience=True, stream=True) + \
@@ -177,6 +178,7 @@ def task_training_loop(
     load_saved_final_data = config_parser['load_saved_final_data']
     # Architecture
     model = config_parser['architecture']
+    initialize_weights_low(model, scale=1e-2)
     # Loss
     criterion = config_parser['loss']
     # Optimizer
@@ -373,9 +375,12 @@ def task_training_loop(
                 torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_0.pt'))
                 model.train()
             else:
-                for idx, train_exp in enumerate(train_stream):
+                current_metrics = None
+                for (idx, train_exp), eval_exp in zip(enumerate(train_stream), eval_stream):
                     print(f"Starting training experience [red]{idx}[/red]: ")
-                    cl_strategy.train(train_exp)
+                    if not early_stopping.use_validation_plugin:
+                        early_stopping.update(cl_strategy, current_metrics)
+                    cl_strategy.train(train_exp)#, eval_streams=[eval_exp])
                     print(f"Starting testing experience [red]{idx}[/red]: ")
                     results.append(cl_strategy.eval(eval_stream))
                     if write_intermediate_models:
