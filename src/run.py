@@ -69,9 +69,10 @@ def get_metrics(loss_type):
     if loss_type == 'GaussianNLL':
         metrics = \
             gaussian_mse_metrics(epoch=True, experience=True, stream=True) + \
+            relative_distance_metrics(epoch=True, experience=True, stream=True) + \
             r2_score_metrics(epoch=True, experience=True, stream=True) + \
+            gaussian_variance_metrics(epoch=True, experience=True, stream=True) + \
             renamed_forgetting_metrics(experience=True, stream=True)
-            # gaussian_variance_metrics(epoch=True, experience=True, stream=True) + \
     elif loss_type in ['BCE', 'bce', 'BCEWithLogits', 'bce_with_logits']:
         metrics = \
             binary_accuracy_metrics(epoch=True, experience=True, stream=True) + \

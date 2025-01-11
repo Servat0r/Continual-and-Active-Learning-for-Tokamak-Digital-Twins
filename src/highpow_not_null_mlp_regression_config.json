@@ -25,9 +25,9 @@
   },
   "architecture": {
     "name": "saved",
-    "model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
+    "model_folder": "highpow_gaussian_mlp_256_2_efe_efi_pfe_pfi_8runs",
     "model_name": "model",
-    "model_class_name": "MLP",
+    "model_class_name": "GaussianMLP",
     "parameters": {
       "input_size": 15,
       "output_size": 4,
@@ -37,16 +37,18 @@
     }
   },
   "loss": {
-    "name": "MSE",
+    "name": "GaussianNLL",
     "parameters": {
-      "reduction": "mean"
+      "reduction": "mean",
+      "constant": 0.0,
+      "nll_lambda": 1e-1
     }
   },
   "optimizer": {
     "name": "AdamW",
     "parameters": {
-      "lr": 2e-3,
-      "weight_decay": 1e-5
+      "lr": 5e-3,
+      "weight_decay": 1e-4
     }
   },
   "scheduler": {
@@ -55,18 +57,18 @@
       "metric": "train_loss",
       "first_exp_only": false,
       "factor": 0.5,
-      "patience": 11,
+      "patience": 21,
       "mode": "min",
       "threshold_mode": "abs",
-      "threshold": 0.05,
+      "threshold": 0.10,
       "min_lr": 1e-4
     }
   },
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "MSE/Base (4096 batch size) (256 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "Gaussian NLL/Base (4096 batch size) (256 hidden size)",
+      "ignore": true,
       "parameters": {
       }
     },
@@ -240,17 +242,18 @@
   ],
   "early_stopping": {
     "patience": 50,
-    "delta": 1.0,
+    "delta": 0.1,
     "val_stream_name": "eval_stream",
-    "min_epochs": 50,
-    "immediate_stop_delta": 1.0
+    "min_epochs": 100,
+    "immediate_stop_delta": 1.0,
+    "when_below": 40
   },
   "validation_stream": {
     "val_stream": "eval_stream"
   },
   "start_model_saving": {
     "save_model": false,
-    "saved_model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
+    "saved_model_folder": "highpow_gaussian_mlp_256_2_efe_efi_pfe_pfi_8runs",
     "saved_model_name": "model",
     "add_timestamp": false
   }
