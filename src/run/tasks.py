@@ -1,0 +1,318 @@
+import gc
+import json
+import sys
+import os
+from typing import Any
+from datetime import datetime
+import torch
+
+from avalanche.logging import InteractiveLogger
+from avalanche.evaluation.metrics import loss_metrics
+from avalanche.models import VAE_loss
+from avalanche.training import GenerativeReplay, VAETraining, JointTraining
+from avalanche.training.plugins import EvaluationPlugin, GenerativeReplayPlugin
+
+
+from ..utils import *
+from ..configs import *
+from .utils import *
+from .plots import *
+
+
+def task_training_loop(
+        config_data: str | dict[str, Any], task_id: int,
+        redirect_stdout=True, extra_log_folder='',
+        write_intermediate_models=False,
+        plot_single_runs=False,
+):
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    config_parser = ConfigParser(config_data, task_id=task_id)
+    config_parser.load_config()
+
+    # Relevant config names
+    config = config_parser.get_config()
+    model_type = config['architecture']['name']
+    optimizer_type = config['optimizer']['name']
+    loss_type = config['loss']['name']
+    strategy_type = config['strategy']['name']
+
+    # Config Processing
+    config_parser.process_config()
+    debug_print(config_parser.get_config())
+    # General
+    train_mb_size = config_parser['train_mb_size']
+    eval_mb_size = config_parser['eval_mb_size']
+    train_epochs = config_parser['train_epochs']
+    num_campaigns = config_parser['num_campaigns']
+    dtype = config_parser['dtype']
+    task = config_parser['task']
+    # Dataset
+    input_columns = config_parser['input_columns']
+    output_columns = config_parser['output_columns']
+    input_size = len(input_columns)
+    output_size = len(output_columns)
+    pow_type = config_parser['pow_type']
+    cluster_type = config_parser['cluster_type']
+    dataset_type = config_parser['dataset_type']
+    normalize_inputs = config_parser['normalize_inputs']
+    normalize_outputs = config_parser['normalize_outputs']
+    load_saved_final_data = config_parser['load_saved_final_data']
+    # Architecture
+    model = config_parser['architecture']
+    initialize_weights_low(model, scale=1e-2)
+    # Loss
+    criterion = config_parser['loss']
+    # Optimizer
+    optimizer_config = config_parser['optimizer']
+    optimizer_class = optimizer_config['class']
+    optimizer_parameters = optimizer_config['parameters']
+    optimizer = optimizer_class(model.parameters(), **optimizer_parameters)
+    # Early Stopping
+    early_stopping = config_parser.get_config().get('early_stopping', None)
+    # Scheduler
+    scheduler_config = config_parser.get_config().get('scheduler', None)
+    scheduler = make_scheduler(scheduler_config, optimizer=optimizer)
+    # CL Strategy Config
+    cl_strategy_config = config_parser['strategy']
+    cl_strategy_class = cl_strategy_config['class']
+    cl_strategy_parameters = cl_strategy_config['parameters']
+    extra_log_folder = cl_strategy_config.get('extra_log_folder', extra_log_folder)
+    # Filters
+    filters_by_geq = None
+    filters_by_leq = None
+    filters = config_parser.get_config().get('filters', None)
+    if filters:
+        filters_by_geq = filters.get('by_geq', None)
+        filters_by_leq = filters.get('by_leq', None)
+
+    # Transforms
+    cl_strategy_transform = config_parser.get_config().get('transform', None)
+    cl_strategy_transform_transform = None
+    cl_strategy_transform_preprocess_ytrue = None
+    cl_strategy_transform_preprocess_ypred = None
+    if cl_strategy_transform:
+        cl_strategy_transform_transform = cl_strategy_transform['transform']
+        cl_strategy_transform_preprocess_ytrue = cl_strategy_transform['preprocess_ytrue']
+        cl_strategy_transform_preprocess_ypred = cl_strategy_transform['preprocess_ypred']
+
+    # Target Transforms
+    cl_strategy_target_transform = config_parser.get_config().get('target_transform', None)
+    cl_strategy_target_transform_transform = None
+    cl_strategy_target_transform_preprocess_ytrue = None
+    cl_strategy_target_transform_preprocess_ypred = None
+    if cl_strategy_target_transform:
+        cl_strategy_target_transform_transform = cl_strategy_target_transform['target_transform']
+        cl_strategy_target_transform_preprocess_ytrue = cl_strategy_target_transform['preprocess_ytrue']
+        cl_strategy_target_transform_preprocess_ypred = cl_strategy_target_transform['preprocess_ypred']
+
+    # Prepare folders for experiments
+    folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}"
+    output_columns_str = '_'.join(output_columns)
+    log_folder = os.path.join(
+        'logs', pow_type, cluster_type, task, dataset_type,
+        output_columns_str, strategy_type, extra_log_folder, folder_name,
+    )
+    os.makedirs(os.path.join(log_folder), exist_ok=True)
+    stdout_file_path = os.path.join(log_folder, 'stdout.txt')
+
+    with open(stdout_file_path, 'w') as stdout_file:
+        if redirect_stdout:
+            sys.stdout = stdout_file # Redirect outputs to file
+        print("[green]Configuration Loaded[/green]:")
+        print(f"  Device: [cyan]{device}[/cyan]")
+        for field_name, field_value in config_parser.get_config().items():
+            print(f"  {field_name}: [cyan]{field_value}[/cyan]")
+
+        # Print Model Size
+        trainables, total = get_model_size(model)
+        print(
+            f"[green]Trainable Parameters[/green] = [red]{trainables}[/red]"
+            f"\n[green]Total Parameters[/green] = [red]{total}[/red]"
+        )
+
+        # Saving model before usage
+        start_model_saving_data = config_parser['start_model_saving']
+        if start_model_saving_data:
+            saved_model_folder = start_model_saving_data['saved_model_folder']
+            saved_model_name = start_model_saving_data['saved_model_name']
+            os.makedirs(saved_model_folder, exist_ok=True)
+            with open(f'{saved_model_folder}/{saved_model_name}.json', 'w') as fp:
+                json.dump(config['architecture'], fp, indent=4)
+            torch.save(model.state_dict(), f'{saved_model_folder}/{saved_model_name}.pt')
+
+        # Print model size to experiment directory
+        with open(f'{log_folder}/model_size.txt', 'w') as fp:
+            print(
+                f"Trainable Parameters = {trainables}"
+                f"\nTotal Parameters = {total}",
+                file=fp
+            )
+
+        train_datasets = []
+        eval_datasets = []
+        test_datasets = []
+        csv_file = f'data/baseline/cleaned/{pow_type}_cluster/{cluster_type}/complete_dataset.csv'
+        print(
+            f"Input columns = {input_columns}"
+            f"\nOutput columns = {output_columns}"
+        )
+        benchmark = make_benchmark(
+            csv_file, train_datasets, eval_datasets, test_datasets, task=task, NUM_CAMPAIGNS=num_campaigns,
+            dtype=dtype, normalize_inputs=normalize_inputs, normalize_outputs=normalize_outputs,
+            log_folder=log_folder, input_columns=input_columns, output_columns=output_columns,
+            dataset_type=dataset_type, filter_by_geq=filters_by_geq, filter_by_leq=filters_by_leq,
+            apply_subsampling=True, transform=cl_strategy_transform_transform,
+            target_transform=cl_strategy_target_transform_transform,
+            load_saved_final_data=load_saved_final_data,
+        )
+
+        train_stream = benchmark.train_stream
+        eval_stream = benchmark.eval_stream
+        test_stream = benchmark.test_stream
+
+        if cl_strategy_class != GenerativeReplay:
+            with open(os.path.join(log_folder, 'config.json'), 'w') as fp:
+                json.dump(config, fp, indent=4)
+
+        # Get and transform metrics
+        metrics = get_metrics(loss_type)
+        if cl_strategy_target_transform:
+            metrics = preprocessed_metrics(
+                metrics, preprocess_ytrue=cl_strategy_target_transform_preprocess_ytrue,
+                preprocess_ypred=cl_strategy_target_transform_preprocess_ypred
+            )
+        metrics = loss_metrics(epoch=True, experience=True, stream=True) + metrics
+
+        # Build logger
+        mean_std_plugin = MeanStdPlugin([str(metric) for metric in metrics], num_experiences=num_campaigns)
+        csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=eval_stream)
+        has_interactive_logger = int(os.getenv('INTERACTIVE', '0'))
+        loggers = ([InteractiveLogger()] if has_interactive_logger else []) + [csv_logger, mean_std_plugin]
+
+        # Define the evaluation plugin with desired metrics
+        eval_plugin = EvaluationPlugin(*metrics, loggers=loggers)
+
+        # Extra plugins
+        plugins = [
+            ValidationStreamPlugin(val_stream=eval_stream),
+            TqdmTrainingEpochsPlugin(num_exp=num_campaigns, num_epochs=train_epochs),
+        ]
+
+        if early_stopping:
+            plugins.append(early_stopping)
+        if scheduler:
+            plugins.append(scheduler)
+
+        print(f"[red]CL Strategy Class[/red]: {cl_strategy_class}")
+        # Continual learning strategy
+        if cl_strategy_class == GenerativeReplay:
+            generator_strategy_config = cl_strategy_parameters.pop('generator_strategy')
+            generator_model = generator_strategy_config['model']
+            generator_optimizer = generator_strategy_config['optimizer']
+            train_mb_size = config["general"]["train_mb_size"]
+            train_epochs = config["general"]["train_epochs"]
+            eval_mb_size = config["general"]["eval_mb_size"]
+            replay_size = cl_strategy_parameters.get("replay_size", None)
+            increasing_replay_size = cl_strategy_parameters.get("increasing_replay_size", False)
+            is_weighted_replay = cl_strategy_parameters.get("is_weighted_replay", False)
+            weight_replay_loss_factor = cl_strategy_parameters.get("weight_replay_loss_factor", 1.0)
+            weight_replay_loss = cl_strategy_parameters.get("weight_replay_loss", 1e-4)
+            generator_strategy = VAETraining(
+                model=generator_model,
+                optimizer=generator_optimizer,
+                criterion=VAE_loss,
+                train_mb_size=train_mb_size,
+                train_epochs=train_epochs,
+                eval_mb_size=eval_mb_size,
+                device=device,
+                plugins=[
+                    GenerativeReplayPlugin(
+                        replay_size=replay_size,
+                        increasing_replay_size=increasing_replay_size,
+                        is_weighted_replay=is_weighted_replay,
+                        weight_replay_loss_factor=weight_replay_loss_factor,
+                        weight_replay_loss=weight_replay_loss,
+                    )
+                ],
+            )
+            cl_strategy_parameters['generator_strategy'] = generator_strategy
+
+        cl_strategy = cl_strategy_class(
+            model=model, optimizer=optimizer, criterion=criterion, train_mb_size=train_mb_size,
+            train_epochs=train_epochs, eval_mb_size=eval_mb_size, device=device, evaluator=eval_plugin,
+            plugins=plugins, **cl_strategy_parameters
+        )
+
+        @time_logger(log_file=f'{log_folder}/timing.txt')
+        def run(train_stream, eval_stream, cl_strategy, model, log_folder, write_intermediate_models):
+            results = []
+            if isinstance(cl_strategy, JointTraining):
+                print(f"Starting [red]JointTraining[/red]training experience: ")
+                cl_strategy.train(train_stream)
+                print(f"Starting [red]JointTraining[/red] evaluation experience: ")
+                results.append(cl_strategy.eval(eval_stream))
+                print(f"Saving model after [red]JointTraining[/red] experience: ")
+                model.eval()
+                torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_0.pt'))
+                model.train()
+            else:
+                current_metrics = None
+                for (idx, train_exp), eval_exp in zip(enumerate(train_stream), eval_stream):
+                    print(f"Starting training experience [red]{idx}[/red]: ")
+                    if not early_stopping.use_validation_plugin:
+                        early_stopping.update(cl_strategy, current_metrics)
+                    cl_strategy.train(train_exp)#, eval_streams=[eval_exp])
+                    print(f"Starting testing experience [red]{idx}[/red]: ")
+                    results.append(cl_strategy.eval(eval_stream))
+                    if write_intermediate_models:
+                        print(f"Saving model after experience [red]{idx}[/red]: ")
+                        model.eval()
+                        torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
+                        model.train()
+            return results
+
+        # garbage collect before running
+        print("[#aa0000]Garbage collecting ...[/#aa0000]")
+        gc.collect()
+
+        # train and test loop over the stream of experiences
+        print("[#aa0000]Starting ...[/#aa0000]")
+        try:
+            results = run(train_stream, eval_stream, cl_strategy, model, log_folder, write_intermediate_models)
+            with open(os.path.join(log_folder, 'results.json'), 'w') as fp:
+                json.dump(results, fp, indent=4)
+
+            # Finally close the logger and evaluate on test stream
+            csv_logger.set_test_stream_type()
+            final_test_results = cl_strategy.eval(test_stream)
+            csv_logger.close()
+            # Filter by results on test_stream
+            final_test_results = {
+                k: v for k, v in final_test_results.items() if "test_stream" in k
+            }
+            final_test_results = process_test_results(final_test_results)
+            with open(os.path.join(log_folder, 'final_test_results.json'), 'w') as fp:
+                json.dump(final_test_results, fp, indent=4)
+            model.eval()
+            # Save model for future usage
+            torch.save(model.state_dict(), os.path.join(log_folder, 'model.pt'))
+            # Plots
+            metric_list = get_metric_names_list(task)
+            title_list = get_title_names_list(task)
+            ylabel_list = get_ylabel_names_list(task)
+            if plot_single_runs:
+                evaluation_experiences_plots(log_folder, metric_list, title_list, ylabel_list)
+            mean_std_plugin.dump_results(os.path.join(log_folder, "mean_std_metric_dump.csv"))
+            return {
+                'result': True, 'log_folder': log_folder, 'task': task,
+                'is_joint_training': (cl_strategy_class == JointTraining)
+            }
+        except Exception as ex:
+            raise ex
+        finally:
+            # Reset stdout
+            if redirect_stdout:
+                sys.stdout = sys.__stdout__
+
+
+__all__ = ['task_training_loop']

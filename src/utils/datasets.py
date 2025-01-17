@@ -83,6 +83,20 @@ def _is_not_null(row, output_columns):
     return any([row[column] != 0.0 for column in output_columns])
 
 
+def make_complete_dataset(
+        pow_type, cluster_type, output_columns: list[str],
+        base_src_folder='baseline/campaigns_lumped',
+        base_dest_folder='baseline/cleaned',
+):
+    src_filename = f'data/{base_src_folder}/{pow_type}_cluster/{cluster_type}/all_campaigns.csv'
+    dest_folder = f'data/{base_dest_folder}/{pow_type}_cluster/{cluster_type}'
+    dest_filename = f'{dest_folder}/complete_dataset.csv'
+    df = pd.read_csv(src_filename)
+    df['has_turbulence'] = df.apply(lambda row: _is_not_null(row, output_columns), axis=1)
+    os.makedirs(dest_folder, exist_ok=True)
+    df.to_csv(dest_filename, index=False)
+
+
 def get_avalanche_csv_regression_datasets(
         train_data, eval_data, test_data, input_columns: list[str], output_columns: list[str], # todo modify later
         transform=None, target_transform=None, filter_by: dict[str, list] = None,
@@ -164,10 +178,18 @@ BASELINE_LOWPOW_INPUTS = [
     'ane', 'ate', 'x', 'q', 'smag', 'alpha', 'ani1', 'ati0', 'normni1', 'zeff', 'lognustar'
 ]
 BASELINE_LOWPOW_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
+# Mixed
+BASELINE_MIXED_INPUTS = [
+    'ane', 'ate', 'autor', 'machtor', 'x', 'zeff', 'gammae', 'q', 'smag',
+    'alpha', 'ani1', 'ati0', 'normni1', 'ti_te0', 'lognustar'
+]
+BASELINE_MIXED_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
 
 
 __all__ = [
     'CSVRegressionDataset', 'get_avalanche_csv_regression_datasets',
     'BASELINE_HIGHPOW_INPUTS', 'BASELINE_HIGHPOW_OUTPUTS',
     'BASELINE_LOWPOW_INPUTS', 'BASELINE_LOWPOW_OUTPUTS',
+    'BASELINE_MIXED_INPUTS', 'BASELINE_MIXED_OUTPUTS',
+    'make_complete_dataset',
 ]

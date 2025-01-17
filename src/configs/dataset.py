@@ -24,8 +24,8 @@ def dataset_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     assert all([isinstance(item, str) for item in default_config['output_columns']])
     assert isinstance(default_config['input_size'], int) and default_config['input_size'] > 0
     assert isinstance(default_config['output_size'], int) and default_config['output_size'] > 0
-    assert default_config['pow_type'] in ['highpow', 'lowpow']
-    assert default_config['cluster_type'] in ['Ip_Pin_based', 'tau_based', 'pca_based']
+    assert default_config['pow_type'] in ['highpow', 'lowpow', 'mixed']
+    assert default_config['cluster_type'] in ['Ip_Pin_based', 'tau_based', 'pca_based', 'wmhd_based', 'beta_based']
     assert default_config['dataset_type'] in ['not_null', 'complete']
     return default_config
 
