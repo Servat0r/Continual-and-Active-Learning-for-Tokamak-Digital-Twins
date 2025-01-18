@@ -9,7 +9,7 @@
   },
   "dataset": {
     "pow_type": "lowpow",
-    "cluster_type": "tau_based",
+    "cluster_type": "Ip_Pin_based",
     "dataset_type": "not_null",
     "input_columns": [
       "ane", "ate", "x", "q", "smag", "alpha",
@@ -157,7 +157,7 @@
     {
       "name": "MASReplay",
       "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 1000 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "ignore": true,
       "parameters": {
         "lambda_reg": 10.0,
         "alpha": 0.5,
@@ -183,7 +183,7 @@
     {
       "name": "GEMReplay",
       "extra_log_folder": "Patterns 100 Buffer 1000 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "ignore": true,
       "parameters": {
         "patterns_per_exp": 100,
         "mem_size": 1000
@@ -201,7 +201,7 @@
     {
       "name": "LFL",
       "extra_log_folder": "Lambda 1 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "ignore": true,
       "parameters": {
         "lambda_e": 1.0
       }
@@ -209,7 +209,7 @@
     {
       "name": "LFL",
       "extra_log_folder": "Lambda 10 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "ignore": true,
       "parameters": {
         "lambda_e": 10.0
       }
@@ -233,7 +233,7 @@
     {
       "name": "JointTraining",
       "extra_log_folder": "Base (4096 batch size) (1024 hidden size)",
-      "ignore": true,
+      "ignore": false,
       "parameters": {
         "eval_every": 0
       }

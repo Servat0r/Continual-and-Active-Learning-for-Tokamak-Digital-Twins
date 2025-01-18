@@ -7,11 +7,14 @@ from .misc import extract_metric_values_over_evaluation_experiences
 
 
 def plot_metric_over_evaluation_experiences(
-        file_path_or_buf: str | pd.DataFrame, metric: str, title: str, xlabel: str, ylabel: str,
-        grid: bool = True, legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
-        save: bool = True, savepath: str = None, num_exp: int = None, from_beginning: bool = True,
-        title_size=None, xlabel_size=None, ylabel_size=None, legend_size=None,
-        ylim_max=None, xlim_max=None, axes_size=16, base_label = 'Eval Experience',
+        file_path_or_buf: str | pd.DataFrame | list[str | pd.DataFrame],
+        metric: str, title: str, xlabel: str, ylabel: str, grid: bool = True,
+        legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
+        save: bool = True, savepath: str = None, num_exp: int = None,
+        from_beginning: bool = True, title_size=None, xlabel_size=None, ylabel_size=None,
+        legend_size=None, ylim_max=None, xlim_max=None, axes_size=16,
+        base_label: str | list[str] = 'Eval Experience', linestyles: str | list[str] = '-',
+        extend_label: bool = True,
 ):
     """
     Plots the values of a given tracked metric on each evaluation experience data across all training experiences.
@@ -37,27 +40,37 @@ def plot_metric_over_evaluation_experiences(
     :param xlim_max: If not None, fixes the maximum value to be shown on the x-axis. Default is None.
     :param axes_size: If not None, fixes the size of the numbers to be shown on the axes. Default is None.
     :param base_label: Legend will use a label of the form f"{base_label} {exp_id}" for each experience.
+    :param linestyles: Linestyles, default to "-".
     """
-    df: pd.DataFrame = pd.read_csv(file_path_or_buf) if isinstance(file_path_or_buf, str) else file_path_or_buf
-    default_num_exp = len(df['eval_exp'].unique())
+    if isinstance(file_path_or_buf, str):
+        dfs: list[pd.DataFrame] = [pd.read_csv(file_path_or_buf)]
+    elif isinstance(file_path_or_buf, pd.DataFrame):
+        dfs: list[pd.DataFrame] = [file_path_or_buf]
+    else:
+        dfs: list[pd.DataFrame] = [pd.read_csv(item) if isinstance(item, str) else item for item in file_path_or_buf]
+    base_labels = len(dfs) * [base_label] if isinstance(base_label, str) else base_label
+    linestyles = len(dfs) * [linestyles] if isinstance(linestyles, str) else linestyles
+    plt.figure(figsize=(12, 8))
+    default_num_exp = len(dfs[0]['eval_exp'].unique())
     num_exp = default_num_exp if num_exp is None else num_exp
     if experiences is None:
         experiences = range(default_num_exp)
-    dict_data = {}
-    for eval_exp in experiences:
-        value = df[df['eval_exp'] == eval_exp][metric].to_numpy()
-        dict_data[f"{base_label} {eval_exp}"] = value
-    ddf = pd.DataFrame(dict_data)
-    plt.figure(figsize=(12, 8))
-    if from_beginning:
-        ddf.plot(kind='line', marker='o', linestyle='-')
-    else:
+    for df, label, linestyle in zip(dfs, base_labels, linestyles):
+        dict_data = {}
         for eval_exp in experiences:
-            column = f"{base_label} {eval_exp}"
-            plt.plot(
-                ddf.index[eval_exp:], ddf[column][eval_exp:], label=column,
-                marker='o', linestyle='-'
-            )
+            value = df[df['eval_exp'] == eval_exp][metric].to_numpy()
+            final_label = f"{label} {eval_exp}" if extend_label else label
+            dict_data[final_label] = value
+        ddf = pd.DataFrame(dict_data)
+        if from_beginning:
+            ddf.plot(kind='line', marker='o', linestyle=linestyle)
+        else:
+            for eval_exp in experiences:
+                column = f"{label} {eval_exp}" if extend_label else label
+                plt.plot(
+                    ddf.index[eval_exp:], ddf[column][eval_exp:], label=column,
+                    marker='o', linestyle=linestyle
+                )
     if ylim_max is not None:
         plt.ylim(0, ylim_max)
     if xlim_max is not None:
