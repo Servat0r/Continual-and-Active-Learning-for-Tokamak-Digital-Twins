@@ -8,15 +8,15 @@ import torch
 
 from avalanche.logging import InteractiveLogger
 from avalanche.evaluation.metrics import loss_metrics
-from avalanche.models import VAE_loss
-from avalanche.training import GenerativeReplay, VAETraining, JointTraining
-from avalanche.training.plugins import EvaluationPlugin, GenerativeReplayPlugin
-
+from avalanche.training import GenerativeReplay, JointTraining, Replay, Naive
+from avalanche.training.plugins import EvaluationPlugin, ReplayPlugin
 
 from ..utils import *
 from ..configs import *
 from .utils import *
 from .plots import *
+from ..utils.buffers import ExperienceBalancedActiveLearningBuffer
+from ..utils.strategies.plugins import PercentageReplayPlugin
 
 
 def task_training_loop(
@@ -40,6 +40,7 @@ def task_training_loop(
     config_parser.process_config()
     debug_print(config_parser.get_config())
     # General
+    mode = config_parser['mode']
     train_mb_size = config_parser['train_mb_size']
     eval_mb_size = config_parser['eval_mb_size']
     train_epochs = config_parser['train_epochs']
@@ -104,6 +105,16 @@ def task_training_loop(
         cl_strategy_target_transform_transform = cl_strategy_target_transform['target_transform']
         cl_strategy_target_transform_preprocess_ytrue = cl_strategy_target_transform['preprocess_ytrue']
         cl_strategy_target_transform_preprocess_ypred = cl_strategy_target_transform['preprocess_ypred']
+
+    # Active Learning
+    batch_selector = None
+    if mode in ['CL(AL)', 'AL(CL)']:
+        cl_strategy_active_learning_data = config_parser['active_learning']
+        print(cl_strategy_active_learning_data)
+        if cl_strategy_active_learning_data is not None:
+            batch_selector = cl_strategy_active_learning_data['batch_selector']
+            batch_selector.set_models([model])
+            batch_selector.set_device(device)
 
     # Prepare folders for experiments
     folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}"
@@ -203,7 +214,29 @@ def task_training_loop(
         if scheduler:
             plugins.append(scheduler)
 
-        print(f"[red]CL Strategy Class[/red]: {cl_strategy_class}")
+        print(f"CL Strategy Class: {cl_strategy_class}")
+        if mode == 'CL(AL)':
+            if cl_strategy_class == Replay:
+                cl_strategy_class = Naive
+                mem_size = cl_strategy_parameters.pop('mem_size')
+                replay_plugin = ReplayPlugin(
+                    mem_size=mem_size,
+                    storage_policy=ExperienceBalancedActiveLearningBuffer(
+                        max_size=mem_size, batch_selector=batch_selector, device=device
+                    )
+                )
+                plugins.append(replay_plugin)
+            elif cl_strategy_class == PercentageReplay:
+                cl_strategy_class = Naive
+                mem_percentage = cl_strategy_parameters.pop('mem_percentage')
+                replay_plugin = PercentageReplayPlugin(
+                    mem_percentage=mem_percentage,
+                    storage_policy=ExperienceBalancedActiveLearningBuffer(
+                        max_size=50_000, batch_selector=batch_selector, device=device # TODO Fix this "magic number"
+                    )
+                )
+                plugins.append(replay_plugin)
+
         cl_strategy = cl_strategy_class(
             model=model, optimizer=optimizer, criterion=criterion, train_mb_size=train_mb_size,
             train_epochs=train_epochs, eval_mb_size=eval_mb_size, device=device, evaluator=eval_plugin,
@@ -225,12 +258,20 @@ def task_training_loop(
             else:
                 current_metrics = None
                 for (idx, train_exp), eval_exp in zip(enumerate(train_stream), eval_stream):
+                    # Active Learning
+                    if batch_selector is not None:
+                        batch_selector.set_train_exp(train_exp)
+                    if (idx > 0) and (batch_selector is not None) and (mode == 'AL(CL)'):
+                        ... # TODO Complete later!
                     print(f"Starting training experience [red]{idx}[/red]: ")
+                    # Early Stopping stuff
                     if not early_stopping.use_validation_plugin:
                         early_stopping.update(cl_strategy, current_metrics)
-                    cl_strategy.train(train_exp)#, eval_streams=[eval_exp])
+                    # Training Cycle
+                    cl_strategy.train(train_exp)
                     print(f"Starting testing experience [red]{idx}[/red]: ")
                     results.append(cl_strategy.eval(eval_stream))
+                    # Save models after each experience
                     if write_intermediate_models:
                         print(f"Saving model after experience [red]{idx}[/red]: ")
                         model.eval()
@@ -239,11 +280,11 @@ def task_training_loop(
             return results
 
         # garbage collect before running
-        print("[#aa0000]Garbage collecting ...[/#aa0000]")
+        print("Garbage collecting ...")
         gc.collect()
 
         # train and test loop over the stream of experiences
-        print("[#aa0000]Starting ...[/#aa0000]")
+        print("Starting ...")
         try:
             results = run(train_stream, eval_stream, cl_strategy, model, log_folder, write_intermediate_models)
             with open(os.path.join(log_folder, 'results.json'), 'w') as fp:

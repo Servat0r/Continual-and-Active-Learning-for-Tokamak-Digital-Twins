@@ -1,6 +1,7 @@
 import os
 from rich import print
 
+import numpy as np
 import pandas as pd
 
 import torch

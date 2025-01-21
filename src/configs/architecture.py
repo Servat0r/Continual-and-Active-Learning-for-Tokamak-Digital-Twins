@@ -61,6 +61,7 @@ def saved_model_handler(model_folder: str, model_name: str, model_class_name: st
 
 @ConfigParser.register_handler('architecture')
 def architecture_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
+    print("Starting Architecture Handler ...")
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
     if 'parameters' not in data:

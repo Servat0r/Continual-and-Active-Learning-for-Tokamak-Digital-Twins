@@ -46,23 +46,22 @@ class CSVRegressionDataset(Dataset):
         else:
             print(f"Using cpu ...")
         # Load the CSV file
-        self.data = data
         if filter_by:
             for column, values in filter_by.items():
-                self.data = self.data[self.data[column].isin(values)]
+                data = data[data[column].isin(values)]
         if filter_by_leq:
             for column, value in filter_by_leq.items():
-                self.data = self.data[self.data[column] <= value]
+                data = data[data[column] <= value]
         if filter_by_geq:
             for column, value in filter_by_geq.items():
-                self.data = self.data[self.data[column] >= value]
+                data = data[data[column] >= value]
         self.transform = transform
         self.target_transform = target_transform
-        self.inputs = torch.tensor(self.data[input_columns].values.astype(float_precision)).to(device)
-        self.targets = torch.tensor(self.data[output_columns].values.astype(float_precision)).to(device)
+        self.inputs = torch.tensor(data[input_columns].values.astype(float_precision)).to(device)
+        self.targets = torch.tensor(data[output_columns].values.astype(float_precision)).to(device)
 
     def __len__(self):
-        return len(self.data)
+        return len(self.inputs)
 
     def __getitem__(self, idx):
         x, y = self.inputs[idx], self.targets[idx]
@@ -72,11 +71,11 @@ class CSVRegressionDataset(Dataset):
             y = self.target_transform(y)
         return x, y
 
-    def get_data(self, copy=False):
-        if copy:
-            return self.data.clone()
-        else:
-            return self.data
+    def set_inputs_and_outputs(self, inputs=None, targets=None):
+        if inputs is not None:
+            self.inputs = inputs
+        if targets is not None:
+            self.targets = targets
 
 
 def _is_not_null(row, output_columns):

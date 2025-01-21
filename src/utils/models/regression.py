@@ -37,13 +37,13 @@ class SimpleRegressionMLP(nn.Module, BaseModel):
 
         if activation == 'relu':
             activation_class = nn.ReLU
-            activation_kwargs = {'inplace': True}
+            activation_kwargs = {'inplace': False}
         elif activation == 'elu':
             activation_class = nn.ELU
-            activation_kwargs = {'inplace': True, 'alpha': 0.5}
+            activation_kwargs = {'inplace': False, 'alpha': 0.5}
         elif activation == 'softplus':
             activation_class = nn.Softplus
-            activation_kwargs = {'inplace': True}
+            activation_kwargs = {'inplace': False}
         elif activation == 'tanh':
             activation_class = nn.Tanh
             activation_kwargs = {}

@@ -14,7 +14,7 @@ def plot_metric_over_evaluation_experiences(
         from_beginning: bool = True, title_size=None, xlabel_size=None, ylabel_size=None,
         legend_size=None, ylim_max=None, xlim_max=None, axes_size=16,
         base_label: str | list[str] = 'Eval Experience', linestyles: str | list[str] = '-',
-        extend_label: bool = True,
+        extend_label: bool = True, colors: list[list[str]] = None,
 ):
     """
     Plots the values of a given tracked metric on each evaluation experience data across all training experiences.
@@ -41,6 +41,7 @@ def plot_metric_over_evaluation_experiences(
     :param axes_size: If not None, fixes the size of the numbers to be shown on the axes. Default is None.
     :param base_label: Legend will use a label of the form f"{base_label} {exp_id}" for each experience.
     :param linestyles: Linestyles, default to "-".
+    :param colors: Colors of the plots.
     """
     if isinstance(file_path_or_buf, str):
         dfs: list[pd.DataFrame] = [pd.read_csv(file_path_or_buf)]
@@ -55,21 +56,22 @@ def plot_metric_over_evaluation_experiences(
     num_exp = default_num_exp if num_exp is None else num_exp
     if experiences is None:
         experiences = range(default_num_exp)
-    for df, label, linestyle in zip(dfs, base_labels, linestyles):
+    for index, (df, label, linestyle) in enumerate(zip(dfs, base_labels, linestyles)):
         dict_data = {}
-        for eval_exp in experiences:
+        colors_list = colors[index] if colors is not None else None
+        for color_index, eval_exp in enumerate(experiences):
             value = df[df['eval_exp'] == eval_exp][metric].to_numpy()
             final_label = f"{label} {eval_exp}" if extend_label else label
             dict_data[final_label] = value
         ddf = pd.DataFrame(dict_data)
         if from_beginning:
-            ddf.plot(kind='line', marker='o', linestyle=linestyle)
+            ddf.plot(kind='line', marker='o', linestyle=linestyle, color=colors_list)
         else:
-            for eval_exp in experiences:
+            for eval_exp, color in zip(experiences, colors_list):
                 column = f"{label} {eval_exp}" if extend_label else label
                 plt.plot(
                     ddf.index[eval_exp:], ddf[column][eval_exp:], label=column,
-                    marker='o', linestyle=linestyle
+                    marker='o', linestyle=linestyle, color=color
                 )
     if ylim_max is not None:
         plt.ylim(0, ylim_max)
