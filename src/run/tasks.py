@@ -5,11 +5,14 @@ import os
 from typing import Any
 from datetime import datetime
 import torch
+from avalanche.benchmarks import AvalancheDataset
 
 from avalanche.logging import InteractiveLogger
 from avalanche.evaluation.metrics import loss_metrics
 from avalanche.training import GenerativeReplay, JointTraining, Replay, Naive
 from avalanche.training.plugins import EvaluationPlugin, ReplayPlugin
+
+from bmdal_reg.bmdal.feature_data import TensorFeatureData
 
 from ..utils import *
 from ..configs import *
@@ -114,7 +117,8 @@ def task_training_loop(
         if cl_strategy_active_learning_data is not None:
             batch_selector = cl_strategy_active_learning_data['batch_selector']
             batch_selector.set_models([model])
-            batch_selector.set_device(device)
+            batch_selector.set_device('cpu')
+            #batch_selector.set_device(device)
 
     # Prepare folders for experiments
     folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}"
@@ -258,25 +262,41 @@ def task_training_loop(
             else:
                 current_metrics = None
                 for (idx, train_exp), eval_exp in zip(enumerate(train_stream), eval_stream):
+                    print(f"Index = {idx}")
                     # Active Learning
-                    if batch_selector is not None:
-                        batch_selector.set_train_exp(train_exp)
-                    if (idx > 0) and (batch_selector is not None) and (mode == 'AL(CL)'):
-                        ... # TODO Complete later!
-                    print(f"Starting training experience [red]{idx}[/red]: ")
+                    if (idx > 0) and (batch_selector is not None) and (mode == 'AL(CL)'): # todo should we put "idx > 0"?
+                        print(f"Train Exp length (before Batch Selection) = {len(train_exp.dataset)}")
+                        train_csv_regression_dataset = train_exp.dataset._datasets[0]
+                        X_pool, y_pool = train_csv_regression_dataset[:]
+                        pool_data = TensorFeatureData(X_pool)
+                        sampled_idxs = batch_selector(pool_data, train_exp.dataset)
+                        sampled_idxs = sampled_idxs.to('cpu')
+                        X_pool, y_pool = X_pool[sampled_idxs].clone(), y_pool[sampled_idxs].clone()  # Filter by sampled indices
+                        new_csv_dataset = CSVRegressionDataset(
+                            data=None, input_columns=[], output_columns=[],
+                            inputs=X_pool, outputs=y_pool, device='cpu'
+                        )
+                        train_exp._dataset = AvalancheDataset([new_csv_dataset])
+                        # train_exp._dataset = train_exp.dataset.subset(sampled_idxs)
+                        # train_exp.dataset._datasets[0].set_device('cpu')
+                        # train_exp.dataset._datasets[0].set_inputs_and_outputs(X_pool, y_pool)
+                    print(f"Train Exp length (after Batch Selection) = {len(train_exp.dataset)}, device = {train_exp.dataset._datasets[0][:][0].device}")
+                    print(f"Starting training experience {idx}: ")
                     # Early Stopping stuff
                     if not early_stopping.use_validation_plugin:
                         early_stopping.update(cl_strategy, current_metrics)
                     # Training Cycle
                     cl_strategy.train(train_exp)
-                    print(f"Starting testing experience [red]{idx}[/red]: ")
+                    print(f"Starting testing experience {idx}: ")
                     results.append(cl_strategy.eval(eval_stream))
                     # Save models after each experience
                     if write_intermediate_models:
-                        print(f"Saving model after experience [red]{idx}[/red]: ")
+                        print(f"Saving model after experience {idx}: ")
                         model.eval()
                         torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
                         model.train()
+                    if batch_selector is not None:
+                        batch_selector.add_train_exp(train_exp)
             return results
 
         # garbage collect before running

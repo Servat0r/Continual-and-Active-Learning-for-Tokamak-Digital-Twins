@@ -34,6 +34,7 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
         self.metric = metric if metric.endswith('_Epoch') else metric + '_Epoch'
         self.stopped_epoch = 0
         self.current_epoch = 0
+        self.best_epoch = 0
         self.type = type
         self.keep_best_weights = restore_best_weights
         self.best_weights = None
@@ -57,28 +58,39 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
 
     def after_training_exp(self, strategy: Template, *args, **kwargs) -> Any:
         self.current_epoch = 0
+        self.best_epoch = 0
         self.best_metric = None
         self.wait = 0
         self.inside_training = False
 
     def update(self, strategy, current_metric, **kwargs):
         if current_metric is not None:
-            if self.type == self.MAX:
-                if self.keep_best_weights and (self.best_metric is None or current_metric > self.best_metric):
+            if self.best_metric is None:
+                # First time setup: everything is new 'best'
+                self.best_metric = current_metric
+                if self.keep_best_weights:
                     self.best_weights = copy.deepcopy(strategy.model.state_dict())
-                if self.best_metric is None or current_metric > self.best_metric + self.delta:
+                self.best_epoch = self.current_epoch
+                self.wait = 0
+            else:
+                # ANY improvement means store best_weights + update best_metric
+                if (self.type == self.MAX and current_metric > self.best_metric) or \
+                        (self.type == self.MIN and current_metric < self.best_metric):
                     self.best_metric = current_metric
-                    self.wait = 0
-                else:
-                    self.wait += 1
-            elif self.type == self.MIN:
-                if self.keep_best_weights and (self.best_metric is None or current_metric < self.best_metric):
-                    self.best_weights = copy.deepcopy(strategy.model.state_dict())
-                if self.best_metric is None or current_metric < self.best_metric - self.delta:
-                    self.best_metric = current_metric
-                    self.wait = 0
-                else:
-                    self.wait += 1
+                    if self.keep_best_weights:
+                        self.best_weights = copy.deepcopy(strategy.model.state_dict())
+                    self.best_epoch = self.current_epoch
+                # Reset `wait` only if improvement >= delta
+                if self.type == self.MAX:
+                    if current_metric > (self.best_metric + self.delta):
+                        self.wait = 0
+                    else:
+                        self.wait += 1
+                else:  # self.type == self.MIN
+                    if current_metric < (self.best_metric - self.delta):
+                        self.wait = 0
+                    else:
+                        self.wait += 1
 
             # Compute conditions for immediate stop (e.g. if loss diverges)
             immediate_stop = False
@@ -129,7 +141,7 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
 
     def restore_best_weights(self, strategy):
         strategy.model.load_state_dict(self.best_weights)
-        print("Restored best weights")
+        print(f"[{type(self).__name__}] Restored best weights of epoch {self.best_epoch}")
 
 
 __all__ = ['ValidationEarlyStoppingPlugin']

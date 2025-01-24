@@ -14,7 +14,8 @@ _BATCH_SELECTORS = {
 def _bmdal_params_handler(parameters):
     assert isinstance(parameters['batch_size'], int)
     assert isinstance(parameters['selection_method'], str) and \
-        (parameters['selection_method'] in ['lcmd', ])
+        (parameters['selection_method'] in
+         ['random', 'maxdiag', 'maxdet', 'bait', 'fw', 'maxdist', 'kmeanspp', 'lcmd'])
     assert isinstance(parameters['base_kernel'], str) and \
         (parameters['base_kernel'] in ['grad', ])
     assert isinstance(parameters['kernel_transforms'], list)
@@ -41,6 +42,7 @@ def active_learning_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         "parameters": {
             "batch_size": 100,
             "selection_method": "lcmd",
+            "sel_with_train": False,
             "base_kernel": "grad",
             "kernel_transforms": [("rp", [512])]
         }

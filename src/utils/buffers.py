@@ -3,11 +3,12 @@ Replay Buffers variations to allow AL-based selection strategies.
 """
 from typing import Any
 import torch
+
 from avalanche.benchmarks import AvalancheDataset
 from avalanche.training import ExemplarsBuffer, BalancedExemplarsBuffer
 from bmdal_reg.bmdal.feature_data import TensorFeatureData
 
-from src.utils import ALBatchSelector
+from src.utils import ALBatchSelector, CSVRegressionDataset
 
 
 class ActiveLearningSamplingBuffer(ExemplarsBuffer):
@@ -39,10 +40,7 @@ class ActiveLearningSamplingBuffer(ExemplarsBuffer):
         sampled_idxs = sampled_idxs[:self.max_size]
         sampled_idxs = sampled_idxs.to('cpu')
         original_subset = new_data.subset(sampled_idxs)
-        X_subset, y_subset = original_subset._datasets[0][:]
-        X_subset = X_subset.to('cpu')
-        y_subset = y_subset.to('cpu')
-        original_subset._datasets[0].set_inputs_and_outputs(X_subset, y_subset)
+        original_subset._datasets[0].set_device('cpu')
         self.buffer = original_subset
 
     def resize(self, strategy: Any, new_size: int):

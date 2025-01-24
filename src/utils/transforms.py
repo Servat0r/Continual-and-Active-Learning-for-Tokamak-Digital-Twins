@@ -21,6 +21,9 @@ class CustomNormalize(ReversableTransform):
         self.std = std
 
     def __call__(self, tensor):
+        tensor_device, mean_device = tensor.device, self.mean.device
+        if tensor_device != mean_device:
+            print(tensor_device, mean_device)
         return (tensor - self.mean) / self.std
 
     def inverse(self) -> Callable:

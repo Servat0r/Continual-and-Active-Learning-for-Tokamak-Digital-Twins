@@ -31,7 +31,18 @@ class ALBatchSelector(ABC):
         self.device = torch.device(device)
 
     def set_train_exp(self, train_exp):
-        self.train_exp = train_exp
+        self.train_exp = train_exp.dataset._datasets[0] # CSVRegressionDataset
+
+    def add_train_exp(self, train_exp):
+        if self.train_exp is None:
+            self.set_train_exp(train_exp)
+        else:
+            new_csv_dataset = train_exp.dataset._datasets[0]
+            new_inputs = torch.concat([self.train_exp.inputs, new_csv_dataset.inputs])
+            new_targets = torch.concat([self.train_exp.targets, new_csv_dataset.targets])
+            self.train_exp.inputs = new_inputs
+            self.train_exp.targets = new_targets
+            print(f"New batch X_train dataset has {len(self.train_exp)} rows")
 
 
 class BMDALBatchSelector(ALBatchSelector):
@@ -43,14 +54,14 @@ class BMDALBatchSelector(ALBatchSelector):
     """
     def __init__(
         self, models: list[torch.nn.Module] = None, batch_size: int = 100,
-        selection_method: str = 'lcmd',
+        selection_method: str = 'lcmd', sel_with_train: bool = False,
         base_kernel: str = 'grad', kernel_transforms: list = None
     ):
         super().__init__()
         self.models = models
         self.batch_size = batch_size
         self.selection_method = selection_method
-        self.sel_with_train = False # We assume to not use previous-experiences data
+        self.sel_with_train = sel_with_train
         # TODO Verify if this assumption can actually be made (it simplifies src.utils.buffers objects).
         self.base_kernel = base_kernel
         self.kernel_transforms = kernel_transforms
@@ -62,11 +73,15 @@ class BMDALBatchSelector(ALBatchSelector):
         if self.models is None:
             raise RuntimeError(f"Attribute \"models\" of {type(self).__name__} object is None")
         if train_data is None:
-            current_exp_dataset = self.train_exp._dataset._datasets[0]
-            X_train, y_train = current_exp_dataset[:]
+            X_train, y_train = self.train_exp[:]
             train_data = TensorFeatureData(X_train.to(self.device))
+            print(
+                type(self).__name__,
+                X_train.device,
+                pool_dataset._datasets[0][:][0].device
+            )
         new_idxs, _ = select_batch(
-            batch_size=self.batch_size, models=self.models, y_train=y_train,
+            batch_size=self.batch_size, models=[m.to('cpu') for m in self.models], y_train=y_train,
             data={'train': train_data, 'pool': pool_data},
             selection_method=self.selection_method,
             sel_with_train=self.sel_with_train,

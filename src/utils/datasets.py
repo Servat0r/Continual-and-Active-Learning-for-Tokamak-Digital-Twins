@@ -17,6 +17,7 @@ class CSVRegressionDataset(Dataset):
             float_precision: str = 'float32', device=None,
             filter_by_leq: dict[str, int | float] = None,
             filter_by_geq: dict[str, int | float] = None,
+            inputs: torch.Tensor = None, outputs: torch.Tensor = None,
     ):
         """
         :param data: pandas DataFrame.
@@ -57,8 +58,16 @@ class CSVRegressionDataset(Dataset):
                 data = data[data[column] >= value]
         self.transform = transform
         self.target_transform = target_transform
-        self.inputs = torch.tensor(data[input_columns].values.astype(float_precision)).to(device)
-        self.targets = torch.tensor(data[output_columns].values.astype(float_precision)).to(device)
+        self.inputs = None
+        self.targets = None
+        if data is not None:
+            self.inputs = torch.tensor(data[input_columns].values.astype(float_precision)).to(device)
+            self.targets = torch.tensor(data[output_columns].values.astype(float_precision)).to(device)
+        else:
+            if inputs is not None:
+                self.inputs = inputs.to(device)
+            if outputs is not None:
+                self.targets = outputs.to(device)
 
     def __len__(self):
         return len(self.inputs)
@@ -76,6 +85,10 @@ class CSVRegressionDataset(Dataset):
             self.inputs = inputs
         if targets is not None:
             self.targets = targets
+
+    def set_device(self, device):
+        self.inputs = self.inputs.to(device)
+        self.targets = self.targets.to(device)
 
 
 def _is_not_null(row, output_columns):
