@@ -1,6 +1,7 @@
 {
   "general": {
     "mode": "AL(CL)",
+    "full_first_train_set": true,
     "task": "regression",
     "dtype": "float32",
     "num_campaigns": 10,
@@ -12,7 +13,9 @@
     "framework": "bmdal",
     "parameters": {
       "batch_size": 2500,
-      "selection_method": "lcmd",
+      "selection_method": "kmeanspp",
+      "initial_selection_method": "maxdiag",
+      "sel_with_train": true,
       "base_kernel": "grad",
       "kernel_transforms": [
         ["rp", [512]]
@@ -77,70 +80,54 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]]/Batch 2500 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set (4096 batch size) (1024 hidden size)",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "FromScratchTraining",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]]/Batch 2500 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set (4096 batch size) (1024 hidden size)",
       "ignore": true,
       "parameters": {
-      }
-    },
-    {
-      "name": "PercentageReplay",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]]/Batch 2500 Percentage 5% (4096 batch size) (1024 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "mem_percentage": 0.05
-      }
-    },
-    {
-      "name": "PercentageReplay",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]]/Batch 2500 Percentage 10% (4096 batch size) (1024 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "mem_percentage": 0.1
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]]/Batch 2500 Buffer 200 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set Buffer 200 (4096 batch size) (1024 hidden size)",
+      "ignore": true,
       "parameters": {
         "mem_size": 200
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]]/Batch 2500 Buffer 2000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set Buffer 1000 (4096 batch size) (1024 hidden size)",
       "ignore": true,
       "parameters": {
-        "mem_size": 2000
+        "mem_size": 1000
       }
     },
     {
       "name": "GEM",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]]/Batch 2500 Patterns 1000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set Patterns 200 (4096 batch size) (1024 hidden size)",
       "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 1000
-      }
-    },
-    {
-      "name": "GEM",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]]/Batch 2500 Patterns 200 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
       "parameters": {
         "patterns_per_exp": 200
       }
     },
     {
+      "name": "GEM",
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set Patterns 2500 (4096 batch size) (1024 hidden size)",
+      "ignore": false,
+      "parameters": {
+        "patterns_per_exp": 2500
+      }
+    },
+    {
       "name": "Cumulative",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]]/Batch 2500 (4096 batch size) (1024 hidden size)",
-      "ignore": true,
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set (4096 batch size) (1024 hidden size)",
+      "ignore": false,
       "parameters": {
       }
     }

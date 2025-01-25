@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch
 import copy
@@ -20,32 +21,42 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
     def MAX(self):
         return 'max'
 
+    def __initialize(self):
+        self.best_metric = None
+        self.wait = 0
+        self.stopped_epoch = 0
+        self.current_epoch = 0
+        self.best_epoch = 0
+        self.best_weights = None
+        self.inside_training = False
+        self.validation_plugin = None
+    
     def __init__(
             self, patience=3, delta=0.01, metric='Loss', type='min',
             restore_best_weights=True, val_stream_name='test_stream',
-            when_above=None, when_below=None, min_epochs=0,
+            when_above=float('-inf'), when_below=float('inf'), min_epochs=0,
             use_validation_plugin=True, immediate_stop_delta=None,
+            debug_log_file=None,
     ):
         super().__init__()
         self.patience = patience
         self.delta = delta
-        self.best_metric = None
-        self.wait = 0
+        if metric.endswith('_Exp'):
+            metric = metric.replace('_Exp', '_Epoch')
         self.metric = metric if metric.endswith('_Epoch') else metric + '_Epoch'
-        self.stopped_epoch = 0
-        self.current_epoch = 0
-        self.best_epoch = 0
         self.type = type
         self.keep_best_weights = restore_best_weights
-        self.best_weights = None
-        self.inside_training = False
         self.val_stream_name = val_stream_name
-        self.validation_plugin = None
         self.when_above = when_above
         self.when_below = when_below
         self.min_epochs = min_epochs
         self.use_validation_plugin = use_validation_plugin
         self.immediate_stop_delta = immediate_stop_delta
+        if debug_log_file is not None:
+            self.debug_log_file = open(debug_log_file, 'w')
+        else:
+            self.debug_log_file = os.devnull
+        self.__initialize()
 
     def before_training(self, strategy: Template, *args, **kwargs) -> Any:
         self.inside_training = True
@@ -57,11 +68,7 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
         self.inside_training = True
 
     def after_training_exp(self, strategy: Template, *args, **kwargs) -> Any:
-        self.current_epoch = 0
-        self.best_epoch = 0
-        self.best_metric = None
-        self.wait = 0
-        self.inside_training = False
+        self.__initialize()
 
     def update(self, strategy, current_metric, **kwargs):
         if current_metric is not None:
@@ -73,13 +80,6 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
                 self.best_epoch = self.current_epoch
                 self.wait = 0
             else:
-                # ANY improvement means store best_weights + update best_metric
-                if (self.type == self.MAX and current_metric > self.best_metric) or \
-                        (self.type == self.MIN and current_metric < self.best_metric):
-                    self.best_metric = current_metric
-                    if self.keep_best_weights:
-                        self.best_weights = copy.deepcopy(strategy.model.state_dict())
-                    self.best_epoch = self.current_epoch
                 # Reset `wait` only if improvement >= delta
                 if self.type == self.MAX:
                     if current_metric > (self.best_metric + self.delta):
@@ -92,22 +92,37 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
                     else:
                         self.wait += 1
 
+                # ANY improvement means store best_weights + update best_metric
+                if (self.type == self.MAX and current_metric > self.best_metric) or \
+                        (self.type == self.MIN and current_metric < self.best_metric):
+                    self.best_metric = current_metric
+                    if self.keep_best_weights:
+                        self.best_weights = copy.deepcopy(strategy.model.state_dict())
+                    self.best_epoch = self.current_epoch
+                    if self.debug_log_file is not None:
+                        print(
+                            f"[{type(self).__name__}]: New best metric {self.best_metric} at epoch {self.best_epoch} (wait = {self.wait})",
+                            file=self.debug_log_file, flush=True
+                        )
+                        
             # Compute conditions for immediate stop (e.g. if loss diverges)
             immediate_stop = False
             if current_metric in [torch.nan, np.nan]:
                 immediate_stop = True
-            if self.type == self.MAX:
-                if (self.best_metric is not None) and (self.immediate_stop_delta is not None) and \
-                        (self.best_metric > current_metric + self.immediate_stop_delta):
-                    immediate_stop = True
-            elif self.type == self.MIN:
-                if (self.best_metric is not None) and (self.immediate_stop_delta is not None) and \
-                        (self.best_metric < current_metric - self.immediate_stop_delta):
-                    immediate_stop = True
+            if (self.best_metric is not None) and (self.immediate_stop_delta is not None):
+                if (self.type == self.MAX) and (self.best_metric > current_metric + self.immediate_stop_delta):
+                        immediate_stop = True
+                elif (self.type == self.MIN) and (self.best_metric < current_metric - self.immediate_stop_delta):
+                        immediate_stop = True
+            if immediate_stop:
+                print(
+                    f"[{type(self).__name__}] [{self.current_epoch}]: Immediate stop triggered at epoch {self.current_epoch}",
+                    file=self.debug_log_file, flush=True
+                )
 
             if ((self.current_epoch > self.min_epochs) and
-                    (self.when_above is None or current_metric > self.when_above) and
-                    (self.when_below is None or current_metric < self.when_below) and
+                    (current_metric > self.when_above) and
+                    (current_metric < self.when_below) and
                     ((self.wait >= self.patience) or immediate_stop)
             ):
                 debug_print(
@@ -141,7 +156,10 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
 
     def restore_best_weights(self, strategy):
         strategy.model.load_state_dict(self.best_weights)
-        print(f"[{type(self).__name__}] Restored best weights of epoch {self.best_epoch}")
+        print(
+            f"[{type(self).__name__}] Restored best weights of epoch {self.best_epoch}",
+            file=self.debug_log_file, flush=True
+        )
 
 
 __all__ = ['ValidationEarlyStoppingPlugin']

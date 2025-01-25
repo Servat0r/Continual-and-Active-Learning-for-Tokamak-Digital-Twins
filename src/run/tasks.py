@@ -50,6 +50,7 @@ def task_training_loop(
     num_campaigns = config_parser['num_campaigns']
     dtype = config_parser['dtype']
     task = config_parser['task']
+    full_first_train_set = config_parser['full_first_train_set']
     # Dataset
     input_columns = config_parser['input_columns']
     output_columns = config_parser['output_columns']
@@ -63,7 +64,6 @@ def task_training_loop(
     load_saved_final_data = config_parser['load_saved_final_data']
     # Architecture
     model = config_parser['architecture']
-    initialize_weights_low(model, scale=1e-2)
     # Loss
     criterion = config_parser['loss']
     # Optimizer
@@ -117,8 +117,8 @@ def task_training_loop(
         if cl_strategy_active_learning_data is not None:
             batch_selector = cl_strategy_active_learning_data['batch_selector']
             batch_selector.set_models([model])
-            batch_selector.set_device('cpu')
-            #batch_selector.set_device(device)
+            #batch_selector.set_device('cpu')
+            batch_selector.set_device(device)
 
     # Prepare folders for experiments
     folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}"
@@ -133,16 +133,16 @@ def task_training_loop(
     with open(stdout_file_path, 'w') as stdout_file:
         if redirect_stdout:
             sys.stdout = stdout_file # Redirect outputs to file
-        print("[green]Configuration Loaded[/green]:")
-        print(f"  Device: [cyan]{device}[/cyan]")
+        print("Configuration Loaded:")
+        print(f"  Device: {device}")
         for field_name, field_value in config_parser.get_config().items():
-            print(f"  {field_name}: [cyan]{field_value}[/cyan]")
+            print(f"  {field_name}: {field_value}")
 
         # Print Model Size
         trainables, total = get_model_size(model)
         print(
-            f"[green]Trainable Parameters[/green] = [red]{trainables}[/red]"
-            f"\n[green]Total Parameters[/green] = [red]{total}[/red]"
+            f"Trainable Parameters = {trainables}"
+            f"\nTotal Parameters = {total}"
         )
 
         # Saving model before usage
@@ -209,11 +209,13 @@ def task_training_loop(
 
         # Extra plugins
         plugins = [
-            ValidationStreamPlugin(val_stream=eval_stream),
+            ValidationStreamPlugin(val_stream=eval_stream, debug_log_file=os.path.join(log_folder, 'val_stream.txt')),
             TqdmTrainingEpochsPlugin(num_exp=num_campaigns, num_epochs=train_epochs),
         ]
 
         if early_stopping:
+            # Write debug log file for early stopping
+            early_stopping.debug_log_file = open(os.path.join(log_folder, 'early_stopping.txt'), 'w')
             plugins.append(early_stopping)
         if scheduler:
             plugins.append(scheduler)
@@ -251,11 +253,11 @@ def task_training_loop(
         def run(train_stream, eval_stream, cl_strategy, model, log_folder, write_intermediate_models):
             results = []
             if isinstance(cl_strategy, JointTraining):
-                print(f"Starting [red]JointTraining[/red]training experience: ")
+                print(f"Starting JointTraining training experience: ")
                 cl_strategy.train(train_stream)
-                print(f"Starting [red]JointTraining[/red] evaluation experience: ")
+                print(f"Starting JointTraining evaluation experience: ")
                 results.append(cl_strategy.eval(eval_stream))
-                print(f"Saving model after [red]JointTraining[/red] experience: ")
+                print(f"Saving model after JointTraining experience: ")
                 model.eval()
                 torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_0.pt'))
                 model.train()
@@ -264,11 +266,12 @@ def task_training_loop(
                 for (idx, train_exp), eval_exp in zip(enumerate(train_stream), eval_stream):
                     print(f"Index = {idx}")
                     # Active Learning
-                    if (idx > 0) and (batch_selector is not None) and (mode == 'AL(CL)'): # todo should we put "idx > 0"?
+                    index_condition = (idx > 0) if full_first_train_set else True
+                    if index_condition and (batch_selector is not None) and (mode == 'AL(CL)'):
                         print(f"Train Exp length (before Batch Selection) = {len(train_exp.dataset)}")
                         train_csv_regression_dataset = train_exp.dataset._datasets[0]
                         X_pool, y_pool = train_csv_regression_dataset[:]
-                        pool_data = TensorFeatureData(X_pool)
+                        pool_data = TensorFeatureData(X_pool.to(device))
                         sampled_idxs = batch_selector(pool_data, train_exp.dataset)
                         sampled_idxs = sampled_idxs.to('cpu')
                         X_pool, y_pool = X_pool[sampled_idxs].clone(), y_pool[sampled_idxs].clone()  # Filter by sampled indices
@@ -277,14 +280,11 @@ def task_training_loop(
                             inputs=X_pool, outputs=y_pool, device='cpu'
                         )
                         train_exp._dataset = AvalancheDataset([new_csv_dataset])
-                        # train_exp._dataset = train_exp.dataset.subset(sampled_idxs)
-                        # train_exp.dataset._datasets[0].set_device('cpu')
-                        # train_exp.dataset._datasets[0].set_inputs_and_outputs(X_pool, y_pool)
-                    print(f"Train Exp length (after Batch Selection) = {len(train_exp.dataset)}, device = {train_exp.dataset._datasets[0][:][0].device}")
+                    print(f"Train Exp length (after Batch Selection) = {len(train_exp.dataset)}")
                     print(f"Starting training experience {idx}: ")
                     # Early Stopping stuff
-                    if not early_stopping.use_validation_plugin:
-                        early_stopping.update(cl_strategy, current_metrics)
+                    #if not early_stopping.use_validation_plugin:
+                    #    early_stopping.update(cl_strategy, current_metrics)
                     # Training Cycle
                     cl_strategy.train(train_exp)
                     print(f"Starting testing experience {idx}: ")
@@ -341,6 +341,9 @@ def task_training_loop(
             # Reset stdout
             if redirect_stdout:
                 sys.stdout = sys.__stdout__
+            # Close debug log file for early stopping
+            if early_stopping.debug_log_file is not None:
+                early_stopping.debug_log_file.close()
 
 
 __all__ = ['task_training_loop']

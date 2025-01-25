@@ -13,8 +13,8 @@ def early_stopping_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         'type': 'min',
         'restore_best_weights': True,
         'val_stream_name': 'test_stream',
-        'when_above': None,
-        'when_below': None,
+        'when_above': float('-inf'),
+        'when_below': float('inf'),
     }
     default_config.update(data)
     return ValidationEarlyStoppingPlugin(**default_config)
