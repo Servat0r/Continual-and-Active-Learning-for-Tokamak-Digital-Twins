@@ -93,7 +93,7 @@ class BMDALBatchSelector(ALBatchSelector):
             else:
                 # Determine the feature size from pool_data
                 shape, dtype = list(pool_data.data.shape), pool_data.data.dtype
-                shape[0] = 0 # Empty tensor
+                shape[0] = 1 # One-element tensor (was empty before but this caused a index-out-of-bounds error in batch_select)
                 X_train = torch.zeros(shape, dtype=dtype).to(self.device)
                 selection_method = self.initial_selection_method
             train_data = TensorFeatureData(X_train.to(self.device))

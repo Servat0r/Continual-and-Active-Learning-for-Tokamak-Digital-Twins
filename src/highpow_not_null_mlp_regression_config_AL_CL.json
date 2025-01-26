@@ -1,7 +1,7 @@
 {
   "general": {
     "mode": "AL(CL)",
-    "full_first_train_set": true,
+    "full_first_train_set": false,
     "task": "regression",
     "dtype": "float32",
     "num_campaigns": 10,
@@ -80,21 +80,21 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set (4096 batch size) (1024 hidden size)",
-      "ignore": true,
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 sampled first set (4096 batch size) (1024 hidden size)",
+      "ignore": false,
       "parameters": {
       }
     },
     {
       "name": "FromScratchTraining",
-      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 sampled first set (4096 batch size) (1024 hidden size)",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set Buffer 200 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 sampled first set Buffer 200 (4096 batch size) (1024 hidden size)",
       "ignore": true,
       "parameters": {
         "mem_size": 200
@@ -102,15 +102,15 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set Buffer 1000 (4096 batch size) (1024 hidden size)",
-      "ignore": true,
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 sampled first set Buffer 1000 (4096 batch size) (1024 hidden size)",
+      "ignore": false,
       "parameters": {
         "mem_size": 1000
       }
     },
     {
       "name": "GEM",
-      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set Patterns 200 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 sampled first set Patterns 200 (4096 batch size) (1024 hidden size)",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 200
@@ -118,16 +118,16 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set Patterns 2500 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 sampled first set Patterns 2500 (4096 batch size) (1024 hidden size)",
+      "ignore": true,
       "parameters": {
         "patterns_per_exp": 2500
       }
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 full first set (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "AL(CL)/kmeanspp [rp, [512]]/Batch 2500 sampled first set (4096 batch size) (1024 hidden size)",
+      "ignore": true,
       "parameters": {
       }
     }
