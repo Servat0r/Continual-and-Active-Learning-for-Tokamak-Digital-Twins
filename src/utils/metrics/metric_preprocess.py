@@ -192,10 +192,6 @@ class StreamPreprocess(PluginPreprocess):
 def preprocessed_metrics(metrics: list[GenericPluginMetric], preprocess_ytrue, preprocess_ypred):
     result = []
     for metric in metrics:
-        if hasattr(metric, '_metric'):
-            print(f"Pippo {metric._metric}")
-        elif hasattr(metric, '_current_metric'):
-            print(f"Pippo {metric._current_metric}")
         # Special Metrics
         if any([
             isinstance(metric, cls) for cls in \

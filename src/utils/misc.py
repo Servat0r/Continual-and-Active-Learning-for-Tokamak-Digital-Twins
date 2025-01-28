@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 import numpy as np
 from torch import float16, float32, float64
@@ -177,10 +178,14 @@ def get_all_tasks_paths(base_path: str) -> dict[str, str]:
     }
 
 
+STDOUT = sys.__stdout__
+STDERR = sys.__stderr__
+
+
 __all__ = [
     "debug_print", "time_logger", "float16", "float32", "float64",
     "get_dtype_from_str", "extract_metric_info", "extract_metric_type",
     "get_means_std_over_evaluation_experiences_multiple_runs",
     "extract_metric_values_over_evaluation_experiences",
-    "get_all_tasks_paths",
+    "get_all_tasks_paths", "STDOUT", "STDERR"
 ]

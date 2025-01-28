@@ -10,6 +10,7 @@ def dataset_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         'output_columns': BASELINE_HIGHPOW_OUTPUTS,
         'input_size': 15,
         'output_size': 4,
+        'simulator_type': 'qualikiz',
         'pow_type': 'highpow',
         'cluster_type': 'Ip_Pin_based',
         'dataset_type': 'not_null',
@@ -24,6 +25,7 @@ def dataset_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     assert all([isinstance(item, str) for item in default_config['output_columns']])
     assert isinstance(default_config['input_size'], int) and default_config['input_size'] > 0
     assert isinstance(default_config['output_size'], int) and default_config['output_size'] > 0
+    assert isinstance(default_config['simulator_type'], str) and default_config['simulator_type'] in ['qualikiz', 'tglf']
     assert default_config['pow_type'] in ['highpow', 'lowpow', 'mixed']
     assert default_config['cluster_type'] in ['Ip_Pin_based', 'tau_based', 'pca_based', 'wmhd_based', 'beta_based']
     assert default_config['dataset_type'] in ['not_null', 'complete']

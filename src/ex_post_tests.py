@@ -36,6 +36,7 @@ def load_baseline_csv_data(
         pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
         raw_or_final: str = 'final', train: bool = True,
         validation: bool = True, test: bool = True, task: str = 'regression',
+        simulator_type: str = 'qualikiz'
 ) -> tuple[pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None]:
     """
     Returns the triple (train_data, eval_data, test_data) as pandas DataFrames according to the
@@ -53,7 +54,7 @@ def load_baseline_csv_data(
     :return: The triple (train_data, eval_data, test_data) as pandas DataFrames, with each value being
     None if the corresponding train/validation/test input parameter is False.
     """
-    data_folder = f'data/baseline/cleaned/{pow_type}_cluster/{cluster_type}'
+    data_folder = f'data/{simulator_type}/cleaned/{pow_type}_cluster/{cluster_type}'
     train_filename = f'{raw_or_final}_train_data_{task}_{dataset_type}.csv'
     eval_filename = f'{raw_or_final}_eval_data_{task}_{dataset_type}.csv'
     test_filename = f'{raw_or_final}_test_data_{task}_{dataset_type}.csv'

@@ -34,7 +34,6 @@ def mlp_config(parameters: dict[str, Any], gaussian=False, task='regression', ta
             'hidden_size', 'hidden_layers', 'input_size', 'output_size',
             'drop_rate', 'dtype', 'include_softplus', 'activation'
         ]
-    print(task)
     if task == 'regression':
         if gaussian:
             return GaussianRegressionMLP(**default_config)
@@ -53,7 +52,6 @@ def saved_model_handler(model_folder: str, model_name: str, model_class_name: st
     if not model_class:
         raise ValueError(f"Invalid model class name \"{model_class_name}\"")
     model_path = f'{MODELS_DIR}/{model_folder}/{model_name} task_{task_id}.pt'
-    print(f"Loading model from path: {model_path}")
     model = model_class(**kwargs)
     model.load_state_dict(torch.load(model_path))
     return model
@@ -61,7 +59,6 @@ def saved_model_handler(model_folder: str, model_name: str, model_class_name: st
 
 @ConfigParser.register_handler('architecture')
 def architecture_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
-    print("Starting Architecture Handler ...")
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
     if 'parameters' not in data:
@@ -73,7 +70,6 @@ def architecture_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         task = kwargs['general']['task']
     else:
         task = 'regression'
-    print(task)
     if name == 'saved':
         model_folder = data.get('model_folder', '')
         model_name = data.get('model_name', 'model.pt')

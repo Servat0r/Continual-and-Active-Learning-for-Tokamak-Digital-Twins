@@ -36,7 +36,6 @@ class MeanStdPlugin(BaseLogger):
         if current_eval_exp <= self.training_exp:
             if not self.in_train_phase:
                 metrics = {extract_metric_info(val.name)['name']: val.value for val in metric_values}
-                print(f"{type(self).__name__}:", metrics, sep='\n')
                 self.metrics[current_eval_exp].update(metrics)
                 self.results.append(self.metrics[current_eval_exp].result())
 

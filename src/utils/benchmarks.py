@@ -17,7 +17,6 @@ from .transforms import *
 def build_normalization_transforms(data, columns, dtype, transform=None):
     mean = torch.tensor(data[columns].mean(axis=0), dtype=dtype)
     std = torch.tensor(data[columns].std(axis=0), dtype=dtype)
-    print(f"[green]mean = {mean}, std = {std} ...[/green]")
     if transform is not None:
         transform = transforms.Compose([CustomNormalize(mean, std), transform])
     else:
@@ -37,7 +36,6 @@ def subsample(data, column='has_turbulence'):
     negatives = data[data[column] == 0]
     positives_len = len(positives)
     negatives_len = len(negatives)
-    print(positives_len, negatives_len)
     min_len = min(positives_len, negatives_len)
     positive_sample = positives.sample(n=min_len, random_state=0)
     negative_sample = negatives.sample(n=min_len, random_state=0)
@@ -93,11 +91,9 @@ def make_benchmark(
     dtype = get_dtype_from_str(dtype)
     if output_columns is None:
         output_columns = BASELINE_HIGHPOW_OUTPUTS
-    debug_print(output_columns)
     dirname = os.path.dirname(csv_file)
     if not load_saved_final_data:
         data = pd.read_csv(csv_file)
-        debug_print(f"There are {len(data)} items in the dataset in {csv_file}.")
         filter_function = lambda x: 1 if any([x[column] for column in output_columns]) else 0
         data['has_turbulence'] = data.apply(filter_function, axis=1)
         def stratification_function(x):
@@ -117,7 +113,7 @@ def make_benchmark(
         train_data = train_data.drop(columns=['stratify'])
         eval_data = eval_data.drop(columns=['stratify'])
         test_data = test_data.drop(columns=['stratify'])
-        print(
+        debug_print(
             f"After stratification: ",
             f"train_data has {len(train_data[train_data.has_turbulence == 1])} positives and {len(train_data[train_data.has_turbulence == 0])} negatives.",
             f"eval_data has {len(eval_data[eval_data.has_turbulence == 1])} positives and {len(eval_data[eval_data.has_turbulence == 0])} negatives.",
@@ -156,7 +152,6 @@ def make_benchmark(
 
     # Handling normalizations
     first_exp_train_data = train_data[train_data.campaign == 0]
-    print(len(first_exp_train_data))
     if normalize_inputs:
         norm_transform, (mean, std) = build_normalization_transforms(first_exp_train_data, input_columns, dtype)
         if log_folder:

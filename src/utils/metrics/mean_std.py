@@ -7,7 +7,6 @@ class MeanStdMetric:
         self.metric_names = metric_names
         self.metric_values = {metric: [] for metric in metric_names}
         self.experience_results = []
-        print(f"Metric names: {self.metric_names}")
 
     def update(self, metrics: Dict[str, float]):
         """
@@ -26,13 +25,11 @@ class MeanStdMetric:
         Returns:
         - result (dict): A dictionary with mean, std, and adjusted mean values.
         """
-        print("Calling results() ...")
         results = {
             'mean': {},
             'std': {},
             'adjusted_mean': {},
         }
-        print(self.metric_values)
         for metric_name in self.metric_names:
             if len(self.metric_values[metric_name]) > 0:
                 results['mean'][metric_name] = np.mean(self.metric_values[metric_name])

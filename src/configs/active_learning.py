@@ -36,7 +36,6 @@ def _deep_ensemble_params_handler(parameters):
 
 @ConfigParser.register_handler('active_learning')
 def active_learning_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
-    print("Starting AL Handler ...")
     default_config = {
         "framework": "bmdal",
         "parameters": {

@@ -22,7 +22,6 @@ class ActiveLearningSamplingBuffer(ExemplarsBuffer):
         super().__init__(max_size)
         self.batch_selector = batch_selector
         self.device = device
-        print(f"{type(self).__name__} initialized with \"max_size\" = {max_size}")
 
     def post_adapt(self, agent, exp):
         self.update_from_dataset(exp.dataset)

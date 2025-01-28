@@ -41,7 +41,6 @@ def task_training_loop(
 
     # Config Processing
     config_parser.process_config()
-    debug_print(config_parser.get_config())
     # General
     mode = config_parser['mode']
     train_mb_size = config_parser['train_mb_size']
@@ -56,6 +55,7 @@ def task_training_loop(
     output_columns = config_parser['output_columns']
     input_size = len(input_columns)
     output_size = len(output_columns)
+    simulator_type = config_parser['simulator_type']
     pow_type = config_parser['pow_type']
     cluster_type = config_parser['cluster_type']
     dataset_type = config_parser['dataset_type']
@@ -113,7 +113,6 @@ def task_training_loop(
     batch_selector = None
     if mode in ['CL(AL)', 'AL(CL)']:
         cl_strategy_active_learning_data = config_parser['active_learning']
-        print(cl_strategy_active_learning_data)
         if cl_strategy_active_learning_data is not None:
             batch_selector = cl_strategy_active_learning_data['batch_selector']
             batch_selector.set_models([model])
@@ -166,7 +165,7 @@ def task_training_loop(
         train_datasets = []
         eval_datasets = []
         test_datasets = []
-        csv_file = f'data/baseline/cleaned/{pow_type}_cluster/{cluster_type}/complete_dataset.csv'
+        csv_file = f'data/{simulator_type}/cleaned/{pow_type}_cluster/{cluster_type}/complete_dataset.csv'
         print(
             f"Input columns = {input_columns}"
             f"\nOutput columns = {output_columns}"
@@ -220,7 +219,6 @@ def task_training_loop(
         if scheduler:
             plugins.append(scheduler)
 
-        print(f"CL Strategy Class: {cl_strategy_class}")
         if mode == 'CL(AL)':
             if cl_strategy_class == Replay:
                 cl_strategy_class = Naive
@@ -264,7 +262,6 @@ def task_training_loop(
             else:
                 current_metrics = None
                 for (idx, train_exp), eval_exp in zip(enumerate(train_stream), eval_stream):
-                    print(f"Index = {idx}")
                     # Active Learning
                     index_condition = (idx > 0) if full_first_train_set else True
                     if index_condition and (batch_selector is not None) and (mode == 'AL(CL)'):
@@ -300,11 +297,10 @@ def task_training_loop(
             return results
 
         # garbage collect before running
-        print("Garbage collecting ...")
         gc.collect()
 
         # train and test loop over the stream of experiences
-        print("Starting ...")
+        debug_print("[red]Starting ...[/red]", file=STDOUT)
         try:
             results = run(train_stream, eval_stream, cl_strategy, model, log_folder, write_intermediate_models)
             with open(os.path.join(log_folder, 'results.json'), 'w') as fp:

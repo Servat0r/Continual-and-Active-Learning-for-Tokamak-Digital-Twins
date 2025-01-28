@@ -30,16 +30,10 @@ if __name__ == '__main__':
     extra_log_folder = cmd_args.extra_log_folder or 'Base'
     write_intermediate_models = cmd_args.write_intermediate_models
     plot_single_runs = cmd_args.plot_single_runs
-    print(f"Config file path: {config_file_path}")
-    print(f"To redirect stdout: {to_redirect_stdout}")
-    print(f"Extra log folder: {extra_log_folder}")
-    print(f"Write intermediate models: {write_intermediate_models}")
-    print(f"Plot single runs: {plot_single_runs}")
     if cmd_args.num_tasks <= 0:
         num_jobs = os.cpu_count()
     else:
         num_jobs = cmd_args.num_tasks
-    print(f"Number of jobs: {num_jobs}")
     # Config data preprocessing
     config_data = json.load(open(config_file_path))
     if not isinstance(config_data['strategy'], list):
@@ -47,10 +41,10 @@ if __name__ == '__main__':
     for strategy in config_data['strategy']:
         ignore_strategy = strategy.get('ignore', False)
         if ignore_strategy:
-            debug_print(f"[red]Ignoring strategy: {strategy['name']} ... [/red]")
+            debug_print(f"[red]Ignoring strategy: {strategy['name']} ... [/red]", file=STDOUT)
             continue
         else:
-            debug_print(f"[red]Running strategy: {strategy['name']} ... [/red]")
+            debug_print(f"[red]Running strategy: {strategy['name']} ... [/red]", file=STDOUT)
         single_config_data = config_data.copy()
         single_config_data['strategy'] = strategy
         if num_jobs > 1:
@@ -71,7 +65,6 @@ if __name__ == '__main__':
                     plot_single_runs=plot_single_runs
                 )
             ]
-        print(results)
         # Plot means and standard deviations
         if num_jobs > 1:
             file_paths = [

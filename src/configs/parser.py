@@ -102,12 +102,10 @@ class ConfigParser:
             data = self.config.pop(key)
             self.config.update(data)
         for key in self.optional_keys:
-            print(f"Parsing key = {key}")
             if key not in self.config:
                 self.config[key] = {}
             else:
                 key_handler: Callable | None = self.__parsing_dict__.get(key, None)
-                print(f"key_handler for key = {key} is: {key_handler}")
                 if key_handler:
                     validation_result = key_handler(self.config[key], task_id=self.task_id, **self.config)
                     if validation_result is None:

@@ -99,7 +99,6 @@ def plot_metrics_over_training_experiences(
     if experiences is None:
         experiences = range(default_num_exp)
     num_epochs = len(df['epoch'].unique())
-    print(num_exp, num_epochs)
     ddf = pd.DataFrame({'epoch': np.arange(num_epochs)})
     for training_exp in experiences:
         selected_df = df[df['training_exp'] == training_exp][metric]

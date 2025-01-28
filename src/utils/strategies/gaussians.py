@@ -6,7 +6,6 @@ from avalanche.training.templates import SupervisedTemplate, BaseSGDTemplate
 class GaussianNaive(SupervisedTemplate):
 
     def training_epoch(self, **kwargs):
-        print(f"[#ff5500]Executing training epoch in {type(self).__name__}...[/#ff5500]")
         for batch in self.dataloader:
             self._before_training_iteration(**kwargs)
             x, y = batch[0], batch[1]

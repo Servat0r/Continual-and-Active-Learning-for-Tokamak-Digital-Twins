@@ -106,12 +106,8 @@ class CustomCSVLogger(BaseLogger):
         }
 
         for metric in metrics:
-            debug_print(metric, flush=True)
             metric_name, metric_type = extract_metric_type(str(metric))
             self.metric_names[metric_type].append(str(metric))
-
-        # Debug print
-        debug_print(self.metric_names, flush=True)
 
         # print csv headers
         for filetype, file in self.training_files.items():
