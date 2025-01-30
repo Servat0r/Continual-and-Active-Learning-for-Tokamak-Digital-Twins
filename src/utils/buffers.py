@@ -8,7 +8,7 @@ from avalanche.benchmarks import AvalancheDataset
 from avalanche.training import ExemplarsBuffer, BalancedExemplarsBuffer
 from bmdal_reg.bmdal.feature_data import TensorFeatureData
 
-from src.utils import ALBatchSelector, CSVRegressionDataset
+from src.utils import ALBatchSelector, CSVRegressionDataset, debug_print, STDOUT
 
 
 class ActiveLearningSamplingBuffer(ExemplarsBuffer):
@@ -26,7 +26,7 @@ class ActiveLearningSamplingBuffer(ExemplarsBuffer):
     def post_adapt(self, agent, exp):
         self.update_from_dataset(exp.dataset)
 
-    def update_from_dataset(self, new_data: AvalancheDataset):
+    def update_from_dataset(self, new_data: AvalancheDataset, exp_index: int = -1):
         """
         Update the buffer using the given dataset.
         :param new_data:
@@ -37,19 +37,17 @@ class ActiveLearningSamplingBuffer(ExemplarsBuffer):
         pool_data = TensorFeatureData(X_pool.to(self.device))
         sampled_idxs = self.batch_selector(pool_data, csv_regression_dataset)
         sampled_idxs = sampled_idxs[:self.max_size]
-        sampled_idxs = sampled_idxs.to('cpu')
-        X_sampled, y_sampled = \
-            X_pool.to('cpu')[sampled_idxs].clone(), y_pool.to('cpu')[sampled_idxs].clone()
+        X_sampled, y_sampled = X_pool.to(self.device)[sampled_idxs], y_pool.to(self.device)[sampled_idxs]
         new_csv_regression_dataset = CSVRegressionDataset(
             data=None, input_columns=[], output_columns=[],
-            inputs=X_sampled, outputs=y_sampled
+            inputs=X_sampled, outputs=y_sampled,
+            transform=csv_regression_dataset.transform,
+            target_transform=csv_regression_dataset.target_transform,
         )
+        new_csv_regression_dataset.set_device(self.device)
         self.buffer = AvalancheDataset([new_csv_regression_dataset])
-        #original_subset = new_data.subset(sampled_idxs)
-        #original_subset._datasets[0].set_device('cpu')
-        #self.buffer = original_subset
         # Now add the newly selected buffer to Batch Selector Memory
-        self.batch_selector.add_train_exp(self.buffer)
+        self.batch_selector.add_train_exp(self.buffer, index=exp_index)
 
     def resize(self, strategy: Any, new_size: int):
         """Update the maximum size of the buffer."""

@@ -37,7 +37,10 @@ class CSVRegressionDataset(Dataset):
         Specifically, for each (column -> value), each row such that row[column] < value
         will be filtered out.
         """
-        if (device is None) or (device == 'gpu'):
+        device = str(device) if device is not None else None
+        if device is None:
+            device = "cpu"
+        elif device == 'gpu':
             device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
         elif not device.startswith('cuda'):
             device = 'cpu'
@@ -85,6 +88,10 @@ class CSVRegressionDataset(Dataset):
             self.inputs = inputs
         if targets is not None:
             self.targets = targets
+
+    @property
+    def device(self):
+        return self.inputs.device
 
     def set_device(self, device):
         self.inputs = self.inputs.to(device)

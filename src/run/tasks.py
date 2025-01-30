@@ -116,8 +116,8 @@ def task_training_loop(
         if cl_strategy_active_learning_data is not None:
             batch_selector = cl_strategy_active_learning_data['batch_selector']
             batch_selector.set_models([model])
-            #batch_selector.set_device('cpu')
             batch_selector.set_device(device)
+            batch_selector.close()
 
     # Prepare folders for experiments
     folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}"
@@ -128,6 +128,7 @@ def task_training_loop(
     )
     os.makedirs(os.path.join(log_folder), exist_ok=True)
     stdout_file_path = os.path.join(log_folder, 'stdout.txt')
+    batch_selector.debug_log_file = open(os.path.join(log_folder, 'batch_selector.log'), 'w')
 
     with open(stdout_file_path, 'w') as stdout_file:
         if redirect_stdout:
@@ -208,17 +209,18 @@ def task_training_loop(
 
         # Extra plugins
         plugins = [
-            ValidationStreamPlugin(val_stream=eval_stream, debug_log_file=os.path.join(log_folder, 'val_stream.txt')),
+            ValidationStreamPlugin(val_stream=eval_stream, debug_log_file=os.path.join(log_folder, 'val_stream.log')),
             TqdmTrainingEpochsPlugin(num_exp=num_campaigns, num_epochs=train_epochs),
         ]
 
         if early_stopping:
             # Write debug log file for early stopping
-            early_stopping.debug_log_file = open(os.path.join(log_folder, 'early_stopping.txt'), 'w')
+            early_stopping.debug_log_file = open(os.path.join(log_folder, 'early_stopping.log'), 'w')
             plugins.append(early_stopping)
         if scheduler:
             plugins.append(scheduler)
 
+        replay_plugin = None
         if mode == 'CL(AL)':
             if cl_strategy_class == Replay:
                 cl_strategy_class = Naive
@@ -226,7 +228,7 @@ def task_training_loop(
                 replay_plugin = ReplayPlugin(
                     mem_size=mem_size,
                     storage_policy=ExperienceBalancedActiveLearningBuffer(
-                        max_size=mem_size, batch_selector=batch_selector, device=device
+                        max_size=mem_size, batch_selector=batch_selector, device='cpu'
                     )
                 )
                 plugins.append(replay_plugin)
@@ -236,7 +238,7 @@ def task_training_loop(
                 replay_plugin = PercentageReplayPlugin(
                     mem_percentage=mem_percentage,
                     storage_policy=ExperienceBalancedActiveLearningBuffer(
-                        max_size=50_000, batch_selector=batch_selector, device=device # TODO Fix this "magic number"
+                        max_size=50_000, batch_selector=batch_selector, device='cpu' # TODO Fix this "magic number"
                     )
                 )
                 plugins.append(replay_plugin)
@@ -262,10 +264,14 @@ def task_training_loop(
             else:
                 current_metrics = None
                 for (idx, train_exp), eval_exp in zip(enumerate(train_stream), eval_stream):
+                    debug_print(
+                        f"[red]train_exp device = {train_exp.dataset._datasets[0].device}[/red]",
+                        file=STDOUT,
+                    )
                     # Active Learning
                     index_condition = (idx > 0) if full_first_train_set else True
                     if index_condition and (batch_selector is not None) and (mode == 'AL(CL)'):
-                        print(f"Train Exp length (before Batch Selection) = {len(train_exp.dataset)}")
+                        debug_print(f"Train Exp length (before Batch Selection) = {len(train_exp.dataset)}", file=STDOUT)
                         train_csv_regression_dataset = train_exp.dataset._datasets[0]
                         X_pool, y_pool = train_csv_regression_dataset[:]
                         pool_data = TensorFeatureData(X_pool.to(device))
@@ -274,14 +280,13 @@ def task_training_loop(
                         X_pool, y_pool = X_pool[sampled_idxs].clone(), y_pool[sampled_idxs].clone()  # Filter by sampled indices
                         new_csv_dataset = CSVRegressionDataset(
                             data=None, input_columns=[], output_columns=[],
-                            inputs=X_pool, outputs=y_pool, device='cpu'
+                            inputs=X_pool, outputs=y_pool, device=y_pool.device,
+                            transform=train_csv_regression_dataset.transform,
+                            target_transform=train_csv_regression_dataset.target_transform
                         )
                         train_exp._dataset = AvalancheDataset([new_csv_dataset])
-                    print(f"Train Exp length (after Batch Selection) = {len(train_exp.dataset)}")
+                        debug_print(f"Train Exp length (after Batch Selection) = {len(train_exp.dataset)}", file=STDOUT)
                     print(f"Starting training experience {idx}: ")
-                    # Early Stopping stuff
-                    #if not early_stopping.use_validation_plugin:
-                    #    early_stopping.update(cl_strategy, current_metrics)
                     # Training Cycle
                     cl_strategy.train(train_exp)
                     print(f"Starting testing experience {idx}: ")
@@ -292,8 +297,9 @@ def task_training_loop(
                         model.eval()
                         torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
                         model.train()
-                    if batch_selector is not None:
-                        batch_selector.add_train_exp(train_exp)
+                    if (batch_selector is not None) and (mode == 'AL(CL)'):
+                        batch_selector.add_train_exp(train_exp, index=idx)
+            batch_selector.close()
             return results
 
         # garbage collect before running

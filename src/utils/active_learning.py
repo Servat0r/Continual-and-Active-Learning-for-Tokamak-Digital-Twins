@@ -4,6 +4,7 @@ This allows to directly call Active Learning selection routines inside the task_
 """
 from abc import ABC, abstractmethod
 from typing import Literal
+from sortedcontainers import SortedDict
 
 import torch.nn
 
@@ -11,13 +12,17 @@ from avalanche.benchmarks import AvalancheDataset, DatasetExperience
 from bmdal_reg.bmdal.feature_data import TensorFeatureData
 from bmdal_reg.bmdal.algorithms import select_batch
 
+from .misc import debug_print, STDOUT
+
 
 class ALBatchSelector(ABC):
 
     def __init__(self):
         self.device = None
         self.models = None
-        self.train_exp = None
+        self.train_experiences = SortedDict()
+        self.train_inputs = None
+        self.train_targets = None
 
     @abstractmethod
     def __call__(
@@ -32,29 +37,17 @@ class ALBatchSelector(ABC):
     def set_device(self, device: str):
         self.device = torch.device(device)
 
-    def set_train_exp(self, train_exp: DatasetExperience | AvalancheDataset):
+    def add_train_exp(self, train_exp: DatasetExperience | AvalancheDataset, index: int = -1):
+        index = index if index >= 0 else len(self.train_experiences)
+        if index in self.train_experiences.keys():
+            debug_print(f"[red]Experience {index} alredy present in Batch Selector[/red]", file=STDOUT)
+            return
         if isinstance(train_exp, DatasetExperience):
-            self.train_exp = train_exp.dataset._datasets[0] # CSVRegressionDataset
+            self.train_experiences[index] = train_exp.dataset
         elif isinstance(train_exp, AvalancheDataset):
-            self.train_exp = train_exp._datasets[0]
-
-    def add_train_exp(self, train_exp: DatasetExperience | AvalancheDataset):
-        if self.train_exp is None:
-            self.set_train_exp(train_exp)
+            self.train_experiences[index] = train_exp
         else:
-            if isinstance(train_exp, DatasetExperience):
-                new_csv_dataset = train_exp.dataset._datasets[0]
-            elif isinstance(train_exp, AvalancheDataset):
-                new_csv_dataset = train_exp._datasets[0]
-            else:
-                raise ValueError(
-                    f"train_exp must be DatasetExperience or AvalancheDataset, got {type(train_exp)}"
-                )
-            new_inputs = torch.concat([self.train_exp.inputs, new_csv_dataset.inputs])
-            new_targets = torch.concat([self.train_exp.targets, new_csv_dataset.targets])
-            self.train_exp.inputs = new_inputs
-            self.train_exp.targets = new_targets
-            print(f"New batch X_train dataset has {len(self.train_exp)} rows")
+            raise TypeError(f"Incorrect type {train_exp.__class__.__name__} for \"train_exp\"")
 
 
 class BMDALBatchSelector(ALBatchSelector):
@@ -68,18 +61,22 @@ class BMDALBatchSelector(ALBatchSelector):
         self, models: list[torch.nn.Module] = None, batch_size: int = 100,
         selection_method: str = 'lcmd', sel_with_train: bool = False,
         base_kernel: str = 'grad', kernel_transforms: list = None,
-        initial_selection_method: Literal["random", "maxdiag"] = "random"
+        initial_selection_method: Literal["random", "maxdiag"] = "random",
+        debug_log_file: str = 'batch_selector.log',
     ):
         super().__init__()
         self.models = models
         self.batch_size = batch_size
         self.selection_method = selection_method
         self.sel_with_train = sel_with_train
-        # TODO Verify if this assumption can actually be made (it simplifies src.utils.buffers objects).
         self.base_kernel = base_kernel
         self.kernel_transforms = kernel_transforms
         self.initial_selection_method = initial_selection_method
-
+        self.debug_log_file = open(debug_log_file, 'w')
+    
+    def close(self):
+        self.debug_log_file.close()
+    
     def __call__(
         self, pool_data: TensorFeatureData, pool_dataset: AvalancheDataset,
         train_data: TensorFeatureData = None, y_train: torch.Tensor = None,
@@ -88,25 +85,44 @@ class BMDALBatchSelector(ALBatchSelector):
         if self.models is None:
             raise RuntimeError(f"Attribute \"models\" of {type(self).__name__} object is None")
         if train_data is None:
-            if self.train_exp is not None:
-                X_train, y_train = self.train_exp[:]
+            #if self.train_inputs is not None:
+            if len(self.train_experiences) > 0:
+                # Dynamic building of training data (hence avoiding GPU memory occupation during training)
+                train_inputs = [
+                    train_exp._datasets[0].inputs for key, train_exp in self.train_experiences.items()
+                ]
+                X_train = torch.concat(train_inputs, dim=0)
+                y_train = None
+                #X_train, y_train = self.train_inputs, self.train_targets
             else:
                 # Determine the feature size from pool_data
                 shape, dtype = list(pool_data.data.shape), pool_data.data.dtype
                 shape[0] = 1 # One-element tensor (was empty before but this caused a index-out-of-bounds error in batch_select)
-                X_train = torch.zeros(shape, dtype=dtype).to(self.device)
+                X_train = torch.zeros(shape, dtype=dtype)
                 selection_method = self.initial_selection_method
-            train_data = TensorFeatureData(X_train.to(self.device))
+            train_data = TensorFeatureData(X_train)
+        debug_print(f"[red]Using selection method '{selection_method}'[/red]", file=STDOUT)
+        # Synchronize all of them on the same device
+        orig_device = pool_data.data.device
+        model_device = next(self.models[0].parameters()).device
+        train_data = TensorFeatureData(train_data.data.to(model_device))
+        pool_data = TensorFeatureData(pool_data.data.to(model_device))
+        y_train2 = y_train.to(model_device) if y_train is not None else y_train
+        is_training = self.models[0].training
+        self.models[0].eval()
+        debug_print(torch.cuda.memory_summary(device='cuda'), file=self.debug_log_file)
         new_idxs, _ = select_batch(
-            batch_size=self.batch_size, models=[m.to(self.device) for m in self.models], y_train=y_train,
+            batch_size=self.batch_size, models=self.models, y_train=y_train2,
             data={'train': train_data, 'pool': pool_data},
             selection_method=selection_method,
             sel_with_train=self.sel_with_train,
             base_kernel=self.base_kernel,
             kernel_transforms=self.kernel_transforms
         )
+        if is_training:
+            self.models[0].train()
         print(f"Selected {len(new_idxs)} samples from pool")
-        return new_idxs
+        return new_idxs.to(orig_device)
 
 
 class MCDropoutBatchSelector(ALBatchSelector):
@@ -152,8 +168,8 @@ class MCDropoutBatchSelector(ALBatchSelector):
             pool_data.data = pool_x.to(self.device)
         
         if train_data is None:
-            if self.train_exp is not None:
-                X_train, y_train = self.train_exp[:]
+            if self.train_inputs is not None:
+                X_train, y_train = self.train_inputs, self.train_targets
             else:
                 shape, dtype = list(pool_data.data.shape), pool_data.data.dtype
                 shape[0] = 0  # no samples
