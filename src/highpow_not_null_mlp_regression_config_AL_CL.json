@@ -13,7 +13,7 @@
     "framework": "bmdal",
     "parameters": {
       "batch_size": 2000,
-      "selection_method": "lcmd",
+      "selection_method": "maxdet",
       "initial_selection_method": "maxdiag",
       "sel_with_train": true,
       "base_kernel": "grad",
@@ -80,21 +80,21 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/maxdet [rp, [512]] + maxdiag/Batch 2000 full first set (4096 batch size) (1024 hidden size)",
       "ignore": false,
       "parameters": {
       }
     },
     {
       "name": "FromScratchTraining",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/maxdet [rp, [512]] + maxdiag/Batch 2000 full first set (4096 batch size) (1024 hidden size)",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set Buffer 200 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/maxdet [rp, [512]] + maxdiag/Batch 2000 full first set Buffer 200 (4096 batch size) (1024 hidden size)",
       "ignore": true,
       "parameters": {
         "mem_size": 200
@@ -102,7 +102,7 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set Buffer 1000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/maxdet [rp, [512]] + maxdiag/Batch 2000 full first set Buffer 1000 (4096 batch size) (1024 hidden size)",
       "ignore": false,
       "parameters": {
         "mem_size": 1000
@@ -110,7 +110,7 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set Patterns 200 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/maxdet [rp, [512]] + maxdiag/Batch 2000 full first set Patterns 200 (4096 batch size) (1024 hidden size)",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 200
@@ -118,15 +118,15 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set Patterns 2000 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "AL(CL)/maxdet [rp, [512]] + maxdiag/Batch 2000 full first set Patterns 2000 (4096 batch size) (1024 hidden size)",
+      "ignore": true,
       "parameters": {
         "patterns_per_exp": 2000
       }
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/maxdet [rp, [512]] + maxdiag/Batch 2000 full first set (4096 batch size) (1024 hidden size)",
       "ignore": false,
       "parameters": {
       }
