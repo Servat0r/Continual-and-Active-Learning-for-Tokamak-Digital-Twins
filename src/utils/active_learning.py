@@ -88,8 +88,9 @@ class BMDALBatchSelector(ALBatchSelector):
             #if self.train_inputs is not None:
             if len(self.train_experiences) > 0:
                 # Dynamic building of training data (hence avoiding GPU memory occupation during training)
+                # The usage of [:][0] ensures that <dataset>.transform() is correctly applied to the items
                 train_inputs = [
-                    train_exp._datasets[0].inputs for key, train_exp in self.train_experiences.items()
+                    train_exp._datasets[0][:][0] for key, train_exp in self.train_experiences.items()
                 ]
                 X_train = torch.concat(train_inputs, dim=0)
                 y_train = None

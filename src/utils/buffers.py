@@ -33,8 +33,9 @@ class ActiveLearningSamplingBuffer(ExemplarsBuffer):
         :return:
         """
         csv_regression_dataset = new_data._datasets[0]
-        X_pool, y_pool = csv_regression_dataset[:]
-        pool_data = TensorFeatureData(X_pool.to(self.device))
+        X_pool, y_pool = csv_regression_dataset.inputs, csv_regression_dataset.targets
+        X_pool_transformed = csv_regression_dataset.transform(X_pool)
+        pool_data = TensorFeatureData(X_pool_transformed.to(self.device))
         sampled_idxs = self.batch_selector(pool_data, csv_regression_dataset)
         sampled_idxs = sampled_idxs[:self.max_size]
         X_sampled, y_sampled = X_pool.to(self.device)[sampled_idxs], y_pool.to(self.device)[sampled_idxs]

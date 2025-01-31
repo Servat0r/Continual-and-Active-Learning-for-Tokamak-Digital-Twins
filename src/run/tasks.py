@@ -273,8 +273,10 @@ def task_training_loop(
                     if index_condition and (batch_selector is not None) and (mode == 'AL(CL)'):
                         debug_print(f"Train Exp length (before Batch Selection) = {len(train_exp.dataset)}", file=STDOUT)
                         train_csv_regression_dataset = train_exp.dataset._datasets[0]
-                        X_pool, y_pool = train_csv_regression_dataset[:]
-                        pool_data = TensorFeatureData(X_pool.to(device))
+                        # I write this like that to be clear on what actually happens
+                        X_pool, y_pool = train_csv_regression_dataset.inputs, train_csv_regression_dataset.targets
+                        X_pool_transformed = train_csv_regression_dataset.transform(X_pool)
+                        pool_data = TensorFeatureData(X_pool_transformed.to(device))
                         sampled_idxs = batch_selector(pool_data, train_exp.dataset)
                         sampled_idxs = sampled_idxs.to('cpu')
                         X_pool, y_pool = X_pool[sampled_idxs].clone(), y_pool[sampled_idxs].clone()  # Filter by sampled indices
