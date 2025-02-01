@@ -1,13 +1,13 @@
 from typing import Any
 from .parser import *
-from ..utils import BASELINE_HIGHPOW_OUTPUTS, BASELINE_HIGHPOW_INPUTS
+from ..utils import QUALIKIZ_HIGHPOW_OUTPUTS, QUALIKIZ_HIGHPOW_INPUTS
 
 
 @ConfigParser.register_handler('dataset')
 def dataset_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     default_config = {
-        'input_columns': BASELINE_HIGHPOW_INPUTS,
-        'output_columns': BASELINE_HIGHPOW_OUTPUTS,
+        'input_columns': QUALIKIZ_HIGHPOW_INPUTS,
+        'output_columns': QUALIKIZ_HIGHPOW_OUTPUTS,
         'input_size': 15,
         'output_size': 4,
         'simulator_type': 'qualikiz',

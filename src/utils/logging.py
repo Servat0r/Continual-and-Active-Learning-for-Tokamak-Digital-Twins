@@ -7,13 +7,14 @@ from avalanche.evaluation import GenericPluginMetric
 from avalanche.logging import BaseLogger
 from avalanche.training.templates import SupervisedTemplate
 
-from .misc import debug_print, extract_metric_info, extract_metric_type
+from .misc import extract_metric_info, extract_metric_type
 
 
 ########################### Helpers
 def get_log_folder(
         pow_type: str, cluster_type: str, task: str, dataset_type: str, outputs: str | list[str],
         strategy: str, extra_log_folder: str, *, count: int = None, task_id: int = 0,
+        simulator_type: str = 'qualikiz'
 ) -> str:
     """
     Retrieves the EXACT log folder path according to the given parameters.

@@ -116,7 +116,7 @@ def load_models(
 
 def build_full_datasets(
     train_data: pd.DataFrame, eval_data: pd.DataFrame, test_data: pd.DataFrame,
-    input_columns: list[str] = BASELINE_HIGHPOW_INPUTS, output_columns: list[str] = BASELINE_HIGHPOW_OUTPUTS,
+    input_columns: list[str] = QUALIKIZ_HIGHPOW_INPUTS, output_columns: list[str] = QUALIKIZ_HIGHPOW_OUTPUTS,
     transform = None, target_transform = None, float_precision: str = 'float32', device: str = 'cpu',
     normalize_inputs: bool = True, normalize_outputs: bool = False,
 ) -> tuple[CSVRegressionDataset, CSVRegressionDataset, CSVRegressionDataset]:
@@ -125,8 +125,8 @@ def build_full_datasets(
     :param train_data: DataFrame with (all) train data.
     :param eval_data: DataFrame with (all) validation data.
     :param test_data: DataFrame with (all) test data.
-    :param input_columns: Input columns, defaults to BASELINE_HIGHPOW_INPUTS (15 columns for high-power experiments).
-    :param output_columns: Output columns, defaults to BASELINE_HIGHPOW_OUTPUTS (4 columns for high-power experiments).
+    :param input_columns: Input columns, defaults to QUALIKIZ_HIGHPOW_INPUTS (15 columns for high-power experiments).
+    :param output_columns: Output columns, defaults to QUALIKIZ_HIGHPOW_OUTPUTS (4 columns for high-power experiments).
     :param transform: Transform to apply to input data (excluding mean-std normalization), defaults to None.
     :param target_transform: Transform to apply to output data (excluding mean-std normalization), defaults to None.
     :param float_precision: Floating point precision, one of {'float32', 'float16', 'float64'}. Defaults to 'float32'.
@@ -159,7 +159,7 @@ def build_full_datasets(
 
 def build_experience_datasets(
     train_data: pd.DataFrame, eval_data: pd.DataFrame, test_data: pd.DataFrame,
-    input_columns: list[str] = BASELINE_HIGHPOW_INPUTS, output_columns: list[str] = BASELINE_HIGHPOW_OUTPUTS,
+    input_columns: list[str] = QUALIKIZ_HIGHPOW_INPUTS, output_columns: list[str] = QUALIKIZ_HIGHPOW_OUTPUTS,
     transform = None, target_transform = None, float_precision: str = 'float32', device: str = 'cpu',
     num_campaigns: int = 10, normalize_inputs: bool = True, normalize_outputs: bool = False,
 ) -> tuple[dict[int, CSVRegressionDataset], dict[int, CSVRegressionDataset], dict[int, CSVRegressionDataset]]:
@@ -168,8 +168,8 @@ def build_experience_datasets(
     :param train_data: DataFrame with (all) train data.
     :param eval_data: DataFrame with (all) validation data.
     :param test_data: DataFrame with (all) test data.
-    :param input_columns: Input columns, defaults to BASELINE_HIGHPOW_INPUTS (15 columns for high-power experiments).
-    :param output_columns: Output columns, defaults to BASELINE_HIGHPOW_OUTPUTS (4 columns for high-power experiments).
+    :param input_columns: Input columns, defaults to QUALIKIZ_HIGHPOW_INPUTS (15 columns for high-power experiments).
+    :param output_columns: Output columns, defaults to QUALIKIZ_HIGHPOW_OUTPUTS (4 columns for high-power experiments).
     :param transform: Transform to apply to input data (excluding mean-std normalization), defaults to None.
     :param target_transform: Transform to apply to output data (excluding mean-std normalization), defaults to None.
     :param float_precision: Floating point precision, one of {'float32', 'float16', 'float64'}. Defaults to 'float32'.
@@ -245,7 +245,6 @@ def get_mean_std_metric_values(
     for i in range(num_exp):
         exp_mean_series = mean_df[(mean_df['training_exp'] == i) & (mean_df['eval_exp'] <= i)][metric].to_numpy()
         exp_std_series = std_df[num_exp*i:num_exp*i+i+1][metric].to_numpy()
-        print("Means: ", exp_mean_series, "Stds: ", exp_std_series, sep='\n')
         combined_mean = exp_mean_series.mean()
         exp_mean_series = (exp_mean_series - combined_mean)
         exp_std_series = exp_std_series**2 + exp_mean_series**2
@@ -261,20 +260,21 @@ def get_mean_std_metric_values(
 
 
 def wrapper(
-    pow_type, cluster_type, dataset_type, task, outputs,
-    strategy, extra_log_folder, metric='Forgetting_Exp'
+    pow_type, cluster_type, dataset_type, task, outputs, strategy,
+    extra_log_folder, metric='Forgetting_Exp', simulator_type='qualikiz'
 ):
     try:
         log_folder = get_log_folder(
-            pow_type, cluster_type, task, dataset_type, outputs, strategy, extra_log_folder, count=0, task_id=0
+            pow_type, cluster_type, task, dataset_type, outputs, strategy,
+            extra_log_folder, count=0, task_id=0, simulator_type=simulator_type
         )
         train_data, eval_data, test_data = load_baseline_csv_data(
-            pow_type, cluster_type, dataset_type, raw_or_final='final', task=task
+            pow_type, cluster_type, dataset_type, raw_or_final='final',
+            task=task, simulator_type=simulator_type
         )
         mean_std_df = get_mean_std_metric_values(eval_data, log_folder, metric=metric)
         return mean_std_df
     except Exception as ex:
-        print(ex)
         return None
 
 

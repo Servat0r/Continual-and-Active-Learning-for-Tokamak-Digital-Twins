@@ -104,8 +104,8 @@ def _is_not_null(row, output_columns):
 
 def make_complete_dataset(
         pow_type, cluster_type, output_columns: list[str],
-        base_src_folder='baseline/campaigns_lumped',
-        base_dest_folder='baseline/cleaned',
+        base_src_folder='qualikiz/campaigns_lumped',
+        base_dest_folder='qualikiz/cleaned',
 ):
     src_filename = f'data/{base_src_folder}/{pow_type}_cluster/{cluster_type}/all_campaigns.csv'
     dest_folder = f'data/{base_dest_folder}/{pow_type}_cluster/{cluster_type}'
@@ -185,30 +185,56 @@ def get_avalanche_csv_regression_datasets(
     return train_dataset, eval_dataset, test_dataset
 
 
-# Constants for loading baseline fields
+# Constants for loading qualikiz fields
 # High Power
-BASELINE_HIGHPOW_INPUTS = [
+QUALIKIZ_HIGHPOW_INPUTS = [
     'ane', 'ate', 'autor', 'machtor', 'x', 'zeff', 'gammae', 'q', 'smag',
     'alpha', 'ani1', 'ati0', 'normni1', 'ti_te0', 'lognustar'
 ]
-BASELINE_HIGHPOW_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
+QUALIKIZ_HIGHPOW_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
 # Low Power
-BASELINE_LOWPOW_INPUTS = [
+QUALIKIZ_LOWPOW_INPUTS = [
     'ane', 'ate', 'x', 'q', 'smag', 'alpha', 'ani1', 'ati0', 'normni1', 'zeff', 'lognustar'
 ]
-BASELINE_LOWPOW_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
+QUALIKIZ_LOWPOW_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
 # Mixed
-BASELINE_MIXED_INPUTS = [
+QUALIKIZ_MIXED_INPUTS = [
     'ane', 'ate', 'autor', 'machtor', 'x', 'zeff', 'gammae', 'q', 'smag',
     'alpha', 'ani1', 'ati0', 'normni1', 'ti_te0', 'lognustar'
 ]
-BASELINE_MIXED_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
+QUALIKIZ_MIXED_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
+
+# TGLF values
+# High Power
+TGLF_HIGHPOW_INPUTS = [
+    "rmin_loc", "drmajdx_loc", "kappa_loc", "delta_loc", "q_loc",
+    "q_prime_loc", "vexb_shear", "rlns_1", "rlts_1", "rlns_2",
+    "rlts_2", "taus_2", "as_2", "rlns_3", "zeff", "betae", "xnue"
+]
+TGLF_HIGHPOW_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
+# Low Power
+TGLF_LOWPOW_INPUTS = [
+    "rmin_loc", "drmajdx_loc", "kappa_loc", "delta_loc", "q_loc",
+    "q_prime_loc", "vexb_shear", "rlns_1", "rlts_1", "rlns_2",
+    "rlts_2", "taus_2", "as_2", "rlns_3", "zeff", "betae", "xnue"
+]
+TGLF_LOWPOW_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
+# Mixed Power
+TGLF_MIXED_INPUTS = [
+    "rmin_loc", "drmajdx_loc", "kappa_loc", "delta_loc", "q_loc",
+    "q_prime_loc", "vexb_shear", "rlns_1", "rlts_1", "rlns_2",
+    "rlts_2", "taus_2", "as_2", "rlns_3", "zeff", "betae", "xnue"
+]
+TGLF_MIXED_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
 
 
 __all__ = [
     'CSVRegressionDataset', 'get_avalanche_csv_regression_datasets',
-    'BASELINE_HIGHPOW_INPUTS', 'BASELINE_HIGHPOW_OUTPUTS',
-    'BASELINE_LOWPOW_INPUTS', 'BASELINE_LOWPOW_OUTPUTS',
-    'BASELINE_MIXED_INPUTS', 'BASELINE_MIXED_OUTPUTS',
+    'QUALIKIZ_HIGHPOW_INPUTS', 'QUALIKIZ_HIGHPOW_OUTPUTS',
+    'QUALIKIZ_LOWPOW_INPUTS', 'QUALIKIZ_LOWPOW_OUTPUTS',
+    'QUALIKIZ_MIXED_INPUTS', 'QUALIKIZ_MIXED_OUTPUTS',
+    'TGLF_HIGHPOW_INPUTS', 'TGLF_HIGHPOW_OUTPUTS',
+    'TGLF_LOWPOW_INPUTS', 'TGLF_LOWPOW_OUTPUTS',
+    'TGLF_MIXED_INPUTS', 'TGLF_MIXED_OUTPUTS',
     'make_complete_dataset',
 ]

@@ -1,7 +1,7 @@
 Final Thesis Project for Master Degree in Computer Science (AI) at University of Pisa, a.y. 2023-2024.
 
 ## Project Structure:
-- `data` folder contains all used datasets, with `baseline` being the original dataset. `baseline/cleaned/<power_type>/<cluster_type>` contains reworked datasets for CL experiment, with `final_<type>_data_<task>.csv` being datasets after preprocessing and directly loaded for experiments
+- `data` folder contains all used datasets, with `qualikiz` being the original dataset. `qualikiz/cleaned/<power_type>/<cluster_type>` contains reworked datasets for CL experiment, with `final_<type>_data_<task>.csv` being datasets after preprocessing and directly loaded for experiments
 - experiment configurations are contained in JSON files, with the following fields:
   - `general` for generic configuration parameters
   - `dataset` for dataset type, inputs/outputs and normalization
@@ -24,7 +24,7 @@ For each experiment, we define the following:
 - `pow_type`: experiment power conditions (`highpow` or `lowpow`)
 - `cluster_type`: experiment data cluster type (`Ip_Pin_based`, `tau_based`, `pca_based`)
 - `task`: `classification` (if there is or not turbulence related to one or more outputs) or `regression` (predict output values)
-- `dataset_type`: `complete` means we use the whole dataset, while `not_null` means we use the subset for which we exclude zero values for all the outputs considered (for baseline, a subset of `{efe, efi, pfe, pfi}`)
+- `dataset_type`: `complete` means we use the whole dataset, while `not_null` means we use the subset for which we exclude zero values for all the outputs considered (for `qualikiz` and `tglf`, a subset of `{efe, efi, pfe, pfi}`)
 - `outputs`: all output columns considered, in the format of `_.join(outputs)` (eg, `efe_efi_pfe_pfi`)
 - `strategy`: Continual Learning Strategy used
 - `extra_log_folder`: extra folder with further information for catalogating experiments

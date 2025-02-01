@@ -47,8 +47,8 @@ def make_benchmark(
         csv_file: str | os.PathLike, train_datasets: list[CSVRegressionDataset | AvalancheDataset],
         eval_datasets: list[CSVRegressionDataset | AvalancheDataset],
         test_datasets: list[CSVRegressionDataset | AvalancheDataset],
-        task='regression', input_columns=BASELINE_HIGHPOW_INPUTS,
-        output_columns=BASELINE_HIGHPOW_OUTPUTS, NUM_CAMPAIGNS=5,
+        task='regression', input_columns=QUALIKIZ_HIGHPOW_INPUTS,
+        output_columns=QUALIKIZ_HIGHPOW_OUTPUTS, NUM_CAMPAIGNS=5,
         dtype='float32', *, test_size=0.2, eval_size=0.25,
         normalize_inputs=True, normalize_outputs=False, log_folder=None,
         dataset_type='complete', filter_by_leq: dict[str, int | float] = None,
@@ -66,8 +66,8 @@ def make_benchmark(
     :param eval_datasets: List to be used for appending validation datasets.
     :param test_datasets: List to be used for appending test datasets.
     :param task: One of {"classification", "regression"}.
-    :param input_columns: Input columns, defaults to BASELINE_HIGHPOW_INPUTS (15 columns for high-power case).
-    :param output_columns: Output columns, defaults to BASELINE_HIGHPOW_OUTPUTS (4 columns for high-power case).
+    :param input_columns: Input columns, defaults to QUALIKIZ_HIGHPOW_INPUTS (15 columns for high-power case).
+    :param output_columns: Output columns, defaults to QUALIKIZ_HIGHPOW_OUTPUTS (4 columns for high-power case).
     :param NUM_CAMPAIGNS: Number of experiences (called "campaigns").
     :param dtype: Datatype to be used for loading floating-point data. Defaults to 'float32'.
     :param test_size: Test size w.r.t. the whole dataset. Defaults to 0.2.
@@ -90,7 +90,7 @@ def make_benchmark(
     float_precision = dtype
     dtype = get_dtype_from_str(dtype)
     if output_columns is None:
-        output_columns = BASELINE_HIGHPOW_OUTPUTS
+        output_columns = QUALIKIZ_HIGHPOW_OUTPUTS
     dirname = os.path.dirname(csv_file)
     if not load_saved_final_data:
         data = pd.read_csv(csv_file)
