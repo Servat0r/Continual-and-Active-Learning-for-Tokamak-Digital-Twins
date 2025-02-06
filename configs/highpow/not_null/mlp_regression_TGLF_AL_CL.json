@@ -12,7 +12,8 @@
   "active_learning": {
     "framework": "bmdal",
     "parameters": {
-      "batch_size": 200,
+      "batch_size": 128,
+      "max_batch_size": 2048,
       "selection_method": "lcmd",
       "initial_selection_method": "maxdiag",
       "sel_with_train": true,
@@ -26,25 +27,38 @@
     "pow_type": "highpow",
     "cluster_type": "tau_based",
     "dataset_type": "not_null",
+    "simulator_type": "tglf",
     "input_columns": [
-      "ane", "ate", "autor", "machtor", "x",
-      "zeff", "gammae", "q", "smag", "alpha",
-      "ani1", "ati0", "normni1", "ti_te0", "lognustar"
+      "rmin_loc", "drmajdx_loc", "kappa_loc", "delta_loc", "q_loc",
+      "q_prime_loc", "vexb_shear", "rlns_1", "rlts_1", "rlns_2",
+      "rlts_2", "taus_2", "as_2", "rlns_3", "zeff", "betae", "xnue"
     ],
     "output_columns": ["efe", "efi", "pfe", "pfi"],
-    "input_size": 15,
+    "input_size": 17,
     "output_size": 4,
     "normalize_inputs": true,
     "normalize_outputs": false,
-    "load_saved_final_data": true
+    "load_saved_final_data": false
+  },
+  "filters": {
+    "by_leq": {
+      "efe": 200.0,
+      "efi": 200.0,
+      "pfe": 200.0,
+      "pfi": 200.0
+    },
+    "by_geq": {
+      "efe": 0.0,
+      "efi": 0.0
+    }
   },
   "architecture": {
     "name": "saved",
-    "model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs_tglf",
     "model_name": "model",
     "model_class_name": "MLP",
     "parameters": {
-      "input_size": 15,
+      "input_size": 17,
       "output_size": 4,
       "hidden_size": 1024,
       "hidden_layers": 2,
@@ -60,7 +74,7 @@
   "optimizer": {
     "name": "AdamW",
     "parameters": {
-      "lr": 2e-3,
+      "lr": 1e-3,
       "weight_decay": 1e-5
     }
   },
@@ -73,29 +87,21 @@
       "patience": 21,
       "mode": "min",
       "threshold_mode": "abs",
-      "threshold": 1.0,
+      "threshold": 0.1,
       "min_lr": 1e-4
     }
   },
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Buffer 200 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
-      "parameters": {
-        "mem_size": 200
-      }
-    },
-    {
-      "name": "Replay",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Buffer 1000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Buffer 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
       "ignore": true,
       "parameters": {
         "mem_size": 1000
@@ -103,8 +109,8 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Lambda 10 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
       "parameters": {
         "mode": "separate",
         "ewc_lambda": 10.0
@@ -112,40 +118,40 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Lambda 10 Alpha 0,5 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Lambda 10 Alpha 0.5 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
       "parameters": {
         "lambda_reg": 10.0,
         "alpha": 0.5
       }
     },
     {
-      "name": "SI",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Lambda 1 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
-      "parameters": {
-        "si_lambda": 1.0
-      }
-    },
-    {
       "name": "GEM",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Patterns 200 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
-      "parameters": {
-        "patterns_per_exp": 200
-      }
-    },
-    {
-      "name": "GEM",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Patterns 1000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Patterns 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 1000
       }
     },
     {
+      "name": "LFL",
+      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
+      "parameters": {
+        "lambda_e": 10.0
+      }
+    },
+    {
+      "name": "SI",
+      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Lambda 1 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
+      "parameters": {
+        "si_lambda": 1.0
+      }
+    },
+    {
       "name": "Cumulative",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
       "ignore": false,
       "parameters": {
       }
@@ -153,16 +159,16 @@
   ],
   "early_stopping": {
     "patience": 50,
-    "delta": 0.1,
+    "delta": 0.05,
     "val_stream_name": "eval_stream",
-    "min_epochs": 100
+    "min_epochs": 50
   },
   "validation_stream": {
     "val_stream": "eval_stream"
   },
   "start_model_saving": {
     "save_model": false,
-    "saved_model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "saved_model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs_tglf",
     "saved_model_name": "model",
     "add_timestamp": false
   }
