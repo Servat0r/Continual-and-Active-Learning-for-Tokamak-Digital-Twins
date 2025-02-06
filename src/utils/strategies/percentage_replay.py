@@ -24,6 +24,7 @@ class PercentageReplay(SupervisedTemplate):
         optimizer: Optimizer,
         criterion,
         mem_percentage: float = 0.1,
+        min_buffer_size: int = 0,
         train_mb_size: int = 1,
         train_epochs: int = 1,
         eval_mb_size: Optional[int] = None,
@@ -33,6 +34,7 @@ class PercentageReplay(SupervisedTemplate):
             EvaluationPlugin, Callable[[], EvaluationPlugin]
         ] = default_evaluator,
         eval_every: int = -1,
+        pr_plugin_kwargs: dict = {},
         **base_kwargs
     ):
         """
@@ -51,9 +53,12 @@ class PercentageReplay(SupervisedTemplate):
         :param evaluator: The evaluation plugin to use for logging and metrics.
         :param eval_every: The frequency of evaluation during training.
             Defaults to -1 (no intermediate evaluation).
+        :param pr_plugin_kwargs: Additional arguments for the PercentageReplayPlugin.
         :param **base_kwargs: Additional arguments for the base template.
         """
-        prp = PercentageReplayPlugin(mem_percentage=mem_percentage)
+        prp = PercentageReplayPlugin(
+            mem_percentage=mem_percentage, min_buffer_size=min_buffer_size, **pr_plugin_kwargs
+        )
         if plugins is None:
             plugins = [prp]
         else:

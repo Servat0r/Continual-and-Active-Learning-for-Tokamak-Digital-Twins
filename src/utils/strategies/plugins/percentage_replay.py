@@ -28,6 +28,7 @@ class PercentageReplayPlugin(ReplayPlugin):
         task_balanced_dataloader: bool = False,
         storage_policy: Optional["ExemplarsBuffer"] = None,
         dump: bool = False, dump_fp: TextIO | str = sys.stdout,
+        min_buffer_size: int = 0,
     ):
         super().__init__()
         assert 0 < mem_percentage <= 1, "Memory percentage must be between 0 and 1."
@@ -36,9 +37,10 @@ class PercentageReplayPlugin(ReplayPlugin):
         self.batch_size_mem = batch_size_mem
         self.task_balanced_dataloader = task_balanced_dataloader
         self.total_training_examples = 0
+        self.min_buffer_size = min_buffer_size
 
         self.storage_policy = storage_policy or ExperienceBalancedBuffer(
-            max_size=1, adaptive_size=True
+            max_size=self.min_buffer_size, adaptive_size=True
         )
         self.dump = dump
         self.dump_fp = dump_fp if dump else None
@@ -58,7 +60,10 @@ class PercentageReplayPlugin(ReplayPlugin):
         self.total_training_examples += current_exp_size
 
         # Calculate new buffer size
-        new_buffer_size = int(self.total_training_examples * self.mem_percentage)
+        new_buffer_size = max(
+            int(self.total_training_examples * self.mem_percentage),
+            self.min_buffer_size
+        )
         if self.dump_fp is not None:
             print(
                 f"Buffer size after training experience {strategy.experience}:",
