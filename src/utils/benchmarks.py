@@ -118,7 +118,7 @@ def make_benchmark(
             f"train_data has {len(train_data[train_data.has_turbulence == 1])} positives and {len(train_data[train_data.has_turbulence == 0])} negatives.",
             f"eval_data has {len(eval_data[eval_data.has_turbulence == 1])} positives and {len(eval_data[eval_data.has_turbulence == 0])} negatives.",
             f"test_data has {len(test_data[test_data.has_turbulence == 1])} positives and {len(test_data[test_data.has_turbulence == 0])} negatives.",
-            sep='\n', end='\n', flush=True,
+            file=STDOUT, sep='\n', end='\n', flush=True,
         )
         # Subsampling and Stratification
         if apply_subsampling:
@@ -137,7 +137,8 @@ def make_benchmark(
             total_data = len(train_data) + len(eval_data) + len(test_data)
             debug_print(
                 f"There are {total_data} items in the dataset after filtering:"
-                f"{len(train_data)} train, {len(eval_data)} eval, and {len(test_data)} test items."
+                f"{len(train_data)} train, {len(eval_data)} eval, and {len(test_data)} test items.",
+                file=STDOUT,
             )
         train_data.to_csv(f'{dirname}/final_train_data_{task}_{dataset_type}.csv', index=False)
         eval_data.to_csv(f'{dirname}/final_eval_data_{task}_{dataset_type}.csv', index=False)
@@ -168,7 +169,8 @@ def make_benchmark(
         # todo be careful on the fact that normalization is not included for inverse()-based preprocess_* methods
 
     for campaign in range(NUM_CAMPAIGNS):
-        print(f"[yellow]Loading data for campaign {campaign} ...[/yellow]")
+        debug_print(f"[yellow]Loading data for campaign {campaign} ...[/yellow]", file=STDOUT)
+        debug_print(f"[yellow]Input Columns = {input_columns}\nOutput Columns = {output_columns}[/yellow]")
         train_dataset, eval_dataset, test_dataset = get_avalanche_csv_regression_datasets(
             train_data, eval_data, test_data, input_columns=input_columns, output_columns=output_columns,
             filter_by={'campaign': [campaign]}, float_precision=float_precision,

@@ -1,7 +1,7 @@
 from typing import Any
 from .parser import *
 from torch.nn import MSELoss, HuberLoss, BCELoss, BCEWithLogitsLoss
-from ..utils import GaussianNLLLoss, MSECosineSimilarityLoss
+from ..utils import GaussianNLLLoss, MSECosineSimilarityLoss, RootMSELoss
 
 
 @ConfigParser.register_handler('loss')
@@ -13,6 +13,8 @@ def loss_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     name, parameters = data['name'], data['parameters']
     if (name == 'mse') or (name == 'MSE'):
         return MSELoss(**parameters)
+    elif name in ['rmse', 'RMSE', 'RootMSE', 'root_mse']:
+        return RootMSELoss(**parameters)
     elif (name == 'huber') or (name == 'Huber'):
         return HuberLoss(**parameters)
     elif (name == 'BCE') or (name == 'bce'):

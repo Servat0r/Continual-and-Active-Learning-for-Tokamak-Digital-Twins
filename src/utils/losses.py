@@ -76,4 +76,28 @@ class MSECosineSimilarityLoss(nn.Module):
         return combined_loss
 
 
-__all__ = ["GaussianNLLLoss", "MSECosineSimilarityLoss"]
+class RootMSELoss(nn.Module):
+    def __init__(self, reduction='mean'):
+        """
+        Root Mean Square Error Loss.
+        :param reduction: Specifies the reduction to apply: 'none', 'mean', or 'sum'.
+        """
+        super(RootMSELoss, self).__init__()
+        self.reduction = reduction
+        if reduction not in ['mean', 'sum', 'none']:
+            raise ValueError(f"Invalid reduction mode: {reduction}")
+
+    def forward(self, outputs, targets):
+        mse = (outputs - targets) ** 2
+        if self.reduction == 'mean':
+            return torch.sqrt(mse.mean())
+        elif self.reduction == 'sum':
+            return torch.sqrt(mse.sum())
+        elif self.reduction == 'none':
+            return torch.sqrt(mse)
+        else:
+            raise ValueError(f"Invalid reduction mode: {self.reduction}")
+
+
+
+__all__ = ["GaussianNLLLoss", "MSECosineSimilarityLoss", "RootMSELoss"]

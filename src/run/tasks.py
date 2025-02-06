@@ -2,7 +2,7 @@ import gc
 import json
 import sys
 import os
-from typing import Any
+from typing import Any, Optional
 from datetime import datetime
 import torch
 from avalanche.benchmarks import AvalancheDataset
@@ -10,7 +10,7 @@ from avalanche.benchmarks import AvalancheDataset
 from avalanche.logging import InteractiveLogger
 from avalanche.evaluation.metrics import loss_metrics
 from avalanche.training import GenerativeReplay, JointTraining, Replay, Naive
-from avalanche.training.plugins import EvaluationPlugin, ReplayPlugin
+from avalanche.training.plugins import EvaluationPlugin, ReplayPlugin, FromScratchTrainingPlugin
 
 from bmdal_reg.bmdal.feature_data import TensorFeatureData
 
@@ -27,7 +27,7 @@ def task_training_loop(
         redirect_stdout=True, extra_log_folder='',
         write_intermediate_models=False,
         plot_single_runs=False,
-):
+) -> Optional[dict]:
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     config_parser = ConfigParser(config_data, task_id=task_id)
     config_parser.load_config()
@@ -80,6 +80,7 @@ def task_training_loop(
     cl_strategy_config = config_parser['strategy']
     cl_strategy_class = cl_strategy_config['class']
     cl_strategy_parameters = cl_strategy_config['parameters']
+    cl_strategy_from_scratch = cl_strategy_config['from_scratch']
     extra_log_folder = cl_strategy_config.get('extra_log_folder', extra_log_folder)
     # Filters
     filters_by_geq = None
@@ -128,7 +129,8 @@ def task_training_loop(
     )
     os.makedirs(os.path.join(log_folder), exist_ok=True)
     stdout_file_path = os.path.join(log_folder, 'stdout.txt')
-    batch_selector.debug_log_file = open(os.path.join(log_folder, 'batch_selector.log'), 'w')
+    if batch_selector is not None:
+        batch_selector.debug_log_file = open(os.path.join(log_folder, 'batch_selector.log'), 'w')
 
     with open(stdout_file_path, 'w') as stdout_file:
         if redirect_stdout:
@@ -167,16 +169,18 @@ def task_training_loop(
         eval_datasets = []
         test_datasets = []
         csv_file = f'data/{simulator_type}/cleaned/{pow_type}_cluster/{cluster_type}/complete_dataset.csv'
-        print(
-            f"Input columns = {input_columns}"
-            f"\nOutput columns = {output_columns}"
-        )
+        if simulator_type == 'qualikiz':
+            apply_subsampling = True
+        elif simulator_type == 'tglf':
+            apply_subsampling = False
+        else:
+            raise ValueError(f"Unknown simulator type \"{simulator_type}\"")
         benchmark = make_benchmark(
             csv_file, train_datasets, eval_datasets, test_datasets, task=task, NUM_CAMPAIGNS=num_campaigns,
             dtype=dtype, normalize_inputs=normalize_inputs, normalize_outputs=normalize_outputs,
             log_folder=log_folder, input_columns=input_columns, output_columns=output_columns,
             dataset_type=dataset_type, filter_by_geq=filters_by_geq, filter_by_leq=filters_by_leq,
-            apply_subsampling=True, transform=cl_strategy_transform_transform,
+            apply_subsampling=apply_subsampling, transform=cl_strategy_transform_transform,
             target_transform=cl_strategy_target_transform_transform,
             load_saved_final_data=load_saved_final_data,
         )
@@ -219,6 +223,9 @@ def task_training_loop(
             plugins.append(early_stopping)
         if scheduler:
             plugins.append(scheduler)
+        
+        if cl_strategy_from_scratch:
+            plugins.append(FromScratchTrainingPlugin(reset_optimizer=True))
 
         replay_plugin = None
         if mode == 'CL(AL)':
@@ -264,10 +271,6 @@ def task_training_loop(
             else:
                 current_metrics = None
                 for (idx, train_exp), eval_exp in zip(enumerate(train_stream), eval_stream):
-                    debug_print(
-                        f"[red]train_exp device = {train_exp.dataset._datasets[0].device}[/red]",
-                        file=STDOUT,
-                    )
                     # Active Learning
                     index_condition = (idx > 0) if full_first_train_set else True
                     if index_condition and (batch_selector is not None) and (mode == 'AL(CL)'):
@@ -301,7 +304,8 @@ def task_training_loop(
                         model.train()
                     if (batch_selector is not None) and (mode == 'AL(CL)'):
                         batch_selector.add_train_exp(train_exp, index=idx)
-            batch_selector.close()
+            if batch_selector is not None:
+                batch_selector.close()
             return results
 
         # garbage collect before running

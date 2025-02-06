@@ -1,3 +1,5 @@
+from typing import *
+
 import json
 import sys
 import os
@@ -10,13 +12,35 @@ from src.utils import *
 from src.configs import *
 from src.run import *
 
+if int(os.getenv('IGNORE_WARNINGS', '0')):
+    import warnings
+    warnings.filterwarnings("ignore")
+
+
+def filtered_task_training_loop(
+        config_data: str | dict[str, Any], task_id: int,
+        redirect_stdout=True, extra_log_folder='',
+        write_intermediate_models=False,
+        plot_single_runs=False, tasks_list: list[int] = None,
+):
+    condition = (tasks_list is None) or (task_id in tasks_list)
+    if condition:
+        return task_training_loop(
+            config_data, task_id, redirect_stdout, extra_log_folder,
+            write_intermediate_models, plot_single_runs
+        )
+    else:
+        debug_print(f"[red]Ignoring task {task_id} ...[/red]", file=STDOUT)
+        return None
+
 
 if __name__ == '__main__':
     # Config
     if len(sys.argv) < 2:
         print(f"[red]Usage[/red]: [cyan](python) {sys.argv[0]} configuration_file_name.json [OPTIONS] [/cyan]")
         print(f"[cyan]Options: [/cyan]")
-        print(f"[cyan]--num_tasks=<int> [/cyan] (parallel execution on multiple model instances)")
+        print(f"[cyan]--num_tasks=<int> (parallel execution on multiple model instances)[/cyan]")
+        print(f"[cyan]--tasks=<list of int> (if you want to filter by tasks)[/cyan]")
         print(f"[cyan]-h[/cyan] or [cyan]--help[/cyan] (help messages)")
         sys.exit(1)
 
@@ -31,13 +55,16 @@ if __name__ == '__main__':
     write_intermediate_models = cmd_args.write_intermediate_models
     plot_single_runs = cmd_args.plot_single_runs
     if cmd_args.num_tasks <= 0:
-        num_jobs = os.cpu_count()
+        num_jobs = os.cpu_count() // 2
     else:
         num_jobs = cmd_args.num_tasks
     # Config data preprocessing
     config_data = json.load(open(config_file_path))
     if not isinstance(config_data['strategy'], list):
         config_data['strategy'] = [config_data['strategy']]
+    tasks_list = cmd_args.tasks
+    if tasks_list is not None:
+        debug_print(f"[red]Tasks {tasks_list} will be run ...[/red]", file=STDOUT)
     for strategy in config_data['strategy']:
         ignore_strategy = strategy.get('ignore', False)
         if ignore_strategy:
@@ -70,7 +97,7 @@ if __name__ == '__main__':
             file_paths = [
                 os.path.join(result['log_folder'], 'eval_results_experience.csv') for result in results if result is not None
             ]
-            if len(file_paths) != len(results):
+            if (len(file_paths) != len(results)) and (len(tasks_list) < num_jobs):
                 raise RuntimeError(f"Something went wrong during training: {len(file_paths)} vs. {len(results)}")
             save_folder = os.path.dirname(file_paths[0])
             # Save csv files for mean and std values
