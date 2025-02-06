@@ -112,7 +112,7 @@ def task_training_loop(
 
     # Active Learning
     batch_selector = None
-    if mode in ['CL(AL)', 'AL(CL)']:
+    if mode == 'AL(CL)':
         cl_strategy_active_learning_data = config_parser['active_learning']
         if cl_strategy_active_learning_data is not None:
             batch_selector = cl_strategy_active_learning_data['batch_selector']
@@ -228,27 +228,6 @@ def task_training_loop(
             plugins.append(FromScratchTrainingPlugin(reset_optimizer=True))
 
         replay_plugin = None
-        if mode == 'CL(AL)':
-            if cl_strategy_class == Replay:
-                cl_strategy_class = Naive
-                mem_size = cl_strategy_parameters.pop('mem_size')
-                replay_plugin = ReplayPlugin(
-                    mem_size=mem_size,
-                    storage_policy=ExperienceBalancedActiveLearningBuffer(
-                        max_size=mem_size, batch_selector=batch_selector, device='cpu'
-                    )
-                )
-                plugins.append(replay_plugin)
-            elif cl_strategy_class == PercentageReplay:
-                cl_strategy_class = Naive
-                mem_percentage = cl_strategy_parameters.pop('mem_percentage')
-                replay_plugin = PercentageReplayPlugin(
-                    mem_percentage=mem_percentage,
-                    storage_policy=ExperienceBalancedActiveLearningBuffer(
-                        max_size=50_000, batch_selector=batch_selector, device='cpu' # TODO Fix this "magic number"
-                    )
-                )
-                plugins.append(replay_plugin)
 
         cl_strategy = cl_strategy_class(
             model=model, optimizer=optimizer, criterion=criterion, train_mb_size=train_mb_size,

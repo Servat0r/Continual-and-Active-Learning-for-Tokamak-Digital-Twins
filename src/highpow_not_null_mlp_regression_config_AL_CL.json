@@ -12,7 +12,7 @@
   "active_learning": {
     "framework": "bmdal",
     "parameters": {
-      "batch_size": 2000,
+      "batch_size": 200,
       "selection_method": "lcmd",
       "initial_selection_method": "maxdiag",
       "sel_with_train": true,
@@ -80,53 +80,72 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set (4096 batch size) (1024 hidden size)",
       "ignore": false,
       "parameters": {
       }
     },
     {
-      "name": "FromScratchTraining",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set (4096 batch size) (1024 hidden size)",
-      "ignore": true,
-      "parameters": {
-      }
-    },
-    {
       "name": "Replay",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set Buffer 200 (4096 batch size) (1024 hidden size)",
-      "ignore": true,
+      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Buffer 200 (4096 batch size) (1024 hidden size)",
+      "ignore": false,
       "parameters": {
         "mem_size": 200
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set Buffer 1000 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Buffer 1000 (4096 batch size) (1024 hidden size)",
+      "ignore": true,
       "parameters": {
         "mem_size": 1000
       }
     },
     {
+      "name": "EWC",
+      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Lambda 10 (4096 batch size) (1024 hidden size)",
+      "ignore": false,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 10.0
+      }
+    },
+    {
+      "name": "MAS",
+      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Lambda 10 Alpha 0,5 (4096 batch size) (1024 hidden size)",
+      "ignore": false,
+      "parameters": {
+        "lambda_reg": 10.0,
+        "alpha": 0.5
+      }
+    },
+    {
+      "name": "SI",
+      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Lambda 1 (4096 batch size) (1024 hidden size)",
+      "ignore": false,
+      "parameters": {
+        "si_lambda": 1.0
+      }
+    },
+    {
       "name": "GEM",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set Patterns 200 (4096 batch size) (1024 hidden size)",
-      "ignore": true,
+      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Patterns 200 (4096 batch size) (1024 hidden size)",
+      "ignore": false,
       "parameters": {
         "patterns_per_exp": 200
       }
     },
     {
       "name": "GEM",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set Patterns 1000 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set Patterns 1000 (4096 batch size) (1024 hidden size)",
+      "ignore": true,
       "parameters": {
         "patterns_per_exp": 1000
       }
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 2000 full first set (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "AL(CL)/lcmd [rp, [512]] + maxdiag/Batch 200 full first set (4096 batch size) (1024 hidden size)",
       "ignore": false,
       "parameters": {
       }
