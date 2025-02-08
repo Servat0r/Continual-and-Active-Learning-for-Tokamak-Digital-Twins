@@ -7,6 +7,21 @@
     "eval_mb_size": 1024,
     "train_epochs": 200
   },
+  "active_learning": {
+    "framework": "bmdal",
+    "parameters": {
+      "batch_size": 128,
+      "max_batch_size": 2048,
+      "reload_initial_weights": false,
+      "selection_method": "random",
+      "initial_selection_method": "random",
+      "sel_with_train": true,
+      "base_kernel": "grad",
+      "kernel_transforms": [
+        ["rp", [512]]
+      ]
+    }
+  },
   "dataset": {
     "pow_type": "lowpow",
     "cluster_type": "Ip_Pin_based",
@@ -50,11 +65,9 @@
     }
   },
   "loss": {
-    "name": "MSECosineSimilarity",
+    "name": "MSE",
     "parameters": {
-      "reduction": "mean",
-      "alpha": 0.01,
-      "beta": 100
+      "reduction": "mean"
     }
   },
   "optimizer": {
@@ -80,21 +93,21 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "FromScratchTraining",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
       }
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Percentage 5% (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Percentage 5% (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "mem_percentage": 0.05
@@ -102,7 +115,7 @@
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Percentage 10% (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Percentage 10% (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "mem_percentage": 0.1
@@ -110,7 +123,7 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Buffer 500 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Buffer 500 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "mem_size": 500
@@ -118,7 +131,7 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Buffer 2000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Buffer 2000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "mem_size": 2000
@@ -126,7 +139,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 10 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "mode": "separate",
@@ -135,7 +148,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "mode": "separate",
@@ -144,7 +157,7 @@
     },
     {
       "name": "EWCReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 10 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "mode": "separate",
@@ -154,7 +167,7 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 10 Alpha 0,5 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 Alpha 0,5 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "lambda_reg": 10.0,
@@ -163,7 +176,7 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 1 Alpha 0,5 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 1 Alpha 0,5 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "lambda_reg": 1.0,
@@ -172,7 +185,7 @@
     },
     {
       "name": "MASReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 10 Alpha 0,5 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 Alpha 0,5 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "lambda_reg": 10.0,
@@ -182,7 +195,7 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Patterns 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Patterns 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "patterns_per_exp": 1000
@@ -190,7 +203,7 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Patterns 2000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Patterns 2000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "patterns_per_exp": 2000
@@ -198,7 +211,7 @@
     },
     {
       "name": "GEMReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Patterns 100 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Patterns 100 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "patterns_per_exp": 100,
@@ -207,7 +220,7 @@
     },
     {
       "name": "GEMReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Patterns 100 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Patterns 100 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "patterns_per_exp": 1000,
@@ -216,7 +229,7 @@
     },
     {
       "name": "LFL",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "lambda_e": 1.0
@@ -224,7 +237,7 @@
     },
     {
       "name": "LFL",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 10 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "lambda_e": 10.0
@@ -232,7 +245,7 @@
     },
     {
       "name": "SI",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "si_lambda": 1.0
@@ -240,7 +253,7 @@
     },
     {
       "name": "SI",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 0.1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 0.1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "si_lambda": 0.1
@@ -248,7 +261,7 @@
     },
     {
       "name": "JointTraining",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
         "eval_every": 0
@@ -256,7 +269,7 @@
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
       "ignore": false,
       "parameters": {
       }

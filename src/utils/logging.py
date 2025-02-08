@@ -144,7 +144,9 @@ class CustomCSVLogger(BaseLogger):
         self.val_stream = None
         self.val_experiences = None
         if val_stream is not None:
-            self.set_validation_stream(val_stream)
+            self.set_validation_stream(val_stream)        
+        # Put the logger in a working state
+        self.working = True
 
     def set_val_stream_type(self):
         self.stream_type = self.VAL
@@ -165,6 +167,18 @@ class CustomCSVLogger(BaseLogger):
             return f"{m_val:.4f}"
         else:
             return str(m_val)
+    
+    def __error_print(self, status, file=sys.stderr, flush=True):
+        print(
+            f"{self.__class__.__name__} has been {status}",
+            file=file, flush=flush
+        )
+    
+    def suspend(self):
+        self.working = False
+    
+    def resume(self):
+        self.working = True
 
     def print_train_metrics(
         self, training_exp, epoch, lr, metric_values, type,
@@ -232,20 +246,18 @@ class CustomCSVLogger(BaseLogger):
         **kwargs,
     ):
         #super().after_training_epoch(strategy, metric_values, **kwargs)
-        if not self.is_open:
-            print(
-                "Logger has been closed",
-                file=sys.stderr,
-                flush=True,
+        if self.is_open and self.working:
+            self.print_train_metrics(
+                self.training_exp_id,
+                strategy.clock.train_exp_epochs,
+                strategy.optimizer.param_groups[0]['lr'],
+                metric_values,
+                type='epoch',
             )
-            return
-        self.print_train_metrics(
-            self.training_exp_id,
-            strategy.clock.train_exp_epochs,
-            strategy.optimizer.param_groups[0]['lr'],
-            metric_values,
-            type='epoch',
-        )
+        elif not self.is_open:
+            self.__error_print("closed")
+        else:
+            self.__error_print("suspended")
 
     def after_eval_exp(
         self,
@@ -254,31 +266,29 @@ class CustomCSVLogger(BaseLogger):
         **kwargs,
     ):
         #super().after_eval_exp(strategy, metric_values, **kwargs)
-        if not self.is_open:
-            print(
-                "Logger has been closed",
-                file=sys.stderr,
-                flush=True,
-            )
-            return
-        if self.in_train_phase:
-            self.print_eval_metrics(
-                strategy.experience.current_experience,
-                self.training_exp_id,
-                metric_values,
-                out_type='epoch',
-                in_type='exp',
-                epoch=strategy.clock.train_exp_epochs,
-                lr=strategy.optimizer.param_groups[0]['lr'],
-            )
+        if self.is_open and self.working:
+            if self.in_train_phase:
+                self.print_eval_metrics(
+                    strategy.experience.current_experience,
+                    self.training_exp_id,
+                    metric_values,
+                    out_type='epoch',
+                    in_type='exp',
+                    epoch=strategy.clock.train_exp_epochs,
+                    lr=strategy.optimizer.param_groups[0]['lr'],
+                )
+            else:
+                self.print_eval_metrics(
+                    strategy.experience.current_experience,
+                    self.training_exp_id,
+                    metric_values,
+                    out_type='exp',
+                    in_type='exp',
+                )
+        elif not self.is_open:
+            self.__error_print("closed")
         else:
-            self.print_eval_metrics(
-                strategy.experience.current_experience,
-                self.training_exp_id,
-                metric_values,
-                out_type='exp',
-                in_type='exp',
-            )
+            self.__error_print("suspended")
 
     def before_training_exp(
         self,
@@ -286,8 +296,11 @@ class CustomCSVLogger(BaseLogger):
         metric_values: list["MetricValue"],
         **kwargs,
     ):
+        if self.working:
         #super().before_training(strategy, metric_values, **kwargs)
-        self.training_exp_id = strategy.experience.current_experience
+            self.training_exp_id = strategy.experience.current_experience
+        else:
+            self.__error_print("suspended")
 
     def before_eval(
         self,
@@ -298,8 +311,9 @@ class CustomCSVLogger(BaseLogger):
         """
         Manage the case in which `eval` is first called before `train`
         """
-        if self.in_train_phase is None:
-            self.in_train_phase = False
+        if self.working:
+            if self.in_train_phase is None:
+                self.in_train_phase = False
 
     def before_training(
         self,
@@ -307,7 +321,8 @@ class CustomCSVLogger(BaseLogger):
         metric_values: list["MetricValue"],
         **kwargs,
     ):
-        self.in_train_phase = True
+        if self.working:
+            self.in_train_phase = True
 
     def after_training(
         self,
@@ -315,7 +330,8 @@ class CustomCSVLogger(BaseLogger):
         metric_values: list["MetricValue"],
         **kwargs,
     ):
-        self.in_train_phase = False
+        if self.working:
+            self.in_train_phase = False
 
     def close(self):
         self.is_open = False

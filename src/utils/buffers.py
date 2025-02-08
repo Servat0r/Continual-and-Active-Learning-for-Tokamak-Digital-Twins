@@ -48,7 +48,7 @@ class ActiveLearningSamplingBuffer(ExemplarsBuffer):
         new_csv_regression_dataset.set_device(self.device)
         self.buffer = AvalancheDataset([new_csv_regression_dataset])
         # Now add the newly selected buffer to Batch Selector Memory
-        self.batch_selector.add_train_exp(self.buffer, index=exp_index)
+        self.batch_selector.set_new_train_exp(self.buffer, index=exp_index)
 
     def resize(self, strategy: Any, new_size: int):
         """Update the maximum size of the buffer."""

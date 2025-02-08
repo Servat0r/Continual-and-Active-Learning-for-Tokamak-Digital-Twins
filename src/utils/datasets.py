@@ -71,6 +71,15 @@ class CSVRegressionDataset(Dataset):
                 self.inputs = inputs.to(device)
             if outputs is not None:
                 self.targets = outputs.to(device)
+    
+    def __repr__(self):
+        obj_classname = self.__class__.__name__
+        size = len(self)
+        dtype = self.inputs.dtype
+        transform = str(self.transform)
+        target_transform = str(self.target_transform)
+        return f"{obj_classname}(size = {size}, dtype = {dtype}, " + \
+            f"transform = {transform}, target_transform = {target_transform})"
 
     def __len__(self):
         return len(self.inputs)
@@ -83,11 +92,14 @@ class CSVRegressionDataset(Dataset):
             y = self.target_transform(y)
         return x, y
 
-    def set_inputs_and_outputs(self, inputs=None, targets=None):
+    def set_raw_data(self, inputs=None, targets=None):
         if inputs is not None:
             self.inputs = inputs
         if targets is not None:
             self.targets = targets
+    
+    def get_raw_data(self):
+        return self.inputs, self.targets
 
     @property
     def device(self):
@@ -96,6 +108,18 @@ class CSVRegressionDataset(Dataset):
     def set_device(self, device):
         self.inputs = self.inputs.to(device)
         self.targets = self.targets.to(device)
+    
+    @classmethod
+    def concat(cls, self, other):
+        self_inputs, self_targets = self.inputs, self.targets
+        other_inputs, other_targets = other.inputs, other.targets
+        new_inputs = torch.cat([self_inputs, other_inputs], dim=0)
+        new_targets = torch.cat([self_targets, other_targets], dim=0)
+        return CSVRegressionDataset(
+            data=None, input_columns=[], output_columns=[],
+            inputs=new_inputs, outputs=new_targets, device=self.device,
+            transform=self.transform, target_transform=self.target_transform
+        )
 
 
 def _is_not_null(row, output_columns):

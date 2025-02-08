@@ -12,7 +12,8 @@ from avalanche.benchmarks import AvalancheDataset, DatasetExperience
 from bmdal_reg.bmdal.feature_data import TensorFeatureData
 from bmdal_reg.bmdal.algorithms import select_batch
 
-from .misc import debug_print, STDOUT
+from ..misc import debug_print, STDOUT
+from ..datasets import CSVRegressionDataset
 
 
 class ALBatchSelector(ABC):
@@ -20,7 +21,7 @@ class ALBatchSelector(ABC):
     def __init__(self):
         self.device = None
         self.models = None
-        self.train_experiences = SortedDict()
+        self.train_avalanche_datasets = SortedDict()
         self.train_inputs = None
         self.train_targets = None
 
@@ -36,19 +37,66 @@ class ALBatchSelector(ABC):
 
     def set_device(self, device: str):
         self.device = torch.device(device)
-
-    def add_train_exp(self, train_exp: DatasetExperience | AvalancheDataset, index: int = -1):
-        index = index if index >= 0 else len(self.train_experiences)
-        if index in self.train_experiences.keys():
-            debug_print(f"[red]Experience {index} alredy present in Batch Selector[/red]", file=STDOUT)
-            return
+    
+    def __build_concatenated_dataset(self, base_dataset: AvalancheDataset, new_dataset: AvalancheDataset):
+        base_raw_dataset = base_dataset._datasets[0]
+        new_raw_dataset = new_dataset._datasets[0]
+        cat_raw_dataset = CSVRegressionDataset.concat(base_raw_dataset, new_raw_dataset)
+        return AvalancheDataset([cat_raw_dataset])
+    
+    def add_dataset_to_train_exp(self, dataset: AvalancheDataset, index: int):
+        if index in self.train_avalanche_datasets.keys():
+            self.train_avalanche_datasets[index] = self.__build_concatenated_dataset(
+                self.train_avalanche_datasets[index], dataset
+            )
+            return True
+        else:
+            debug_print(f"[red]Experience {index} not present in Batch Selector[/red]", file=STDOUT)
+            return False
+    
+    def add_inputs_and_targets_to_train_exp(self, inputs: torch.Tensor, targets: torch.Tensor, index: int):
+        if index in self.train_avalanche_datasets.keys():
+            orig_csv_dataset: CSVRegressionDataset = self.train_avalanche_datasets[index]._datasets[0]
+            transform = orig_csv_dataset.transform
+            target_transform = orig_csv_dataset.target_transform
+            csv_dataset = CSVRegressionDataset(
+                data = None, input_columns=[], output_columns=[], inputs=inputs,
+                outputs=targets, transform=transform, target_transform=target_transform,
+                device=orig_csv_dataset.device
+            )
+            dataset = AvalancheDataset([csv_dataset])
+            self.train_avalanche_datasets[index] = self.__build_concatenated_dataset(
+                self.train_avalanche_datasets[index], dataset
+            )
+            return True
+        else:
+            debug_print(f"[red]Experience {index} not present in Batch Selector[/red]", file=STDOUT)
+            return False
+    
+    def __set_train_exp(self, train_exp: DatasetExperience | AvalancheDataset, index: int):
         if isinstance(train_exp, DatasetExperience):
-            self.train_experiences[index] = train_exp.dataset
+            self.train_avalanche_datasets[index] = train_exp.dataset
         elif isinstance(train_exp, AvalancheDataset):
-            self.train_experiences[index] = train_exp
+            self.train_avalanche_datasets[index] = train_exp
         else:
             raise TypeError(f"Incorrect type {train_exp.__class__.__name__} for \"train_exp\"")
+    
+    def replace_train_exp(self, train_exp: DatasetExperience | AvalancheDataset, index: int) -> bool:
+        if index in self.train_avalanche_datasets.keys():
+            self.__set_train_exp(train_exp, index)
+            return True
+        else:
+            debug_print(f"[red][/red]", file=STDOUT)
+            return False
 
+    def set_new_train_exp(self, train_exp: DatasetExperience | AvalancheDataset, index: int = -1) -> bool:
+        index = index if index >= 0 else len(self.train_avalanche_datasets)
+        if index in self.train_avalanche_datasets.keys():
+            debug_print(f"[red]Experience {index} alredy present in Batch Selector[/red]", file=STDOUT)
+            return False
+        else:
+            self.__set_train_exp(train_exp, index)
+            return True
 
 class BMDALBatchSelector(ALBatchSelector):
     """
@@ -79,30 +127,33 @@ class BMDALBatchSelector(ALBatchSelector):
     
     def __call__(
         self, pool_data: TensorFeatureData, pool_dataset: AvalancheDataset,
-        train_data: TensorFeatureData = None, y_train: torch.Tensor = None,
+        train_data: TensorFeatureData | None = None, y_train: torch.Tensor | None = None,
     ) -> torch.Tensor:
         selection_method = self.selection_method
         if self.models is None:
             raise RuntimeError(f"Attribute \"models\" of {type(self).__name__} object is None")
         if train_data is None:
             #if self.train_inputs is not None:
-            if len(self.train_experiences) > 0:
+            X_train = None
+            if len(self.train_avalanche_datasets) > 0:
                 # Dynamic building of training data (hence avoiding GPU memory occupation during training)
                 # The usage of [:][0] ensures that <dataset>.transform() is correctly applied to the items
-                train_inputs = [
-                    train_exp._datasets[0][:][0] for key, train_exp in self.train_experiences.items()
-                ]
-                X_train = torch.concat(train_inputs, dim=0)
+                train_inputs = []
+                for _, train_exp in self.train_avalanche_datasets.items():
+                    inputs, _ = train_exp._datasets[0][:] # ALREADY TRANSFORMED
+                    if len(inputs) > 0:
+                        train_inputs.append(inputs)
+                if len(train_inputs) > 0:
+                    X_train = torch.concat(train_inputs, dim=0)
                 y_train = None
                 #X_train, y_train = self.train_inputs, self.train_targets
-            else:
+            if X_train is None:
                 # Determine the feature size from pool_data
                 shape, dtype = list(pool_data.data.shape), pool_data.data.dtype
                 shape[0] = 1 # One-element tensor (was empty before but this caused a index-out-of-bounds error in batch_select)
                 X_train = torch.zeros(shape, dtype=dtype)
                 selection_method = self.initial_selection_method
             train_data = TensorFeatureData(X_train)
-        debug_print(f"[red]Using selection method '{selection_method}'[/red]", file=STDOUT)
         # Synchronize all of them on the same device
         orig_device = pool_data.data.device
         model_device = next(self.models[0].parameters()).device

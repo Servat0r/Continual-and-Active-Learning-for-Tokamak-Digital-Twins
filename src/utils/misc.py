@@ -28,6 +28,12 @@ def debug_print(*objects, sep=' ', end='\n', file=None, flush=True):
         )
 
 
+def stdout_debug_print(string, color=None, sep=' ', end='\n'):
+    if color is not None:
+        string = f"[{color}]{string}[/{color}]"
+    debug_print(string, sep=sep, end=end, file=STDOUT, flush=True)
+
+
 def get_dtype_from_str(dtype: str):
     if dtype == 'float16':
         dtype = float16
@@ -183,7 +189,7 @@ STDERR = sys.__stderr__
 
 
 __all__ = [
-    "debug_print", "time_logger", "float16", "float32", "float64",
+    "debug_print", "stdout_debug_print", "time_logger", "float16", "float32", "float64",
     "get_dtype_from_str", "extract_metric_info", "extract_metric_type",
     "get_means_std_over_evaluation_experiences_multiple_runs",
     "extract_metric_values_over_evaluation_experiences",

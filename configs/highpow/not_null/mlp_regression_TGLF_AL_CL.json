@@ -1,7 +1,8 @@
 {
   "general": {
     "mode": "AL(CL)",
-    "full_first_train_set": true,
+    "full_first_train_set": false,
+    "downsampling_factor": 2,
     "task": "regression",
     "dtype": "float32",
     "num_campaigns": 10,
@@ -14,8 +15,9 @@
     "parameters": {
       "batch_size": 128,
       "max_batch_size": 2048,
-      "selection_method": "lcmd",
-      "initial_selection_method": "maxdiag",
+      "reload_initial_weights": false,
+      "selection_method": "random",
+      "initial_selection_method": "random",
       "sel_with_train": true,
       "base_kernel": "grad",
       "kernel_transforms": [
@@ -94,14 +96,14 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
-      "ignore": true,
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": false,
       "parameters": {
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Buffer 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Buffer 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
       "ignore": true,
       "parameters": {
         "mem_size": 1000
@@ -109,7 +111,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -118,7 +120,7 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Lambda 10 Alpha 0.5 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 Alpha 0.5 (4096 batch size) (1024 hidden size) (2 hidden layers)",
       "ignore": true,
       "parameters": {
         "lambda_reg": 10.0,
@@ -127,15 +129,15 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Patterns 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
-      "ignore": true,
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Patterns 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": false,
       "parameters": {
         "patterns_per_exp": 1000
       }
     },
     {
       "name": "LFL",
-      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
       "ignore": true,
       "parameters": {
         "lambda_e": 10.0
@@ -143,7 +145,7 @@
     },
     {
       "name": "SI",
-      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Lambda 1 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 1 (4096 batch size) (1024 hidden size) (2 hidden layers)",
       "ignore": true,
       "parameters": {
         "si_lambda": 1.0
@@ -151,17 +153,17 @@
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "TGLF/AL(CL) lcmd [rp, [512]] + maxdiag/Batches 128 2048 full first set/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
       "parameters": {
       }
     }
   ],
   "early_stopping": {
-    "patience": 50,
+    "patience": 10,
     "delta": 0.05,
     "val_stream_name": "eval_stream",
-    "min_epochs": 50
+    "min_epochs": 10
   },
   "validation_stream": {
     "val_stream": "eval_stream"

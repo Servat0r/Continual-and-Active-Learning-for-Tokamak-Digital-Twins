@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.utils.active_learning import *
+from src.utils.active_learning.batch_selectors import *
 from .parser import *
 
 
@@ -13,6 +13,8 @@ _BATCH_SELECTORS = {
 
 def _bmdal_params_handler(parameters):
     assert isinstance(parameters['batch_size'], int)
+    assert isinstance(parameters['max_batch_size'], int)
+    assert isinstance(parameters['reload_initial_weights'], bool)
     assert isinstance(parameters['selection_method'], str) and \
         (parameters['selection_method'] in
          ['random', 'maxdiag', 'maxdet', 'bait', 'fw', 'maxdist', 'kmeanspp', 'lcmd'])
@@ -39,7 +41,9 @@ def active_learning_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     default_config = {
         "framework": "bmdal",
         "parameters": {
-            "batch_size": 100,
+            "batch_size": 128,
+            "max_batch_size": 2048, # 16 iterations by default
+            "reload_initial_weights": False,
             "selection_method": "lcmd",
             "sel_with_train": False,
             "base_kernel": "grad",
@@ -57,10 +61,15 @@ def active_learning_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         default_config['parameters'] = _deep_ensemble_params_handler(default_config['parameters'])
     else:
         raise ValueError(f"Unknown framework \"{default_config['framework']}\"")
+    max_batch_size = default_config['parameters'].pop("max_batch_size", 2048)
+    reload_initial_weights = default_config['parameters'].pop("reload_initial_weights", False)
     batch_selector = _BATCH_SELECTORS[default_config['framework']](**default_config['parameters'])
     return {
         'parameters': default_config,
         'batch_selector': batch_selector,
+        'batch_size': default_config['parameters']['batch_size'],
+        'max_batch_size': max_batch_size,
+        'reload_initial_weights': reload_initial_weights
     }
 
 

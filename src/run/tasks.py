@@ -5,11 +5,16 @@ import os
 from typing import Any, Optional
 from datetime import datetime
 import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+
+from tqdm import tqdm
 from avalanche.benchmarks import AvalancheDataset
+from avalanche.benchmarks.scenarios.dataset_scenario import DatasetExperience
 
 from avalanche.logging import InteractiveLogger
 from avalanche.evaluation.metrics import loss_metrics
-from avalanche.training import GenerativeReplay, JointTraining, Replay, Naive
+from avalanche.training import GenerativeReplay, JointTraining, Replay, Naive, Cumulative
 from avalanche.training.plugins import EvaluationPlugin, ReplayPlugin, FromScratchTrainingPlugin
 
 from bmdal_reg.bmdal.feature_data import TensorFeatureData
@@ -20,6 +25,133 @@ from .utils import *
 from .plots import *
 from ..utils.buffers import ExperienceBalancedActiveLearningBuffer
 from ..utils.strategies.plugins import PercentageReplayPlugin
+
+
+def downsample_experience(train_exp: DatasetExperience, downsampling_factor: int) -> DatasetExperience:
+    """
+    Downsample a training experience by randomly selecting 1/downsampling_factor of the data,
+    attempting to maintain stratification across orders of magnitude.
+    
+    Args:
+        train_exp: The training experience to downsample
+        downsampling_factor: Factor to downsample by (e.g. 2 means take half the data)
+    
+    Returns:
+        Downsampled training experience
+    """
+    if downsampling_factor <= 1:
+        return train_exp
+        
+    # Get inputs and targets from the dataset
+    dataset = train_exp.dataset._datasets[0]
+    X, y = dataset.inputs, dataset.targets
+    
+    # Calculate orders of magnitude for inputs and outputs
+    X_magnitudes = torch.log10(torch.abs(X) + 1e-10).mean(dim=1).floor()
+    y_magnitudes = torch.log10(torch.abs(y) + 1e-10).mean(dim=1).floor()
+    
+    # Combine magnitudes to create strata
+    combined_magnitudes = X_magnitudes * 10 + y_magnitudes  # Arbitrary scaling to separate X and y magnitudes
+    unique_strata = torch.unique(combined_magnitudes)
+    
+    selected_indices = []
+    
+    # Sample from each stratum
+    for stratum in unique_strata:
+        stratum_indices = torch.where(combined_magnitudes == stratum)[0]
+        num_to_sample = max(len(stratum_indices) // downsampling_factor, 0) # NOTE: Previously was 1
+        stdout_debug_print(f"Sampled = {num_to_sample}", color='cyan')
+        
+        # Randomly sample indices from this stratum
+        if len(stratum_indices) > 0:
+            sampled = stratum_indices[torch.randperm(len(stratum_indices))[:num_to_sample]]
+            selected_indices.extend(sampled.tolist())
+    
+    # Convert to tensor and sort
+    selected_indices = torch.tensor(selected_indices)
+    selected_indices = selected_indices.sort()[0]
+    
+    # Create new dataset with selected indices
+    X_sampled = X[selected_indices]
+    y_sampled = y[selected_indices]
+    
+    new_dataset = CSVRegressionDataset(
+        data=None,
+        input_columns=[],
+        output_columns=[],
+        inputs=X_sampled,
+        outputs=y_sampled,
+        device=y.device,
+        transform=dataset.transform,
+        target_transform=dataset.target_transform
+    )
+    
+    # Return new experience with downsampled dataset
+    result_exp = DatasetExperience(
+        current_experience=train_exp.current_experience,
+        #origin_stream=train_exp.origin_stream,
+        dataset=AvalancheDataset([new_dataset])
+    )
+    result_exp._origin_stream = train_exp.origin_stream
+    return result_exp
+
+
+# TODO: Still to be tested in the training loop!
+def pure_training_loop(
+    model: nn.Module,
+    train_exp: DatasetExperience,
+    criterion: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    train_mb_size: int,
+    train_epochs: int,
+    device: str,
+) -> None:
+    """
+    Pure PyTorch training loop for faster training during AL iterations.
+    Only trains on current experience data without any CL overhead.
+    """
+    # Set model to training mode
+    model.train()
+    
+    # Create data loader
+    train_loader = DataLoader(
+        train_exp.dataset._datasets[0], # i.e., pure CSVRegressionDataset
+        batch_size=train_mb_size,
+        shuffle=True
+    )
+
+    # Training loop
+    for epoch in range(train_epochs):
+        running_loss = 0.0
+        samples_seen = 0
+        
+        for batch_data in train_loader:
+            # Get inputs and targets
+            inputs = batch_data[0].to(device)
+            targets = batch_data[1].to(device)
+            
+            # Zero gradients
+            optimizer.zero_grad()
+            
+            # Forward pass
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            
+            # Backward pass and optimize
+            loss.backward()
+            optimizer.step()
+            
+            # Statistics
+            running_loss += loss.item() * inputs.size(0)
+            samples_seen += inputs.size(0)
+            
+        # Epoch statistics
+        epoch_loss = running_loss / samples_seen
+        if (epoch + 1) % 10 == 0:  # Print every 10 epochs
+            stdout_debug_print(
+                f'Epoch {epoch+1}/{train_epochs}, Loss: {epoch_loss:.4f}',
+                color='blue'
+            )
 
 
 def task_training_loop(
@@ -62,6 +194,7 @@ def task_training_loop(
     normalize_inputs = config_parser['normalize_inputs']
     normalize_outputs = config_parser['normalize_outputs']
     load_saved_final_data = config_parser['load_saved_final_data']
+    downsampling_factor = config_parser['downsampling_factor']
     # Architecture
     model = config_parser['architecture']
     # Loss
@@ -112,6 +245,12 @@ def task_training_loop(
 
     # Active Learning
     batch_selector = None
+    cl_strategy_active_learning_data = None
+    batch_size = None
+    max_batch_size = None
+    reload_initial_weights = None
+
+    downsampling_dump_fp = None
     if mode == 'AL(CL)':
         cl_strategy_active_learning_data = config_parser['active_learning']
         if cl_strategy_active_learning_data is not None:
@@ -119,6 +258,9 @@ def task_training_loop(
             batch_selector.set_models([model])
             batch_selector.set_device(device)
             batch_selector.close()
+            batch_size = cl_strategy_active_learning_data['batch_size']
+            max_batch_size = cl_strategy_active_learning_data['max_batch_size']
+            reload_initial_weights = cl_strategy_active_learning_data['reload_initial_weights']
 
     # Prepare folders for experiments
     folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}"
@@ -131,6 +273,7 @@ def task_training_loop(
     stdout_file_path = os.path.join(log_folder, 'stdout.txt')
     if batch_selector is not None:
         batch_selector.debug_log_file = open(os.path.join(log_folder, 'batch_selector.log'), 'w')
+        downsampling_dump_fp = open(os.path.join(log_folder, 'downsampling.log'), 'w')
 
     with open(stdout_file_path, 'w') as stdout_file:
         if redirect_stdout:
@@ -248,41 +391,138 @@ def task_training_loop(
                 torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_0.pt'))
                 model.train()
             else:
-                current_metrics = None
-                for (idx, train_exp), eval_exp in zip(enumerate(train_stream), eval_stream):
-                    # Active Learning
+                for (idx, train_exp), _ in zip(enumerate(train_stream), eval_stream):
+                    stdout_debug_print(f"Starting training experience {idx}: ", color='green')
                     index_condition = (idx > 0) if full_first_train_set else True
-                    if index_condition and (batch_selector is not None) and (mode == 'AL(CL)'):
-                        debug_print(f"Train Exp length (before Batch Selection) = {len(train_exp.dataset)}", file=STDOUT)
-                        train_csv_regression_dataset = train_exp.dataset._datasets[0]
-                        # I write this like that to be clear on what actually happens
-                        X_pool, y_pool = train_csv_regression_dataset.inputs, train_csv_regression_dataset.targets
-                        X_pool_transformed = train_csv_regression_dataset.transform(X_pool)
-                        pool_data = TensorFeatureData(X_pool_transformed.to(device))
-                        sampled_idxs = batch_selector(pool_data, train_exp.dataset)
-                        sampled_idxs = sampled_idxs.to('cpu')
-                        X_pool, y_pool = X_pool[sampled_idxs].clone(), y_pool[sampled_idxs].clone()  # Filter by sampled indices
-                        new_csv_dataset = CSVRegressionDataset(
-                            data=None, input_columns=[], output_columns=[],
-                            inputs=X_pool, outputs=y_pool, device=y_pool.device,
-                            transform=train_csv_regression_dataset.transform,
-                            target_transform=train_csv_regression_dataset.target_transform
-                        )
-                        train_exp._dataset = AvalancheDataset([new_csv_dataset])
-                        debug_print(f"Train Exp length (after Batch Selection) = {len(train_exp.dataset)}", file=STDOUT)
-                    print(f"Starting training experience {idx}: ")
-                    # Training Cycle
-                    cl_strategy.train(train_exp)
-                    print(f"Starting testing experience {idx}: ")
-                    results.append(cl_strategy.eval(eval_stream))
+                    if (mode == 'CL') or \
+                    (mode == 'AL(CL)' and len(train_exp.dataset) / downsampling_factor <= max_batch_size) or \
+                    (mode == 'AL(CL)' and not index_condition):
+                        # Training Cycle
+                        cl_strategy.train(train_exp)
+                        if mode == 'AL(CL)':
+                            batch_selector.set_new_train_exp(train_exp, index=idx)
+                        stdout_debug_print(f"Starting testing experience {idx}: ", color='green')
+                        results.append(cl_strategy.eval(eval_stream))
+                    elif mode == 'AL(CL)': # Active Learning
+                        # Auxiliary CL strategy
+                        # This is needed, since Cumulative strategy would concatenate old and new AL batches
+                        # across AL runs, resulting in an exponentially increasing dataset with many repeated
+                        # elements
+                        # TODO: Make a pure training loop instead (i.e., with NO Continual Learning!)
+                        if cl_strategy_class == Cumulative:
+                            auxiliary_cl_strategy = Naive(
+                                model=model, optimizer=optimizer, criterion=criterion,
+                                train_mb_size=train_mb_size, train_epochs=train_epochs,
+                                eval_mb_size=eval_mb_size, device=device,
+                            )
+                        else:
+                            auxiliary_cl_strategy = cl_strategy
+                        # Downsampling of the full dataset
+                        orig_str = f"Original training exp {idx} has {len(train_exp.dataset)} items"
+                        stdout_debug_print(orig_str, color='purple')
+                        print(orig_str, file=downsampling_dump_fp)
+                        train_exp = downsample_experience(train_exp, downsampling_factor)
+                        new_str = f"Downsampled training exp {idx} has {len(train_exp.dataset)} items"
+                        stdout_debug_print(new_str, color='purple')
+                        print(new_str, file=downsampling_dump_fp)
+                        # For num_iterations select from batch and add to the train_exp
+                        # Store initial train_exp for pool data
+                        initial_train_exp = train_exp
+                        # Save initial weights
+                        initial_weights = None
+                        if reload_initial_weights:
+                            # Save initial weights before AL training cycle
+                            initial_weights = {
+                                name: param.clone().detach() 
+                                for name, param in model.state_dict().items()
+                            }
+                        num_selected_items = 0 # How many items we have selected with batch_selector
+                        # Temporarily disable callbacks to avoid running them multiple times
+                        original_callbacks = cl_strategy.plugins
+                        cl_strategy.plugins = []
+                        auxiliary_cl_strategy.plugins = []
+                        csv_logger.suspend() # Deactivate CSVLogger to avoid printing out the results inside the AL cycle
+                        # pool_train_exp = train_exp that contains all remaining pool data
+                        # sel_train_exp = train_exp that contains all selected data
+                        pool_train_exp = train_exp # todo copy?
+                        pool_avalanche_dataset = pool_train_exp.dataset
+                        pool_raw_dataset: CSVRegressionDataset = pool_avalanche_dataset._datasets[0]
+                        sel_train_exp = None
+                        current_experience = pool_train_exp.current_experience
+                        al_queue = tqdm(max_batch_size // batch_size, desc="Active Learning Training")
+                        while num_selected_items < max_batch_size:
+                            # First iteration
+                            pool_inputs, pool_targets = pool_raw_dataset.get_raw_data()
+                            pool_inputs_transformed = pool_raw_dataset.transform(pool_inputs)
+                            pool_data = TensorFeatureData(pool_inputs_transformed)
+                            # Select batch using batch_selector
+                            sampled_idxs = batch_selector(pool_data, pool_avalanche_dataset)
+                            sampled_idxs = sampled_idxs.to('cpu')
+                            num_selected_items += batch_size
+                            # Add selected samples to AL training set
+                            selected_inputs = pool_inputs[sampled_idxs[:batch_size]]
+                            selected_targets = pool_targets[sampled_idxs[:batch_size]]
+                            # Remove selected samples from pool dataset
+                            mask = torch.ones(len(pool_avalanche_dataset), dtype=torch.bool)
+                            mask[sampled_idxs[:batch_size]] = False
+                            pool_inputs, pool_targets = pool_inputs[mask], pool_targets[mask]
+                            pool_raw_dataset.set_raw_data(pool_inputs, pool_targets)
+                            pool_avalanche_dataset = AvalancheDataset([pool_raw_dataset])
+                            # NOTE: In-place modification!
+                            pool_train_exp._dataset = pool_avalanche_dataset
+                            if sel_train_exp is None:
+                                sel_train_raw_dataset = CSVRegressionDataset(
+                                    data=None, input_columns=[], output_columns=[],
+                                    inputs=selected_inputs, outputs=selected_targets,
+                                    device=pool_raw_dataset.device,
+                                    transform=pool_raw_dataset.transform,
+                                    target_transform=pool_raw_dataset.target_transform
+                                )
+                                sel_train_avalanche_dataset = AvalancheDataset([sel_train_raw_dataset])
+                                sel_train_exp = DatasetExperience(
+                                    dataset=sel_train_avalanche_dataset,
+                                    current_experience=current_experience
+                                )
+                                sel_train_exp._origin_stream = pool_train_exp.origin_stream
+                                # NOTE: In-place modification!
+                                #sel_train_exp._dataset = sel_train_avalanche_dataset
+                            else:
+                                sel_train_raw_dataset: CSVRegressionDataset = sel_train_exp.dataset._datasets[0]
+                                sel_train_inputs, sel_train_targets = sel_train_raw_dataset.get_raw_data()
+                                sel_train_inputs = torch.cat([sel_train_inputs, selected_inputs])
+                                sel_train_targets = torch.cat([sel_train_targets, selected_targets])
+                                sel_train_raw_dataset = CSVRegressionDataset(
+                                    data=None, input_columns=[], output_columns=[], device=sel_train_raw_dataset.device,
+                                    inputs=sel_train_inputs, outputs=sel_train_targets,
+                                    transform=sel_train_raw_dataset.transform,
+                                    target_transform=sel_train_raw_dataset.target_transform
+                                )
+                                sel_train_avalanche_dataset = AvalancheDataset([sel_train_raw_dataset])
+                                # NOTE: In-place modification!
+                                sel_train_exp._dataset = sel_train_avalanche_dataset
+                            if not batch_selector.replace_train_exp(sel_train_exp, index=current_experience):
+                                batch_selector.set_new_train_exp(sel_train_exp, index=current_experience)
+                            # Train on current AL dataset
+                            # Todo THIS WILL MAKE REPLAY BE CALLED MANY TIMES
+                            sel_train_exp._origin_stream = train_exp.origin_stream
+                            if num_selected_items >= max_batch_size:
+                                cl_strategy.plugins = original_callbacks
+                                csv_logger.resume() # Reactivate CSVLogger
+                                # Restore initial model weights if specified
+                                if reload_initial_weights:
+                                    model.load_state_dict(initial_weights)
+                                stdout_debug_print(f"Train Exp length (after Batch Selection) = {len(train_exp.dataset)}", color='purple')
+                                train_exp = sel_train_exp
+                                auxiliary_cl_strategy = cl_strategy
+                            al_queue.update(1)
+                            auxiliary_cl_strategy.train(sel_train_exp)
+                        results.append(cl_strategy.eval(eval_stream))
                     # Save models after each experience
                     if write_intermediate_models:
-                        print(f"Saving model after experience {idx}: ")
+                        stdout_debug_print(f"Saving model after experience {idx}: ", color='red')
                         model.eval()
                         torch.save(model.state_dict(), os.path.join(log_folder, f'model_after_exp_{idx}.pt'))
                         model.train()
-                    if (batch_selector is not None) and (mode == 'AL(CL)'):
-                        batch_selector.add_train_exp(train_exp, index=idx)
             if batch_selector is not None:
                 batch_selector.close()
             return results
@@ -331,6 +571,10 @@ def task_training_loop(
             # Close debug log file for early stopping
             if early_stopping.debug_log_file is not None:
                 early_stopping.debug_log_file.close()
+            if batch_selector is not None:
+                batch_selector.close()
+            if downsampling_dump_fp is not None:
+                downsampling_dump_fp.close()
 
 
 __all__ = ['task_training_loop']
