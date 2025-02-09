@@ -7,6 +7,8 @@ from avalanche.training.storage_policy import ExperienceBalancedBuffer, Exemplar
 if TYPE_CHECKING:
     from avalanche.training.templates import SupervisedTemplate
 
+from ...buffers.pr import *
+
 
 class PercentageReplayPlugin(ReplayPlugin):
     """
@@ -39,13 +41,14 @@ class PercentageReplayPlugin(ReplayPlugin):
         self.total_training_examples = 0
         self.min_buffer_size = min_buffer_size
 
-        self.storage_policy = storage_policy or ExperienceBalancedBuffer(
-            max_size=self.min_buffer_size, adaptive_size=True
+        self.storage_policy = storage_policy or ExperienceProportionalBuffer(
+            max_size=self.min_buffer_size
         )
         self.dump = dump
         self.dump_fp = dump_fp if dump else None
         if isinstance(self.dump_fp, str):
             self.dump_fp = open(self.dump_fp, "w")
+        self.storage_policy._dump_fp = self.dump_fp
 
     def after_training_exp(self, strategy: "SupervisedTemplate", **kwargs):
         """
@@ -67,7 +70,7 @@ class PercentageReplayPlugin(ReplayPlugin):
         if self.dump_fp is not None:
             print(
                 f"Buffer size after training experience {strategy.experience}:",
-                new_buffer_size, sep=' ', end='\n', file=self.dump_fp,
+                new_buffer_size, sep=' ', end='\n', file=self.dump_fp, flush=True
             )
 
         print(f"Before resize: Buffer size = {len(self.storage_policy.buffer)}, "

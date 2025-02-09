@@ -80,6 +80,19 @@
     },
     {
       "name": "PercentageReplay",
+      "extra_log_folder": "Percentage 1% (4096 batch size) (1024 hidden size)",
+      "ignore": false,
+      "parameters": {
+        "mem_percentage": 0.01,
+        "min_buffer_size": 200,
+        "pr_plugin_kwargs": {
+          "dump": true,
+          "dump_fp": "percentage_replay_1.log"
+        }
+      }
+    },
+    {
+      "name": "PercentageReplay",
       "extra_log_folder": "Percentage 5% (4096 batch size) (1024 hidden size)",
       "ignore": true,
       "parameters": {
@@ -123,7 +136,7 @@
     {
       "name": "Replay",
       "extra_log_folder": "Buffer 2000 from_scratch (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "ignore": true,
       "from_scratch": true,
       "parameters": {
         "mem_size": 2000

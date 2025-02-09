@@ -23,7 +23,7 @@ from ..utils import *
 from ..configs import *
 from .utils import *
 from .plots import *
-from ..utils.buffers import ExperienceBalancedActiveLearningBuffer
+from ..utils.buffers.cl_al import ExperienceBalancedActiveLearningBuffer
 from ..utils.strategies.plugins import PercentageReplayPlugin
 
 
