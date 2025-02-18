@@ -194,6 +194,7 @@ def task_training_loop(
     batch_size = None
     max_batch_size = None
     reload_initial_weights = None
+    al_method = None
 
     downsampling_dump_fp = None
     if mode == 'AL(CL)':
@@ -206,14 +207,32 @@ def task_training_loop(
             batch_size = cl_strategy_active_learning_data['batch_size']
             max_batch_size = cl_strategy_active_learning_data['max_batch_size']
             reload_initial_weights = cl_strategy_active_learning_data['reload_initial_weights']
+            al_method = cl_strategy_active_learning_data['al_method']
 
     # Prepare folders for experiments
     folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}"
     output_columns_str = '_'.join(output_columns)
-    log_folder = os.path.join(
-        'logs', pow_type, cluster_type, task, dataset_type,
-        output_columns_str, strategy_type, extra_log_folder, folder_name,
-    )
+    hidden_size = config['architecture']['parameters']['hidden_size']
+    hidden_layers = config['architecture']['parameters']['hidden_layers']
+    if mode == 'CL':
+        log_folder = get_log_folder(
+            pow_type, cluster_type, task, dataset_type, output_columns_str, strategy_type,
+            hidden_size, hidden_layers, batch_size=train_mb_size, active_learning=False,
+            extra_log_folder=extra_log_folder, simulator_type=simulator_type, new=True
+        )
+    elif mode == 'AL(CL)':
+        actual_downsampling = 1 / downsampling_factor if isinstance(downsampling_factor, int) else downsampling_factor
+        log_folder = get_log_folder(
+            pow_type, cluster_type, task, dataset_type, output_columns_str, strategy_type,
+            hidden_size, hidden_layers, batch_size=train_mb_size, active_learning=True,
+            al_batch_size=batch_size, al_max_batch_size=max_batch_size, al_method=al_method,
+            al_full_first_train_set=full_first_train_set, al_reload_weights=reload_initial_weights,
+            al_downsampling=actual_downsampling, extra_log_folder=extra_log_folder,
+            simulator_type=simulator_type, new=True
+        )
+    else:
+        raise RuntimeError(f"Invalid mode \"{mode}\"")
+    log_folder = f"{log_folder}/{folder_name}"
     os.makedirs(os.path.join(log_folder), exist_ok=True)
     stdout_file_path = os.path.join(log_folder, 'stdout.txt')
     if batch_selector is not None:

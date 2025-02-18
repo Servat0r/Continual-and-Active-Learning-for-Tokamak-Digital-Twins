@@ -28,6 +28,7 @@ def _bmdal_params_handler(parameters: dict):
     # For simplicity, we have assumed here that sigma = 0.1 for BALD and BatchBALD, since it is a configurable
     # parameter that should be estimated BEFORE the actual computation!
     # TODO: Verify if this assumption holds!
+    method = None
     if 'standard_method' in parameters.keys():
         method = parameters.pop('standard_method', None)
         if method == 'coreset':
@@ -107,7 +108,7 @@ def _bmdal_params_handler(parameters: dict):
             raise ValueError(f"Unknown standard method: {method}")
     else:
         for key in ['selection_method', 'initial_selection_method']:
-            assert isinstance(parameters[key], str) and (parameters[key] in \
+            assert isinstance(parameters[key], str) and (parameters[key] in
             ['random', 'maxdiag', 'maxdet', 'bait', 'fw', 'maxdist', 'kmeanspp', 'lcmd'])
             # We are temporarily ignoring the experimental options: 'fw-kernel', 'rmds' and 'sosd'
         assert isinstance(parameters['base_kernel'], str) and \
@@ -117,7 +118,7 @@ def _bmdal_params_handler(parameters: dict):
             tuple(item) if isinstance(item, list) else item for item in parameters['kernel_transforms']
         ]
         parameters['kernel_transforms'] = kernel_transforms
-    return parameters
+    return parameters, method
 
 
 def _mcdropout_params_handler(parameters):
@@ -143,10 +144,11 @@ def active_learning_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         }
     }
     default_config.update(data)
+    al_method = None
     assert isinstance(default_config['framework'], str) and \
         (default_config['framework'] in ['bmdal', 'mc_dropout', 'deep_ensemble'])
     if default_config['framework'] == 'bmdal':
-        default_config['parameters'] = _bmdal_params_handler(default_config['parameters'])
+        default_config['parameters'], al_method = _bmdal_params_handler(default_config['parameters'])
     elif default_config['framework'] == 'mc_dropout':
         default_config['parameters'] = _mcdropout_params_handler(default_config['parameters'])
     elif default_config['framework'] == 'deep_ensemble':
@@ -156,12 +158,16 @@ def active_learning_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     max_batch_size = default_config['parameters'].pop("max_batch_size", 2048)
     reload_initial_weights = default_config['parameters'].pop("reload_initial_weights", False)
     batch_selector = _BATCH_SELECTORS[default_config['framework']](**default_config['parameters'])
+    if al_method is None:
+        params = default_config['parameters']
+        al_method = f'{params["selection_method"]} {params["initial_selection_method"]}'
     return {
         'parameters': default_config,
         'batch_selector': batch_selector,
         'batch_size': default_config['parameters']['batch_size'],
         'max_batch_size': max_batch_size,
-        'reload_initial_weights': reload_initial_weights
+        'reload_initial_weights': reload_initial_weights,
+        'al_method': al_method
     }
 
 

@@ -96,13 +96,16 @@ if __name__ == '__main__':
                 extra_log_folder = simulator_prefix + folder + ' ' + suffix
                 mean_std_df = mean_std_df_wrapper(
                     args.pow_type, args.cluster_type, args.dataset_type,
-                    args.task, outputs, strategy, extra_log_folder,
-                    metric=metric, count=args.count
+                    args.task, outputs, strategy, args.hidden_size, args.hidden_layers,
+                    active_learning=(args.mode == 'al_cl'), # TODO Completare!
+                    extra_log_folder=extra_log_folder, metric=metric, count=args.count
                 )
                 if mean_std_df is not None:
                     log_folder = get_log_folder(
                         args.pow_type, args.cluster_type, args.task, args.dataset_type,
-                        outputs, strategy, extra_log_folder, count=args.count, task_id=0,
+                        outputs, strategy, args.hidden_size, args.hidden_layers, args.batch_size,
+                        active_learning=(args.mode == 'al_cl'), # TODO Completare!
+                        extra_log_folder=extra_log_folder, count=args.count, task_id=0,
                         simulator_type=args.simulator_type
                     )
                     mean_std_df['eval_exp'] = 10 * [0]
@@ -116,7 +119,9 @@ if __name__ == '__main__':
                         try:
                             log_folder = get_log_folder(
                                 args.pow_type, args.cluster_type, args.task, args.dataset_type,
-                                outputs, strategy, extra_log_folder, count=args.count,
+                                outputs, strategy, args.hidden_size, args.hidden_layers, args.batch_size,
+                                active_learning=(args.mode == 'al_cl'), # TODO Completare!
+                                extra_log_folder=extra_log_folder, count=args.count,
                                 task_id=task_id, simulator_type=args.simulator_type
                             )
                             num_tasks += 1

@@ -11,10 +11,30 @@ from .misc import extract_metric_info, extract_metric_type
 
 
 ########################### Helpers
+simulator_prefixes: dict[str, str] = {
+    'qualikiz': '',
+    'tglf': 'TGLF/'
+}
+
+
+def get_al_approach_log_folder(
+    al_approach: str, batch_size: int = 128, max_batch_size: int = 2048, full_first_set: bool = False,
+    reload_weights: bool = False, downsampling_factor: int = 0.5
+):
+    full_first_set_str = ('' if full_first_set else 'non-') + 'full first set'
+    reload_weights_str = ('' if reload_weights else 'no ') + 'reload weights'
+    downsampling_factor_str = f'downsampling {float(downsampling_factor)}'
+    return f"AL(CL)/Continual/{al_approach}/Batches {batch_size} {max_batch_size} " + \
+        f"{full_first_set_str} {reload_weights_str} {downsampling_factor_str}"
+
+
 def get_log_folder(
         pow_type: str, cluster_type: str, task: str, dataset_type: str, outputs: str | list[str],
-        strategy: str, extra_log_folder: str, *, count: int = None, task_id: int = 0,
-        simulator_type: str = 'qualikiz'
+        strategy: str, hidden_size: int = 1024, hidden_layers: int = 2, batch_size: int = 4096,
+        active_learning: bool = False, al_batch_size: int = None, al_max_batch_size: int = None,
+        al_method: str = 'random_sketch_grad', al_full_first_train_set: bool = False,
+        al_reload_weights: bool = False, al_downsampling: int | float = 1.0, extra_log_folder: str = 'Base',
+        count: int = None, task_id: int = 0, simulator_type: str = 'qualikiz', new: bool = False
 ) -> str:
     """
     Retrieves the EXACT log folder path according to the given parameters.
@@ -31,33 +51,37 @@ def get_log_folder(
     :param task_id: Run id, in {0, ..., N-1}.
     :return: Log folder path.
     """
+    print(f"Extra log folder = {extra_log_folder}")
     outputs_string = outputs if isinstance(outputs, str) else '_'.join(outputs)
+    simulator_prefix = simulator_prefixes[simulator_type]
+    base_extra_name = f'{simulator_prefix}{extra_log_folder} ({batch_size} batch size) ({hidden_size} hidden size)'.lstrip()
+    if (simulator_type == 'tglf') or (hidden_layers != 2):
+        base_extra_name = base_extra_name + f' ({hidden_layers} hidden layers)'
+    if active_learning:
+        al_base_extra_name = get_al_approach_log_folder(
+            al_method, al_batch_size, al_max_batch_size, al_full_first_train_set, al_reload_weights, al_downsampling
+        )
+        base_extra_name = f'{al_base_extra_name}/{base_extra_name}'
     index_dir = os.path.join(
-        'logs', pow_type, cluster_type, task, dataset_type, outputs_string, strategy, extra_log_folder
+        'logs', pow_type, cluster_type, task, dataset_type, outputs_string, strategy, base_extra_name
     )
-    current_count = 0
-    last_dirname = None
-    for dirname in os.listdir(index_dir):
-        if dirname.endswith(f"task_{task_id}"):
-            if (count >= 0) and (current_count >= count):
-                return os.path.join(index_dir, dirname)
-            else:
-                current_count += 1
-                last_dirname = dirname[:]
-    if (count == -1) and (last_dirname is not None):
-        return os.path.join(index_dir, last_dirname)
-    raise ValueError(f"Not found any directory in \"{index_dir}\" ending with \"task_{task_id}\"")
-
-
-def get_al_approach_log_folder(
-    al_approach: str, batch_size: int = 128, max_batch_size: int = 2048, full_first_set: bool = False,
-    reload_weights: bool = False, downsampling_factor: int = 0.5
-):
-    full_first_set_str = ('' if full_first_set else 'non-') + 'full first set'
-    reload_weights_str = ('' if reload_weights else 'no ') + 'reload weights'
-    downsampling_factor_str = f'downsampling {float(downsampling_factor)}'
-    return f"AL(CL)/Continual/{al_approach}/Batches {batch_size} {max_batch_size} " + \
-        f"{full_first_set_str} {reload_weights_str} {downsampling_factor_str}"
+    print(index_dir)
+    print(base_extra_name)
+    if new:
+        return index_dir
+    else:
+        current_count = 0
+        last_dirname = None
+        for dirname in os.listdir(index_dir):
+            if dirname.endswith(f"task_{task_id}"):
+                if (count >= 0) and (current_count >= count):
+                    return os.path.join(index_dir, dirname)
+                else:
+                    current_count += 1
+                    last_dirname = dirname[:]
+        if (count == -1) and (last_dirname is not None):
+            return os.path.join(index_dir, last_dirname)
+        raise ValueError(f"Not found any directory in \"{index_dir}\" ending with \"task_{task_id}\"")
 ############################
 
 
@@ -101,7 +125,6 @@ class CustomCSVLogger(BaseLogger):
         }
 
         self.verbose = verbose
-
         # current training experience id
         self.training_exp_id = None
 
@@ -361,5 +384,5 @@ class CustomCSVLogger(BaseLogger):
 
 
 __all__ = [
-    "get_log_folder", "CustomCSVLogger", "get_al_approach_log_folder"
+    "get_log_folder", "CustomCSVLogger", "get_al_approach_log_folder", "simulator_prefixes"
 ]

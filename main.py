@@ -78,18 +78,18 @@ if __name__ == '__main__':
             task_ids = range(num_jobs)
             results = \
                 Parallel(n_jobs=num_jobs)(
-                    delayed(task_training_loop)(
+                    delayed(filtered_task_training_loop)(
                         single_config_data, task_id, to_redirect_stdout, extra_log_folder,
-                        write_intermediate_models, plot_single_runs
+                        write_intermediate_models, plot_single_runs, tasks_list
                     ) for task_id in task_ids
                 )
         else:
             results = [
-                task_training_loop(
+                filtered_task_training_loop(
                     single_config_data, 0, redirect_stdout=to_redirect_stdout,
                     extra_log_folder=extra_log_folder,
                     write_intermediate_models=write_intermediate_models,
-                    plot_single_runs=plot_single_runs
+                    plot_single_runs=plot_single_runs, tasks_list=tasks_list
                 )
             ]
         # Plot means and standard deviations
