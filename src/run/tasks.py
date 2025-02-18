@@ -23,11 +23,11 @@ from ..utils import *
 from ..configs import *
 from .utils import *
 from .plots import *
-from ..utils.buffers.cl_al import ExperienceBalancedActiveLearningBuffer
+from ..utils.active_learning import al_cl_strategy_converter
 from ..utils.strategies.plugins import PercentageReplayPlugin
 
 
-def downsample_experience(train_exp: DatasetExperience, downsampling_factor: int) -> DatasetExperience:
+def downsample_experience(train_exp: DatasetExperience, downsampling_factor: int, seed: int = 42) -> DatasetExperience:
     """
     Downsample a training experience by randomly selecting 1/downsampling_factor of the data,
     attempting to maintain stratification across orders of magnitude.
@@ -39,6 +39,9 @@ def downsample_experience(train_exp: DatasetExperience, downsampling_factor: int
     Returns:
         Downsampled training experience
     """
+    # Set seed
+    torch.manual_seed(seed)
+    
     if downsampling_factor <= 1:
         return train_exp
         
@@ -94,64 +97,6 @@ def downsample_experience(train_exp: DatasetExperience, downsampling_factor: int
     )
     result_exp._origin_stream = train_exp.origin_stream
     return result_exp
-
-
-# TODO: Still to be tested in the training loop!
-def pure_training_loop(
-    model: nn.Module,
-    train_exp: DatasetExperience,
-    criterion: nn.Module,
-    optimizer: torch.optim.Optimizer,
-    train_mb_size: int,
-    train_epochs: int,
-    device: str,
-) -> None:
-    """
-    Pure PyTorch training loop for faster training during AL iterations.
-    Only trains on current experience data without any CL overhead.
-    """
-    # Set model to training mode
-    model.train()
-    
-    # Create data loader
-    train_loader = DataLoader(
-        train_exp.dataset._datasets[0], # i.e., pure CSVRegressionDataset
-        batch_size=train_mb_size,
-        shuffle=True
-    )
-
-    # Training loop
-    for epoch in range(train_epochs):
-        running_loss = 0.0
-        samples_seen = 0
-        
-        for batch_data in train_loader:
-            # Get inputs and targets
-            inputs = batch_data[0].to(device)
-            targets = batch_data[1].to(device)
-            
-            # Zero gradients
-            optimizer.zero_grad()
-            
-            # Forward pass
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            
-            # Backward pass and optimize
-            loss.backward()
-            optimizer.step()
-            
-            # Statistics
-            running_loss += loss.item() * inputs.size(0)
-            samples_seen += inputs.size(0)
-            
-        # Epoch statistics
-        epoch_loss = running_loss / samples_seen
-        if (epoch + 1) % 10 == 0:  # Print every 10 epochs
-            stdout_debug_print(
-                f'Epoch {epoch+1}/{train_epochs}, Loss: {epoch_loss:.4f}',
-                color='blue'
-            )
 
 
 def task_training_loop(
@@ -370,8 +315,12 @@ def task_training_loop(
         if cl_strategy_from_scratch:
             plugins.append(FromScratchTrainingPlugin(reset_optimizer=True))
 
-        replay_plugin = None
-
+        # Change CL strategy to AL(CL) one if needed
+        if mode == 'AL(CL)':
+            stdout_debug_print(f"Converting {cl_strategy_class} for AL(CL) training ...", color='red')
+            cl_strategy_class = al_cl_strategy_converter(cl_strategy_class)
+            stdout_debug_print(f"Converted to {cl_strategy_class} strategy", color='red')
+        
         cl_strategy = cl_strategy_class(
             model=model, optimizer=optimizer, criterion=criterion, train_mb_size=train_mb_size,
             train_epochs=train_epochs, eval_mb_size=eval_mb_size, device=device, evaluator=eval_plugin,
@@ -404,19 +353,7 @@ def task_training_loop(
                         stdout_debug_print(f"Starting testing experience {idx}: ", color='green')
                         results.append(cl_strategy.eval(eval_stream))
                     elif mode == 'AL(CL)': # Active Learning
-                        # Auxiliary CL strategy
-                        # This is needed, since Cumulative strategy would concatenate old and new AL batches
-                        # across AL runs, resulting in an exponentially increasing dataset with many repeated
-                        # elements
-                        # TODO: Make a pure training loop instead (i.e., with NO Continual Learning!)
-                        if cl_strategy_class == Cumulative:
-                            auxiliary_cl_strategy = Naive(
-                                model=model, optimizer=optimizer, criterion=criterion,
-                                train_mb_size=train_mb_size, train_epochs=train_epochs,
-                                eval_mb_size=eval_mb_size, device=device,
-                            )
-                        else:
-                            auxiliary_cl_strategy = cl_strategy
+                        cl_strategy.start_active_learning_cycle()
                         # Downsampling of the full dataset
                         orig_str = f"Original training exp {idx} has {len(train_exp.dataset)} items"
                         stdout_debug_print(orig_str, color='purple')
@@ -437,10 +374,6 @@ def task_training_loop(
                                 for name, param in model.state_dict().items()
                             }
                         num_selected_items = 0 # How many items we have selected with batch_selector
-                        # Temporarily disable callbacks to avoid running them multiple times
-                        original_callbacks = cl_strategy.plugins
-                        cl_strategy.plugins = []
-                        auxiliary_cl_strategy.plugins = []
                         csv_logger.suspend() # Deactivate CSVLogger to avoid printing out the results inside the AL cycle
                         # pool_train_exp = train_exp that contains all remaining pool data
                         # sel_train_exp = train_exp that contains all selected data
@@ -506,16 +439,16 @@ def task_training_loop(
                             # Todo THIS WILL MAKE REPLAY BE CALLED MANY TIMES
                             sel_train_exp._origin_stream = train_exp.origin_stream
                             if num_selected_items >= max_batch_size:
-                                cl_strategy.plugins = original_callbacks
+                                cl_strategy.stop_active_learning_cycle() # We are ready for a full training experience
                                 csv_logger.resume() # Reactivate CSVLogger
                                 # Restore initial model weights if specified
                                 if reload_initial_weights:
                                     model.load_state_dict(initial_weights)
-                                stdout_debug_print(f"Train Exp length (after Batch Selection) = {len(train_exp.dataset)}", color='purple')
+                                log_str = f"Train Exp length (after Batch Selection) = {len(train_exp.dataset)}"
+                                stdout_debug_print(log_str, color='purple')
                                 train_exp = sel_train_exp
-                                auxiliary_cl_strategy = cl_strategy
                             al_queue.update(1)
-                            auxiliary_cl_strategy.train(sel_train_exp)
+                            cl_strategy.train(sel_train_exp)
                         results.append(cl_strategy.eval(eval_stream))
                     # Save models after each experience
                     if write_intermediate_models:

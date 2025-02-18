@@ -32,9 +32,9 @@ class ValidationStreamPlugin(SupervisedPlugin):
     
     def after_training_exp(self, strategy: Any, *args, **kwargs) -> Any:
         self.last_results = None
-        self.training_exp_id += 1
 
     def after_training_epoch(self, strategy: Template, *args, **kwargs) -> Any:
+        self.training_exp_id = strategy.experience.current_experience
         val_exp = self.val_experiences[self.training_exp_id]
         last_results = strategy.eval(val_exp)
         self.last_results = {}

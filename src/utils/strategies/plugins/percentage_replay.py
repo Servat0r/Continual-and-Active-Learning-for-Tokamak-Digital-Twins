@@ -20,7 +20,8 @@ class PercentageReplayPlugin(ReplayPlugin):
     and mem_percentage = 0.1, buffer sizes would be (at the beginning
     of each experience) {0, 5000, 9300, 10500} (hence total experience
     datasets would be {50000, 48000, 21300, 33500}, a net increase of
-    {+0%, +11.63%, +77.5%, +45.65%}).
+    {+0%, +11.63%, +77.5%, +45.65%}). It is also possible to specify
+    a minimum size for the buffer.
     """
     def __init__(
         self,

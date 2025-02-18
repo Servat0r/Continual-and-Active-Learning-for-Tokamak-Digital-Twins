@@ -36,14 +36,29 @@ def get_log_folder(
         'logs', pow_type, cluster_type, task, dataset_type, outputs_string, strategy, extra_log_folder
     )
     current_count = 0
+    last_dirname = None
     for dirname in os.listdir(index_dir):
         if dirname.endswith(f"task_{task_id}"):
-            if current_count >= count:
+            if (count >= 0) and (current_count >= count):
                 return os.path.join(index_dir, dirname)
             else:
                 current_count += 1
+                last_dirname = dirname[:]
+    if (count == -1) and (last_dirname is not None):
+        return os.path.join(index_dir, last_dirname)
     raise ValueError(f"Not found any directory in \"{index_dir}\" ending with \"task_{task_id}\"")
-############################à
+
+
+def get_al_approach_log_folder(
+    al_approach: str, batch_size: int = 128, max_batch_size: int = 2048, full_first_set: bool = False,
+    reload_weights: bool = False, downsampling_factor: int = 0.5
+):
+    full_first_set_str = ('' if full_first_set else 'non-') + 'full first set'
+    reload_weights_str = ('' if reload_weights else 'no ') + 'reload weights'
+    downsampling_factor_str = f'downsampling {float(downsampling_factor)}'
+    return f"AL(CL)/Continual/{al_approach}/Batches {batch_size} {max_batch_size} " + \
+        f"{full_first_set_str} {reload_weights_str} {downsampling_factor_str}"
+############################
 
 
 class CustomCSVLogger(BaseLogger):
@@ -58,7 +73,7 @@ class CustomCSVLogger(BaseLogger):
 
     def __init__(
             self, log_folder: str = None, metrics: list[GenericPluginMetric] = None,
-            val_stream=None,
+            val_stream=None, verbose: bool = False,
     ):
         """
         :param log_folder: Directory in which to create log files.
@@ -84,6 +99,8 @@ class CustomCSVLogger(BaseLogger):
             'exp': open(os.path.join(self.log_folder, "test_results_experience.csv"), "w"), # Experience
             'stream': open(os.path.join(self.log_folder, "test_results_stream.csv"), "w") # Stream
         }
+
+        self.verbose = verbose
 
         # current training experience id
         self.training_exp_id = None
@@ -256,7 +273,7 @@ class CustomCSVLogger(BaseLogger):
             )
         elif not self.is_open:
             self.__error_print("closed")
-        else:
+        elif self.verbose:
             self.__error_print("suspended")
 
     def after_eval_exp(
@@ -287,7 +304,7 @@ class CustomCSVLogger(BaseLogger):
                 )
         elif not self.is_open:
             self.__error_print("closed")
-        else:
+        elif self.verbose:
             self.__error_print("suspended")
 
     def before_training_exp(
@@ -299,7 +316,7 @@ class CustomCSVLogger(BaseLogger):
         if self.working:
         #super().before_training(strategy, metric_values, **kwargs)
             self.training_exp_id = strategy.experience.current_experience
-        else:
+        elif self.verbose:
             self.__error_print("suspended")
 
     def before_eval(
@@ -344,5 +361,5 @@ class CustomCSVLogger(BaseLogger):
 
 
 __all__ = [
-    "get_log_folder", "CustomCSVLogger"
+    "get_log_folder", "CustomCSVLogger", "get_al_approach_log_folder"
 ]

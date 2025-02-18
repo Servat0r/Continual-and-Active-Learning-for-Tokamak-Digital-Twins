@@ -109,8 +109,7 @@ class BMDALBatchSelector(ALBatchSelector):
         self, models: list[torch.nn.Module] = None, batch_size: int = 100,
         selection_method: str = 'lcmd', sel_with_train: bool = False,
         base_kernel: str = 'grad', kernel_transforms: list = None,
-        initial_selection_method: Literal["random", "maxdiag"] = "random",
-        debug_log_file: str = 'batch_selector.log',
+        initial_selection_method: str = "random", debug_log_file: str = 'batch_selector.log',
     ):
         super().__init__()
         self.models = models

@@ -160,30 +160,49 @@ def plot_metric_over_evaluation_experiences_multiple_runs(
     plt.close()
 
 
-def plot_forgetting_over_multiple_strategies(
-    file_paths_or_bufs: dict[str, str | pd.DataFrame], experience_id: int, grid: bool = True,
+def plot_metric_over_multiple_strategies(
+    file_paths_or_bufs: dict[str, tuple[str | pd.DataFrame, str, str]], grid: bool = True,
     legend: bool = True, show: bool = True, save: bool = True, savepath: str = None,
     title: str = None, xlabel: str = None, ylabel: str = None,
 ):
-    keys, values = [], []
-    for k, v in file_paths_or_bufs.items():
-        keys.append(k)
-        values.append(v)
-    result_dfs = extract_metric_values_over_evaluation_experiences(
-        values, 'Forgetting_Exp', num_exp=10
-    )
-    series = [df[experience_id].to_numpy() for df in result_dfs]
-    dict_data = {key: data for key, data in zip(keys, series)}
-    df = pd.DataFrame(dict_data)
-    base_title = title if title is not None else f"Forgetting on Evaluation Data of Experience"
-    xlabel = xlabel if xlabel is not None else "Evaluation Experience"
-    ylabel = ylabel if ylabel is not None else "Forgetting"
-    df.plot(
-        kind='line', figsize=(12, 8), title=f"{base_title} {experience_id}",
-        xlabel=xlabel, ylabel=ylabel, grid=grid, legend=legend
-    )
-    if save: plt.savefig(savepath)
-    if show: plt.show()
+    plt.figure(figsize=(12, 8))
+    for strategy_name, (df, color, linestyle) in file_paths_or_bufs.items():
+        mean_col = [col for col in df.columns if col.startswith('Mean')][0]
+        std_col = [col for col in df.columns if col.startswith('Std')][0]
+        x_values = df['Experience'].values
+        mean_values = df[mean_col].values
+        std_values = df[std_col].values
+        
+        # Use strategy name as label, removing any 'Mean/Std' prefix
+        label = strategy_name
+        
+        plt.plot(x_values, mean_values, label=label, marker='o', linestyle=linestyle, color=color)
+        plt.fill_between(
+            x_values,
+            mean_values - std_values,
+            mean_values + std_values,
+            alpha=0.2,
+            color=color
+        )
+
+    base_title = title if title is not None else "Performance Over Experiences"
+    base_xlabel = xlabel if xlabel is not None else "Experience"
+    base_ylabel = ylabel if ylabel is not None else "Metric Value"
+    
+    plt.title(base_title, fontsize=14)
+    plt.xlabel(base_xlabel, fontsize=12)
+    plt.ylabel(base_ylabel, fontsize=12)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    
+    if grid:
+        plt.grid(True, linestyle='--')
+    if legend:
+        plt.legend(fontsize=10)
+    if save and savepath is not None:
+        plt.savefig(savepath, bbox_inches='tight')
+    if show:
+        plt.show()
     plt.close()
 
 
@@ -191,5 +210,5 @@ __all__ = [
     'plot_metric_over_evaluation_experiences',
     'plot_metrics_over_training_experiences',
     'plot_metric_over_evaluation_experiences_multiple_runs',
-    'plot_forgetting_over_multiple_strategies',
+    'plot_metric_over_multiple_strategies',
 ]

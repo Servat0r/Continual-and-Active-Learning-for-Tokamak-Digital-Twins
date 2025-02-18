@@ -237,15 +237,16 @@ def get_mean_std_metric_values(
     std_file_path = os.path.join(log_folder, std_filename)
     mean_df = pd.read_csv(mean_file_path)
     std_df = pd.read_csv(std_file_path)
-    weights = np.array([
-        len(dataset[dataset.campaign == i]) / len(dataset) for i in range(num_exp)
+    absolute_weights = np.array([
+        len(dataset[dataset.campaign == i]) for i in range(num_exp)
     ])
     mean_data = []
     std_data = []
     for i in range(num_exp):
+        weights = absolute_weights[:i+1] / absolute_weights[:i+1].sum()
         exp_mean_series = mean_df[(mean_df['training_exp'] == i) & (mean_df['eval_exp'] <= i)][metric].to_numpy()
         exp_std_series = std_df[num_exp*i:num_exp*i+i+1][metric].to_numpy()
-        combined_mean = exp_mean_series.mean()
+        combined_mean = (exp_mean_series * weights[:i+1]).sum()
         exp_mean_series = (exp_mean_series - combined_mean)
         exp_std_series = exp_std_series**2 + exp_mean_series**2
         exp_std_series = weights[:i+1] * exp_std_series
@@ -259,16 +260,16 @@ def get_mean_std_metric_values(
     })
 
 
-def wrapper(
-    pow_type, cluster_type, dataset_type, task, outputs, strategy,
-    extra_log_folder, metric='Forgetting_Exp', simulator_type='qualikiz'
+def mean_std_df_wrapper(
+    pow_type, cluster_type, dataset_type, task, outputs, strategy, extra_log_folder,
+    metric='Forgetting_Exp', simulator_type='qualikiz', count=0
 ):
     try:
         log_folder = get_log_folder(
             pow_type, cluster_type, task, dataset_type, outputs, strategy,
-            extra_log_folder, count=0, task_id=0, simulator_type=simulator_type
+            extra_log_folder, count=count, task_id=0, simulator_type=simulator_type
         )
-        train_data, eval_data, test_data = load_baseline_csv_data(
+        _, eval_data, _ = load_baseline_csv_data(
             pow_type, cluster_type, dataset_type, raw_or_final='final',
             task=task, simulator_type=simulator_type
         )
@@ -278,8 +279,190 @@ def wrapper(
         return None
 
 
+# Comparing multiple strategies on a metric
+def mean_std_strategy_plots_wrapper(
+    pow_type, cluster_type, dataset_type, task, outputs, strategy_dicts: dict[str, str | tuple[str, str]],
+    internal_metric_name: str = 'Forgetting_Exp', plot_metric_name: str = 'Forgetting',
+    simulator_type: str = 'qualikiz', count: int = 0, title: str = None, save: bool = False,
+    savepath: str = None, show: bool = True, grid: bool = True, legend: bool = True,
+    colors_and_linestyle_dict: dict[str, tuple[str, str]] = None
+):
+    # Get mean_std_df for each strategy
+    strategy_dfs = {}
+    for strategy_metric_name, strategy_data in strategy_dicts.items():
+        color, linestyle = colors_and_linestyle_dict[strategy_metric_name]
+        if isinstance(strategy_data, str):
+            extra_folder = strategy_data
+            strategy_name = strategy_metric_name
+        else:
+            strategy_name = strategy_data[0]
+            extra_folder = strategy_data[1]
+        mean_std_df = mean_std_df_wrapper(
+            pow_type, cluster_type, dataset_type, task, outputs,
+            strategy_name, extra_folder, metric=internal_metric_name,
+            simulator_type=simulator_type, count=count
+        )
+        if mean_std_df is not None:
+            strategy_dfs[strategy_metric_name] = (mean_std_df, color, linestyle)
+
+    # Plot metrics across strategies
+    if strategy_dfs:
+        plot_metric_over_multiple_strategies(
+            strategy_dfs, grid=grid, legend=legend,
+            show=show, save=save, savepath=savepath, 
+            title=f"{plot_metric_name} Over Experiences" or title,
+            xlabel="Experience", ylabel=plot_metric_name,
+        )
+
+
+def mean_std_al_wrapper(
+    pow_type, cluster_type, dataset_type, task, outputs, strategy, extra_log_folder,
+    al_approach: str, batch_size: int = 128, max_batch_size: int = 2048,
+    full_first_set: bool = False, reload_weights: bool = False, downsampling_factor: int = 0.5,
+    metric: str = 'Forgetting_Exp', simulator_type: str = 'qualikiz', count: int = 0
+):
+    """
+    Wrapper to get mean/std dataframe for a specific AL approach of a strategy.
+    Similar to mean_std_df_wrapper but includes AL approach in path.
+    """
+    try:
+        al_log_folder = get_al_approach_log_folder(
+            al_approach, batch_size, max_batch_size, full_first_set,
+            reload_weights, downsampling_factor
+        )
+        full_extra_log_folder = f'{al_log_folder}/{extra_log_folder}'
+        log_folder = get_log_folder(
+            pow_type, cluster_type, task, dataset_type, outputs, strategy,
+            full_extra_log_folder, count=count, task_id=0, simulator_type=simulator_type
+        )
+        _, eval_data, _ = load_baseline_csv_data(
+            pow_type, cluster_type, dataset_type, raw_or_final='final',
+            task=task, simulator_type=simulator_type
+        )
+        mean_std_df = get_mean_std_metric_values(eval_data, log_folder, metric=metric)
+        return mean_std_df
+    except Exception as ex:
+        return None
+
+
+def mean_std_al_plots_wrapper(
+    pow_type, cluster_type, dataset_type, task, outputs, strategy, al_approaches: dict[str, str],
+    batch_size: int = 128, max_batch_size: int = 2048, full_first_set: bool = False,
+    reload_weights: bool = False, downsampling_factor: float = 0.5,
+    internal_metric_name='Forgetting_Exp', plot_metric_name='Forgetting',
+    simulator_type='qualikiz', count=0, title: str = None, save: bool = False,
+    savepath: str = None, show: bool = True, grid: bool = True, legend: bool = True
+):
+    """
+    Creates plots comparing different Active Learning approaches for a single strategy,
+    using the same batch sizes and downsampling parameters.
+    
+    Args:
+        pow_type: Power regime ("highpow" or "lowpow")
+        cluster_type: Clustering approach used
+        dataset_type: Type of dataset
+        task: Task type (e.g. "regression")
+        outputs: Output variables
+        strategy: The CL strategy to analyze
+        al_approaches: Dict mapping AL approach names to their extra folder paths
+        batch_size: Size of AL batches
+        max_batch_size: Maximum batch size for AL
+        full_first_set: Whether to use full first set
+        reload_weights: Whether to reload weights
+        downsampling_factor: Factor for downsampling
+        internal_metric_name: Metric name in data files
+        plot_metric_name: Metric name for plot
+        simulator_type: Type of simulator used
+        count: Run number
+        title: Plot title (optional)
+        save: Whether to save the plot
+        savepath: Path to save plot
+        show: Whether to display plot
+        grid: Whether to show grid
+        legend: Whether to show legend
+    """
+    # Get mean_std_df for each AL approach
+    al_dfs = {}
+    for al_name, extra_folder in al_approaches.items():
+        mean_std_df = mean_std_al_wrapper(
+            pow_type, cluster_type, dataset_type, task, outputs,
+            strategy, extra_folder, al_name, batch_size, max_batch_size,
+            full_first_set, reload_weights, downsampling_factor,
+            metric=internal_metric_name, simulator_type=simulator_type, count=count
+        )
+        if mean_std_df is not None:
+            al_dfs[al_name] = mean_std_df
+
+    # Plot metrics across AL approaches
+    if al_dfs:
+        plot_metric_over_multiple_strategies(
+            al_dfs, grid=grid, legend=legend,
+            show=show, save=save, savepath=savepath,
+            title=f"{plot_metric_name} Over Experiences ({strategy})" if title is None else title,
+            xlabel="Experience", ylabel=plot_metric_name,
+        )
+
+def mean_std_al_batch_plots_wrapper(
+    pow_type, cluster_type, dataset_type, task, outputs, strategy, al_approach: str,
+    batch_configs: list[tuple[int, int]], downsampling_factors: list[float],
+    full_first_set: bool = False, reload_weights: bool = False,
+    internal_metric_name='Forgetting_Exp', plot_metric_name='Forgetting',
+    simulator_type='qualikiz', count=0, title: str = None, save: bool = False,
+    savepath: str = None, show: bool = True, grid: bool = True, legend: bool = True
+):
+    """
+    Creates plots comparing different batch size and downsampling configurations for a single AL approach.
+    
+    Args:
+        pow_type: Power regime ("highpow" or "lowpow")
+        cluster_type: Clustering approach used
+        dataset_type: Type of dataset
+        task: Task type (e.g. "regression")
+        outputs: Output variables
+        strategy: The CL strategy to analyze
+        al_approach: The AL approach to analyze
+        batch_configs: List of (batch_size, max_batch_size) tuples to compare
+        downsampling_factors: List of downsampling factors to compare
+        full_first_set: Whether to use full first set
+        reload_weights: Whether to reload weights
+        internal_metric_name: Metric name in data files
+        plot_metric_name: Metric name for plot
+        simulator_type: Type of simulator used
+        count: Run number
+        title: Plot title (optional)
+        save: Whether to save the plot
+        savepath: Path to save plot
+        show: Whether to display plot
+        grid: Whether to show grid
+        legend: Whether to show legend
+    """
+    # Get mean_std_df for each batch configuration and downsampling factor
+    config_dfs = {}
+    for (batch_size, max_batch_size), downsampling in zip(batch_configs, downsampling_factors):
+        config_name = f"Batches {batch_size}-{max_batch_size}, downsampling by {downsampling}"
+        mean_std_df = mean_std_al_wrapper(
+            pow_type, cluster_type, dataset_type, task, outputs,
+            strategy, "", al_approach, batch_size, max_batch_size,
+            full_first_set, reload_weights, downsampling,
+            metric=internal_metric_name, simulator_type=simulator_type, count=count
+        )
+        if mean_std_df is not None:
+            config_dfs[config_name] = mean_std_df
+
+    # Plot metrics across configurations
+    if config_dfs:
+        plot_metric_over_multiple_strategies(
+            config_dfs, grid=grid, legend=legend,
+            show=show, save=save, savepath=savepath,
+            title=f"{plot_metric_name} Over Experiences ({al_approach})" if title is None else title,
+            xlabel="Experience", ylabel=plot_metric_name,
+        )
+
+
 __all__ = [
     'load_models', 'load_baseline_csv_data',
     'build_full_datasets', 'build_experience_datasets',
-    'outputs_direction_report', 'get_mean_std_metric_values', 'wrapper',
+    'outputs_direction_report', 'get_mean_std_metric_values',
+    'mean_std_df_wrapper', 'mean_std_strategy_plots_wrapper',
+    'mean_std_al_wrapper', 'mean_std_al_plots_wrapper'
 ]
