@@ -214,25 +214,24 @@ def task_training_loop(
     output_columns_str = '_'.join(output_columns)
     hidden_size = config['architecture']['parameters']['hidden_size']
     hidden_layers = config['architecture']['parameters']['hidden_layers']
-    if mode == 'CL':
-        log_folder = get_log_folder(
-            pow_type, cluster_type, task, dataset_type, output_columns_str, strategy_type,
-            hidden_size, hidden_layers, batch_size=train_mb_size, active_learning=False,
-            extra_log_folder=extra_log_folder, simulator_type=simulator_type, new=True
-        )
-    elif mode == 'AL(CL)':
+    logging_config = LoggingConfiguration(
+        pow_type=pow_type, cluster_type=cluster_type, dataset_type=dataset_type, task=task,
+        outputs=output_columns_str, strategy=strategy_type, extra_log_folder=extra_log_folder,
+        simulator_type=simulator_type, hidden_size=hidden_size, hidden_layers=hidden_layers,
+        batch_size=train_mb_size, active_learning=False
+    )
+    if mode == 'AL(CL)':
         actual_downsampling = 1 / downsampling_factor if isinstance(downsampling_factor, int) else downsampling_factor
-        log_folder = get_log_folder(
-            pow_type, cluster_type, task, dataset_type, output_columns_str, strategy_type,
-            hidden_size, hidden_layers, batch_size=train_mb_size, active_learning=True,
-            al_batch_size=batch_size, al_max_batch_size=max_batch_size, al_method=al_method,
-            al_full_first_train_set=full_first_train_set, al_reload_weights=reload_initial_weights,
-            al_downsampling=actual_downsampling, extra_log_folder=extra_log_folder,
-            simulator_type=simulator_type, new=True
-        )
-    else:
+        logging_config.active_learning = True
+        logging_config.al_batch_size = batch_size
+        logging_config.al_max_batch_size = max_batch_size
+        logging_config.al_method = al_method
+        logging_config.al_full_first_set = full_first_train_set
+        logging_config.al_reload_weights = reload_initial_weights
+        logging_config.al_downsampling_factor = actual_downsampling
+    elif mode != 'CL':
         raise RuntimeError(f"Invalid mode \"{mode}\"")
-    log_folder = f"{log_folder}/{folder_name}"
+    log_folder = f"{logging_config.get_log_folder(suffix=False)}/{folder_name}"
     os.makedirs(os.path.join(log_folder), exist_ok=True)
     stdout_file_path = os.path.join(log_folder, 'stdout.txt')
     if batch_selector is not None:

@@ -260,19 +260,14 @@ def get_mean_std_metric_values(
     })
 
 
-def mean_std_df_wrapper(
-    pow_type, cluster_type, dataset_type, task, outputs, strategy, hidden_size,
-    hidden_layers, batch_size, active_learning, al_batch_size, al_max_batch_size,
-    al_method, al_full_first_train_set, al_reload_weights, al_downsampling,
-    extra_log_folder, metric='Forgetting_Exp', simulator_type='qualikiz', count=0
+def mean_std_df_wrapper(    
+    logging_config: LoggingConfiguration, metric='Forgetting_Exp', count=0
 ):
     try:
-        log_folder = get_log_folder(
-            pow_type, cluster_type, task, dataset_type, outputs, strategy, hidden_size,
-            hidden_layers, batch_size, active_learning, al_batch_size, al_max_batch_size,
-            al_method, al_full_first_train_set, al_reload_weights, al_downsampling,
-            extra_log_folder, count=count, task_id=0, simulator_type=simulator_type
-        )
+        log_folder = logging_config.get_log_folder(count=count, task_id=0)
+        pow_type, cluster_type, dataset_type, task, simulator_type = \
+            logging_config.pow_type, logging_config.cluster_type, logging_config.dataset_type, \
+            logging_config.task, logging_config.simulator_type
         _, eval_data, _ = load_baseline_csv_data(
             pow_type, cluster_type, dataset_type, raw_or_final='final',
             task=task, simulator_type=simulator_type
@@ -285,14 +280,10 @@ def mean_std_df_wrapper(
 
 # Comparing multiple strategies on a metric
 def mean_std_strategy_plots_wrapper(
-    pow_type, cluster_type, dataset_type, task, outputs, strategy_dicts: dict[str, str | tuple[str, str]],
+    logging_config: LoggingConfiguration, strategy_dicts: dict[str, str | tuple[str, str]],
     internal_metric_name: str = 'Forgetting_Exp', plot_metric_name: str = 'Forgetting',
-    simulator_type: str = 'qualikiz', hidden_size: int = 1024, hidden_layers: int = 2, batch_size: int = 4096,
-    active_learning: bool = False, al_batch_size: int = 128, al_max_batch_size: int = 2048,
-    al_method: str = 'random_sketch_grad', al_full_first_train_set: bool = False,
-    al_reload_weights: bool = False, al_downsampling: int | float = 0.5,
-    count: int = 0, title: str = None, save: bool = False,
-    savepath: str = None, show: bool = True, grid: bool = True, legend: bool = True,
+    count: int = 0, title: str = None, save: bool = False, savepath: str = None,
+    show: bool = True, grid: bool = True, legend: bool = True,
     colors_and_linestyle_dict: dict[str, tuple[str, str]] = None
 ):
     """
@@ -310,16 +301,13 @@ def mean_std_strategy_plots_wrapper(
         else:
             strategy_name = strategy_data[0]
             extra_folder = strategy_data[1]
+        logging_config.strategy = strategy_name
+        logging_config.extra_log_folder = extra_folder
         mean_std_df = mean_std_df_wrapper(
-            pow_type, cluster_type, dataset_type, task, outputs, strategy_name,
-            hidden_size, hidden_layers, batch_size, active_learning, al_batch_size,
-            al_max_batch_size, al_method, al_full_first_train_set, al_reload_weights,
-            al_downsampling, extra_folder, metric=internal_metric_name,
-            simulator_type=simulator_type, count=count
+            logging_config, metric=internal_metric_name, count=count
         )
         if mean_std_df is not None:
             strategy_dfs[strategy_metric_name] = (mean_std_df, color, linestyle)
-
     # Plot metrics across strategies
     if strategy_dfs:
         plot_metric_over_multiple_strategies(
@@ -331,14 +319,9 @@ def mean_std_strategy_plots_wrapper(
 
 
 def mean_std_al_plots_wrapper(
-    pow_type, cluster_type, dataset_type, task, outputs, strategy: str,
-    al_methods_dict: dict[str, str], batch_size: int = 4096,
-    al_batch_size: int = 128, al_max_batch_size: int = 2048,
-    full_first_set: bool = False, reload_weights: bool = False,
-    downsampling_factor: float = 0.5, internal_metric_name: str = 'Forgetting_Exp',
-    plot_metric_name: str = 'Forgetting', simulator_type: str = 'qualikiz',
-    hidden_size: int = 1024, hidden_layers: int = 2, count: int = 0,
-    title: str = None, save: bool = False, savepath: str = None,
+    logging_config: LoggingConfiguration, al_methods_dict: dict[str, tuple[str, str]],
+    internal_metric_name: str = 'Forgetting_Exp', plot_metric_name: str = 'Forgetting',
+    count: int = 0, title: str = None, save: bool = False, savepath: str = None,
     show: bool = True, grid: bool = True, legend: bool = True,
     colors_and_linestyle_dict: dict[str, tuple[str, str]] = None
 ):
@@ -347,20 +330,18 @@ def mean_std_al_plots_wrapper(
     al_methods_dict = {Uncertainty: uncertainty_sketch_grad}
     colors_and_linestyle_dict = {Random: ('red', '-')}
     """
+    logging_config.active_learning = True
     # Get mean_std_df for each AL method
     al_method_dfs = {}
     for al_method_metric_name, (al_method, extra_log_folder) in al_methods_dict.items():
         color, linestyle = colors_and_linestyle_dict[al_method_metric_name]
+        logging_config.al_method = al_method
+        logging_config.extra_log_folder = extra_log_folder
         mean_std_df = mean_std_df_wrapper(
-            pow_type, cluster_type, dataset_type, task, outputs, strategy,
-            hidden_size, hidden_layers, batch_size, True, al_batch_size,
-            al_max_batch_size, al_method, full_first_set, reload_weights,
-            downsampling_factor, extra_log_folder=extra_log_folder,
-            metric=internal_metric_name, simulator_type=simulator_type, count=count
+            logging_config, metric=internal_metric_name, count=count
         )
         if mean_std_df is not None:
             al_method_dfs[al_method_metric_name] = (mean_std_df, color, linestyle)
-
     # Plot metrics across AL methods
     if al_method_dfs:
         plot_metric_over_multiple_strategies(
@@ -369,7 +350,6 @@ def mean_std_al_plots_wrapper(
             title=f"{plot_metric_name} Over Experiences" or title,
             xlabel="Experience", ylabel=plot_metric_name,
         )
-
 
 
 __all__ = [
