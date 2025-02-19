@@ -19,22 +19,25 @@ cl_strategies = [
 
 cl_extra_log_folders = [
     ['Base'], ['Base'], ['Buffer 500', 'Buffer 1000', 'Buffer 2000', 'Buffer 10000'],
-    ['Percentage 1%', 'Percentage 5%', 'Percentage 10%'], ['Lambda 1', 'Lambda 10'],
-    ['Lambda 10 Buffer 1000'], ['Lambda 1 Alpha 0.0', 'Lambda 10 Alpha 0.0'],
-    ['Lambda 1 Alpha 0.0 Buffer 1000', 'Lambda 10 Alpha 0,5 Buffer 1000'],
-    ['Patterns 100', 'Patterns 400', 'Patterns 1000', 'Patterns 1000 Gamma 0.1', 'Patterns 1000 Gamma 0.25', 'Patterns 2000'],
-    ['Patterns 100 Buffer 1000'], ['Lambda 1', 'Lambda 10'], ['Lambda 0.1', 'Lambda 1']
+    ['Percentage 1%', 'Percentage 5%', 'Percentage 10%'], ['Lambda 0.1', 'Lambda 1', 'Lambda 10'],
+    ['Lambda 1 Buffer 1000', 'Lambda 10 Buffer 1000', 'Lambda 1 Buffer 2000'],
+    ['Lambda 1 Alpha 0.0', 'Lambda 10 Alpha 0.0'],
+    ['Lambda 1 Alpha 0.0 Buffer 1000', 'Lambda 1 Alpha 0.0 Buffer 2000', 'Lambda 1 Alpha 0.0 Buffer 10000'],
+    ['Patterns 100', 'Patterns 400', 'Patterns 1000', 'Patterns 2000'],
+    ['Patterns 100 Buffer 1000', 'Patterns 100 Buffer 10000', 'Patterns 1000 Buffer 1000'],
+    ['Lambda 1', 'Lambda 10'], ['Lambda 0.1', 'Lambda 1']
 ]
 
 cl_proxy_names = [
     ['Naive'], ['Cumulative'],
     _make_str_list('Replay (', ['500', '1000', '2000', '10000'], ')'),
     _make_str_list('Percentage Replay (', ['1', '5', '10'], '%)'),
-    ['EWC (1)', 'EWC (10)'], ['EWCReplay (10, 1000)'],
+    ['EWC (0.1)', 'EWC (1)', 'EWC (10)'],
+    ['EWCReplay (1, 1000)', 'EWCReplay (10, 1000)', 'EWCReplay (1, 2000)'],
     ['MAS (1, 0.0)', 'MAS (10, 0.0)'],
-    ['MAS Replay (1, 0.0, 1000)', 'MAS Replay (10, 0.5, 1000)'],
-    ['GEM (100 per exp)', 'GEM (400 per exp)', 'GEM (1000 per exp)', 'GEM (1000 per exp, gamma = 0.1)', 'GEM (1000 per exp, gamma = 0.25)', 'GEM (2000 per exp)'],
-    ['GEMReplay (100, 1000)'],
+    ['MAS Replay (1, 0.0, 1000)', 'MAS Replay (1, 0.0, 2000)', 'MAS Replay (1, 0.0, 10000)'],
+    ['GEM (100 per exp)', 'GEM (400 per exp)', 'GEM (1000 per exp)', 'GEM (2000 per exp)'],
+    ['GEMReplay (100, 1000)', 'GEMReplay (100, 10000)', 'GEMReplay (1000, 1000)'],
     ['LFL (1)', 'LFL (10)'], ['SI (0.1)', 'SI (1)']
 ]
 
@@ -178,16 +181,21 @@ if __name__ == '__main__':
         
         index = 0
         pow_type, cluster_type, task, dataset_type = args.pow_type, args.cluster_type, args.task, args.dataset_type
+        logging_config = LoggingConfiguration(
+            pow_type=pow_type, cluster_type=cluster_type, dataset_type=dataset_type, task=task,
+            outputs=outputs, simulator_type=args.simulator_type, hidden_size=args.hidden_size,
+            hidden_layers=args.hidden_layers, batch_size=args.batch_size, active_learning=is_active_learning,
+            al_batch_size=args.al_batch_size, al_max_batch_size=args.al_max_batch_size, al_method=args.al_method,
+            al_full_first_set=args.full_first_set, al_reload_weights=args.reload_weights,
+            al_downsampling_factor=args.downsampling
+        )
         for (strategy, proxy_list, folders) in zip(strategies, proxies, extra_log_folders):
             for proxy, folder in zip(proxy_list, folders):
-                extra_log_folder = simulator_prefix + folder
+                extra_log_folder = folder
+                logging_config.strategy = strategy
+                logging_config.extra_log_folder = extra_log_folder
                 try:
-                    folder_path = get_log_folder(
-                        pow_type, cluster_type, task, dataset_type, outputs, strategy, args.hidden_size,
-                        args.hidden_layers, args.batch_size, is_active_learning, args.al_batch_size,
-                        args.al_max_batch_size, args.al_method, args.full_first_set, args.reload_weights,
-                        args.downsampling, extra_log_folder, count=-1, simulator_type=args.simulator_type
-                    )
+                    folder_path = logging_config.get_log_folder(count=-1, task_id=0, suffix=True)
                     print(f"[red]Strategy: {strategy}, Proxy: {proxy}, Folder: {extra_log_folder}[/red]")
                     strategies_dict[proxy] = (strategy, extra_log_folder)
                     colors_dict[proxy] = (colors[index], linestyles[index])
@@ -204,12 +212,9 @@ if __name__ == '__main__':
         os.makedirs(savefolder, exist_ok=True)
 
         mean_std_strategy_plots_wrapper(
-            pow_type, cluster_type, dataset_type, task, outputs, strategies_dict,
-            internal_metric_name=args.internal_metric_name, plot_metric_name=plot_metric_name,
-            simulator_type=args.simulator_type, hidden_size=args.hidden_size, hidden_layers=args.hidden_layers,
-            batch_size=args.batch_size, active_learning=is_active_learning, # TODO Completare!
-            show=True, save=True, savepath=savepath, grid=True, legend=True, count=-1,
-            colors_and_linestyle_dict=colors_dict
+            logging_config, strategies_dict, internal_metric_name=args.internal_metric_name,
+            plot_metric_name=plot_metric_name, show=True, save=True, savepath=savepath,
+            grid=True, legend=True, count=-1, colors_and_linestyle_dict=colors_dict
         )
     else:
         # AL(CL) method comparisons
@@ -220,16 +225,21 @@ if __name__ == '__main__':
         index = 0
         pow_type, cluster_type, task, dataset_type = args.pow_type, args.cluster_type, args.task, args.dataset_type
         strategy = strategies[0]
+        logging_config = LoggingConfiguration(
+            pow_type=pow_type, cluster_type=cluster_type, dataset_type=dataset_type, task=task,
+            outputs=outputs, strategy=strategy, simulator_type=args.simulator_type,
+            hidden_size=args.hidden_size, hidden_layers=args.hidden_layers, batch_size=args.batch_size,
+            active_learning=is_active_learning, al_method=args.al_method, al_batch_size=args.al_batch_size,
+            al_max_batch_size=args.al_max_batch_size, al_full_first_set=args.full_first_set,
+            al_reload_weights=args.reload_weights, al_downsampling_factor=args.downsampling
+        )
 
         for method, proxy in zip(al_cl_methods, al_cl_methods_proxies):
             for extra_log_folder, strategy_name_proxy in zip(extra_log_folders, proxies):
+                logging_config.al_method = method
+                logging_config.extra_log_folder = extra_log_folder
                 try:
-                    folder_path = get_log_folder(
-                        pow_type, cluster_type, task, dataset_type, outputs, strategy, args.hidden_size,
-                        args.hidden_layers, args.batch_size, True, args.al_batch_size,
-                        args.al_max_batch_size, method, args.full_first_set, args.reload_weights,
-                        args.downsampling, extra_log_folder, count=-1, simulator_type=args.simulator_type
-                    )
+                    folder_path = logging_config.get_log_folder(count=-1, task_id=0, suffix=True)
                     print(f"[red]Strategy: {strategy}, AL Method: {method}, Proxy: {proxy}[/red]")
                     final_proxy_name = f"{strategy_name_proxy} - {proxy}"
                     al_methods_dict[final_proxy_name] = (method, extra_log_folder)
@@ -243,13 +253,7 @@ if __name__ == '__main__':
         os.makedirs(savefolder, exist_ok=True)
 
         mean_std_al_plots_wrapper(
-            pow_type, cluster_type, dataset_type, task, outputs, strategy, al_methods_dict,
-            batch_size=args.batch_size, al_batch_size=args.al_batch_size,
-            al_max_batch_size=args.al_max_batch_size, 
-            full_first_set=args.full_first_set, reload_weights=args.reload_weights,
-            downsampling_factor=args.downsampling, internal_metric_name=args.internal_metric_name,
-            plot_metric_name=plot_metric_name, simulator_type=args.simulator_type,
-            hidden_size=args.hidden_size, hidden_layers=args.hidden_layers,
-            count=-1, show=True, save=True, savepath=savepath, grid=True, legend=True,
-            colors_and_linestyle_dict=colors_dict
+            logging_config, al_methods_dict, internal_metric_name=args.internal_metric_name,
+            plot_metric_name=plot_metric_name, count=-1, show=True, save=True, savepath=savepath,
+            grid=True, legend=True, colors_and_linestyle_dict=colors_dict
         )
