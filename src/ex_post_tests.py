@@ -212,8 +212,10 @@ def build_experience_datasets(
     return experience_train_datasets, experience_eval_datasets, experience_test_datasets
 
 
-def outputs_direction_report(model, inputs, targets, ef_columns=None):
-    predicted = model(inputs)
+def outputs_direction_report(model, inputs, targets, ef_columns=None, mult_factor: float = 1.0, zero_negs: bool = False):
+    predicted = model(inputs) * mult_factor
+    if zero_negs:
+        predicted[:, ef_columns][predicted[:, ef_columns] < 0] = 0
     mse = ((predicted - targets)**2).mean()
     cos_sim = cosine_similarity(predicted, targets).mean()
     ef_columns = ef_columns or [0, 1]
@@ -231,7 +233,7 @@ def outputs_direction_report(model, inputs, targets, ef_columns=None):
 
 def get_mean_std_metric_values(
     dataset, log_folder, mean_filename='mean_values.csv', std_filename='std_values.csv',
-    metric='Forgetting_Exp', num_exp=10
+    metric='Forgetting_Exp', num_exp=10, include_future_experiences=False
 ):
     mean_file_path = os.path.join(log_folder, mean_filename)
     std_file_path = os.path.join(log_folder, std_filename)
@@ -243,13 +245,14 @@ def get_mean_std_metric_values(
     mean_data = []
     std_data = []
     for i in range(num_exp):
-        weights = absolute_weights[:i+1] / absolute_weights[:i+1].sum()
-        exp_mean_series = mean_df[(mean_df['training_exp'] == i) & (mean_df['eval_exp'] <= i)][metric].to_numpy()
-        exp_std_series = std_df[num_exp*i:num_exp*i+i+1][metric].to_numpy()
-        combined_mean = (exp_mean_series * weights[:i+1]).sum()
+        index = num_exp if include_future_experiences else i+1
+        weights = absolute_weights[:index] / absolute_weights[:index].sum()
+        exp_mean_series = mean_df[(mean_df['training_exp'] == i) & (mean_df['eval_exp'] < index)][metric].to_numpy()
+        exp_std_series = std_df[num_exp*i:num_exp*i+index][metric].to_numpy()
+        combined_mean = (exp_mean_series * weights[:index]).sum()
         exp_mean_series = (exp_mean_series - combined_mean)
         exp_std_series = exp_std_series**2 + exp_mean_series**2
-        exp_std_series = weights[:i+1] * exp_std_series
+        exp_std_series = weights[:index] * exp_std_series
         combined_std = exp_std_series.sum()
         mean_data.append(combined_mean)
         std_data.append(combined_std)
@@ -261,7 +264,7 @@ def get_mean_std_metric_values(
 
 
 def mean_std_df_wrapper(    
-    logging_config: LoggingConfiguration, metric='Forgetting_Exp', count=0
+    logging_config: LoggingConfiguration, metric='Forgetting_Exp', count=0, include_future_experiences=False
 ):
     try:
         log_folder = logging_config.get_log_folder(count=count, task_id=0)
@@ -272,7 +275,9 @@ def mean_std_df_wrapper(
             pow_type, cluster_type, dataset_type, raw_or_final='final',
             task=task, simulator_type=simulator_type
         )
-        mean_std_df = get_mean_std_metric_values(eval_data, log_folder, metric=metric)
+        mean_std_df = get_mean_std_metric_values(
+            eval_data, log_folder, metric=metric, include_future_experiences=include_future_experiences
+        )
         return mean_std_df
     except Exception as ex:
         return None
@@ -284,7 +289,8 @@ def mean_std_strategy_plots_wrapper(
     internal_metric_name: str = 'Forgetting_Exp', plot_metric_name: str = 'Forgetting',
     count: int = 0, title: str = None, save: bool = False, savepath: str = None,
     show: bool = True, grid: bool = True, legend: bool = True,
-    colors_and_linestyle_dict: dict[str, tuple[str, str]] = None
+    colors_and_linestyle_dict: dict[str, tuple[str, str]] = None,
+    include_future_experiences: bool = False
 ):
     """
     strategy_dicts = {Naive: Base}
@@ -304,7 +310,8 @@ def mean_std_strategy_plots_wrapper(
         logging_config.strategy = strategy_name
         logging_config.extra_log_folder = extra_folder
         mean_std_df = mean_std_df_wrapper(
-            logging_config, metric=internal_metric_name, count=count
+            logging_config, metric=internal_metric_name, count=count,
+            include_future_experiences=include_future_experiences
         )
         if mean_std_df is not None:
             strategy_dfs[strategy_metric_name] = (mean_std_df, color, linestyle)
@@ -323,7 +330,9 @@ def mean_std_al_plots_wrapper(
     internal_metric_name: str = 'Forgetting_Exp', plot_metric_name: str = 'Forgetting',
     count: int = 0, title: str = None, save: bool = False, savepath: str = None,
     show: bool = True, grid: bool = True, legend: bool = True,
-    colors_and_linestyle_dict: dict[str, tuple[str, str]] = None
+    colors_and_linestyle_dict: dict[str, tuple[str, str]] = None,
+    pure_cl_strategy: str = None, pure_cl_extra_log_folder: str = None,
+    include_future_experiences: bool = False
 ):
     """
     al_methods_dict = {Random: random_sketch_grad}
@@ -333,6 +342,20 @@ def mean_std_al_plots_wrapper(
     logging_config.active_learning = True
     # Get mean_std_df for each AL method
     al_method_dfs = {}
+    if pure_cl_strategy is not None:
+        al = logging_config.active_learning
+        elf = logging_config.extra_log_folder
+        logging_config.active_learning = False
+        logging_config.extra_log_folder = pure_cl_extra_log_folder
+        mean_std_df = mean_std_df_wrapper(
+            logging_config, metric=internal_metric_name, count=count,
+            include_future_experiences=include_future_experiences
+        )
+        if mean_std_df is not None:
+            al_method_dfs[f"Pure {pure_cl_strategy}"] = (mean_std_df, 'blue', '-')
+        logging_config.active_learning = al
+        logging_config.extra_log_folder = elf
+
     for al_method_metric_name, (al_method, extra_log_folder) in al_methods_dict.items():
         color, linestyle = colors_and_linestyle_dict[al_method_metric_name]
         logging_config.al_method = al_method
@@ -352,10 +375,62 @@ def mean_std_al_plots_wrapper(
         )
 
 
+def get_datasets_sizes_report(
+    simulator_type: str = 'qualikiz', pow_type: str = 'highpow', cluster_type: str = 'tau_based',
+    dataset_type: str = 'not_null', task: str = 'regression', verbose: bool = True,
+):
+    data_folder = os.path.join('data', simulator_type, 'cleaned', f"{pow_type}_cluster", cluster_type)
+    # Complete, raw, final
+    def get_csv_length(filepath: str) -> int:
+        """Get number of rows in CSV without loading into memory"""
+        with open(filepath) as f:
+            # Subtract 1 to account for header row
+            return sum(1 for _ in f) - 1
+
+    train_filename = f'raw_train_data_{task}_{dataset_type}.csv'
+    eval_filename = f'raw_eval_data_{task}_{dataset_type}.csv'
+    test_filename = f'raw_test_data_{task}_{dataset_type}.csv'
+    
+    raw_train_size = get_csv_length(os.path.join(data_folder, train_filename))
+    raw_eval_size = get_csv_length(os.path.join(data_folder, eval_filename)) 
+    raw_test_size = get_csv_length(os.path.join(data_folder, test_filename))
+
+    train_filename = f'final_train_data_{task}_{dataset_type}.csv'
+    eval_filename = f'final_eval_data_{task}_{dataset_type}.csv'
+    test_filename = f'final_test_data_{task}_{dataset_type}.csv'
+    
+    final_train_size = get_csv_length(os.path.join(data_folder, train_filename))
+    final_eval_size = get_csv_length(os.path.join(data_folder, eval_filename))
+    final_test_size = get_csv_length(os.path.join(data_folder, test_filename))
+
+    complete_filename = f'complete_dataset.csv'
+    complete_size = get_csv_length(os.path.join(data_folder, complete_filename))
+
+    result = {
+        'raw': {
+            'train': raw_train_size,
+            'eval': raw_eval_size,
+            'test': raw_test_size
+        },
+        'final': {
+            'train': final_train_size,
+            'eval': final_eval_size,
+            'test': final_test_size
+        },
+        'complete': complete_size
+    }
+    if verbose:
+        print(f"Complete dataset has {complete_size} items.")
+        for t, tname in zip(['raw', 'final'], ['Raw', 'Final']):
+            for p, pname in zip(['train', 'eval', 'test'], ['Training', 'Validation', 'Test']):
+                print(f"{tname} {pname} dataset has {result[t][p]} items.")
+    return result
+
+
 __all__ = [
     'load_models', 'load_baseline_csv_data',
     'build_full_datasets', 'build_experience_datasets',
     'outputs_direction_report', 'get_mean_std_metric_values',
     'mean_std_df_wrapper', 'mean_std_strategy_plots_wrapper',
-    'mean_std_al_plots_wrapper'
+    'mean_std_al_plots_wrapper', 'get_datasets_sizes_report'
 ]

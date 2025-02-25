@@ -89,9 +89,16 @@ class SimpleRegressionMLP(nn.Module, BaseModel):
         x = self.final(x)
         return x
 
-    def get_features(self, x):
+    def get_raw_features(self, x):
         x = x.contiguous()
         x = self.features(x)
+        return x
+    
+    def get_features(self, x, with_final: bool = True): # TODO True or False?
+        x = self.get_raw_features(x)
+        x = self.regressor(x)
+        if with_final:
+            x = self.final(x)
         return x
 
 

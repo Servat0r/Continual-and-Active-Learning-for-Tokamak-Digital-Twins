@@ -310,7 +310,7 @@ def task_training_loop(
 
         # Build logger
         mean_std_plugin = MeanStdPlugin([str(metric) for metric in metrics], num_experiences=num_campaigns)
-        csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=eval_stream)
+        csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=eval_stream, verbose=False)
         has_interactive_logger = int(os.getenv('INTERACTIVE', '0'))
         loggers = ([InteractiveLogger()] if has_interactive_logger else []) + [csv_logger, mean_std_plugin]
 
@@ -344,6 +344,9 @@ def task_training_loop(
             train_epochs=train_epochs, eval_mb_size=eval_mb_size, device=device, evaluator=eval_plugin,
             plugins=plugins, **cl_strategy_parameters
         )
+        
+        if cl_strategy_class == DoubleLFL:
+            cl_strategy.set_eval_stream(eval_stream)
 
         @time_logger(log_file=f'{log_folder}/timing.txt')
         def run(train_stream, eval_stream, cl_strategy, model, log_folder, write_intermediate_models):
@@ -370,6 +373,10 @@ def task_training_loop(
                             batch_selector.set_new_train_exp(train_exp, index=idx)
                         stdout_debug_print(f"Starting testing experience {idx}: ", color='green')
                         results.append(cl_strategy.eval(eval_stream))
+                        # NOTE NEW, to see what happens with test_stream also!
+                        csv_logger.set_test_stream_type()
+                        cl_strategy.eval(test_stream)
+                        csv_logger.set_val_stream_type()
                     elif mode == 'AL(CL)': # Active Learning
                         cl_strategy.start_active_learning_cycle()
                         # Downsampling of the full dataset

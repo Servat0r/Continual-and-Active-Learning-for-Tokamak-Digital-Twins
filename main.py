@@ -102,7 +102,9 @@ if __name__ == '__main__':
             save_folder = os.path.dirname(file_paths[0])
             # Save csv files for mean and std values
             get_means_std_over_evaluation_experiences_multiple_runs(
-                file_paths, os.path.join(save_folder, 'mean_values.csv'), os.path.join(save_folder, 'std_values.csv')
+                file_paths,
+                os.path.join(save_folder, 'mean_values.csv'),
+                os.path.join(save_folder, 'std_values.csv')
             )
             # Plot mean and std values
             task = results[0]['task']

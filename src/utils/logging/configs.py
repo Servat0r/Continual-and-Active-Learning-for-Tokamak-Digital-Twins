@@ -55,7 +55,6 @@ class LoggingConfiguration:
         base_extra_name = f'{simulator_prefix}{self.extra_log_folder} ({self.batch_size} batch size) '.lstrip() + \
             f"({self.hidden_size} hidden size)"
         if (self.simulator_type == 'tglf') or (self.hidden_layers != 2):
-            print('INIA')
             base_extra_name = base_extra_name + f' ({self.hidden_layers} hidden layers)'
         if self.active_learning:
             al_base_extra_name = self.get_al_log_folder()
@@ -64,8 +63,6 @@ class LoggingConfiguration:
             'logs', self.pow_type, self.cluster_type, self.task, self.dataset_type,
             outputs_string, self.strategy, base_extra_name
         )
-        print(index_dir)
-        print(base_extra_name)
         return index_dir
     
     def get_al_log_folder(self) -> str:
@@ -86,6 +83,7 @@ class LoggingConfiguration:
     
     def get_log_folder(self, count: int = -1, task_id: int = 0, suffix: bool = True) -> str:
         index_dir = self.__base_log_folder()
+        #print(f"Base log folder = {index_dir}")
         if suffix:
             current_count = 0
             last_dirname = None

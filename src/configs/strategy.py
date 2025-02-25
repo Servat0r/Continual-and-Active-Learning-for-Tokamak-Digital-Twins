@@ -1,10 +1,7 @@
 from typing import Any
 
-import torch
-from torch.optim import Adam
-from avalanche.training import Naive, Replay, EWC, SynapticIntelligence, \
+from avalanche.training import Naive, Replay, SynapticIntelligence, \
     GEM, MAS, Cumulative, JointTraining, FromScratchTraining, LFL
-from avalanche.training.plugins import FromScratchTrainingPlugin
 
 from .parser import *
 from ..utils.strategies import *
@@ -17,15 +14,17 @@ __strategy_dict = {
     'FromScratchTraining': FromScratchTraining,
     'Replay': Replay,
     'PercentageReplay': PercentageReplay,
-    'EWC': EWC,
+    'EWC': VariableEWC,
     'SI': SynapticIntelligence,
     'GEM': GEM,
     'MAS': MAS,
     'LFL': LFL,
+    'DoubleLFL': DoubleLFL,
     'EWCReplay': EWCReplay,
     'MASReplay': MASReplay,
     'GEMReplay': GEMReplay,
     'SIReplay': SIReplay,
+    'LFLReplay': LFLReplay
 }
 
 
