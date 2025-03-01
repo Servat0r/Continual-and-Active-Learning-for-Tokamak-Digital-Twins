@@ -475,6 +475,9 @@ def task_training_loop(
                             al_queue.update(1)
                             cl_strategy.train(sel_train_exp)
                         results.append(cl_strategy.eval(eval_stream))
+                        csv_logger.set_test_stream_type()
+                        cl_strategy.eval(test_stream)
+                        csv_logger.set_val_stream_type()
                     # Save models after each experience
                     if write_intermediate_models:
                         stdout_debug_print(f"Saving model after experience {idx}: ", color='red')
@@ -496,9 +499,9 @@ def task_training_loop(
                 json.dump(results, fp, indent=4)
 
             # Finally close the logger and evaluate on test stream
-            csv_logger.set_test_stream_type()
-            final_test_results = cl_strategy.eval(test_stream)
+            #csv_logger.set_test_stream_type()
             csv_logger.close()
+            final_test_results = cl_strategy.eval(test_stream)
             # Filter by results on test_stream
             final_test_results = {
                 k: v for k, v in final_test_results.items() if "test_stream" in k

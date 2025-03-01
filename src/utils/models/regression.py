@@ -188,9 +188,9 @@ class GaussianRegressionMLP(nn.Module, BaseModel):
         return torch.cat([mean, std], dim=1)
 
     def get_features(self, x):
-        x = x.contiguous()
-        x = self.features(x)
-        return x
+        #x = x.contiguous()
+        #x = self.features(x)
+        return self.forward(x)
 
 
 class SimpleConv1DModel(nn.Module):

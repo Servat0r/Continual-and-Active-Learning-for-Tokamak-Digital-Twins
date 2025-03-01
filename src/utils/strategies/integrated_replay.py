@@ -5,14 +5,13 @@ from torch.nn import Module
 from torch.optim import Optimizer
 
 from avalanche.core import SupervisedPlugin
-from avalanche.training import EWC, SynapticIntelligence, GEM, MAS, LFL, FromScratchTraining
+from avalanche.training import EWC, SynapticIntelligence, GEM, MAS, LFL
 from avalanche.training.plugins import ReplayPlugin, EvaluationPlugin
 from avalanche.training.plugins.evaluation import default_evaluator
 from avalanche.training.templates.strategy_mixin_protocol import CriterionType
 
 
 class EWCReplay(EWC):
-
     """
     Simple combination of Elastic Weight Consolidation with a Replay plugin.
     """

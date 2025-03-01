@@ -83,7 +83,6 @@ class LoggingConfiguration:
     
     def get_log_folder(self, count: int = -1, task_id: int = 0, suffix: bool = True) -> str:
         index_dir = self.__base_log_folder()
-        #print(f"Base log folder = {index_dir}")
         if suffix:
             current_count = 0
             last_dirname = None

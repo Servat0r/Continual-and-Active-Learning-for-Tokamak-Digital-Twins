@@ -29,6 +29,7 @@ parser.add_argument('--batch_size', type=int, default=4096, help='Batch size')
 parser.add_argument('--hidden_size', type=int, default=1024, help='Hidden size')
 parser.add_argument('--hidden_layers', type=int, default=2, help='Number of hidden layers')
 parser.add_argument('--count', type=int, default=-1, help='Run ordinal number')
+parser.add_argument('--set_type', type=str, default='eval', help='Set type: either "eval" or "test"')
 
 args = parser.parse_args()
 
@@ -41,11 +42,12 @@ logging_config = LoggingConfiguration(
 
 file_paths = []
 task_id = 0
+set_type = args.set_type
 
 while True:
     try:
         log_folder = logging_config.get_log_folder(count=args.count, task_id=task_id, suffix=True)
-        file_paths.append(os.path.join(log_folder, 'eval_results_experience.csv'))
+        file_paths.append(os.path.join(log_folder, f'{set_type}_results_experience.csv'))
         task_id += 1
     except:
         break
@@ -58,8 +60,8 @@ save_folder = os.path.dirname(file_paths[0])
 
 get_means_std_over_evaluation_experiences_multiple_runs(
     file_paths,
-    os.path.join(save_folder, 'mean_values.csv'),
-    os.path.join(save_folder, 'std_values.csv')
+    os.path.join(save_folder, f'{set_type}_mean_values.csv'),
+    os.path.join(save_folder, f'{set_type}_std_values.csv')
 )
 
 # Get metric names and plot
@@ -75,9 +77,9 @@ is_joint_training = len(first_file_data['training_exp'].unique()) == 1
 if is_joint_training:
     mean_std_evaluation_experiences_plots(
         file_paths, metric_list, title_list, ylabel_list,
-        start_exp=0, end_exp=0, num_exp=1
+        start_exp=0, end_exp=0, num_exp=1, set_type=set_type
     )
 else:
     mean_std_evaluation_experiences_plots(
-        file_paths, metric_list, title_list, ylabel_list
+        file_paths, metric_list, title_list, ylabel_list, set_type=set_type
     )

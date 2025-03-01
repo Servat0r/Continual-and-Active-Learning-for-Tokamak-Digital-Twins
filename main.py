@@ -94,26 +94,32 @@ if __name__ == '__main__':
             ]
         # Plot means and standard deviations
         if num_jobs > 1:
-            file_paths = [
-                os.path.join(result['log_folder'], 'eval_results_experience.csv') for result in results if result is not None
-            ]
-            if (len(file_paths) != len(results)) and (len(tasks_list) < num_jobs):
-                raise RuntimeError(f"Something went wrong during training: {len(file_paths)} vs. {len(results)}")
-            save_folder = os.path.dirname(file_paths[0])
-            # Save csv files for mean and std values
-            get_means_std_over_evaluation_experiences_multiple_runs(
-                file_paths,
-                os.path.join(save_folder, 'mean_values.csv'),
-                os.path.join(save_folder, 'std_values.csv')
-            )
-            # Plot mean and std values
-            task = results[0]['task']
-            metric_list = get_metric_names_list(task)
-            title_list = get_title_names_list(task)
-            ylabel_list = get_ylabel_names_list(task)
-            if results[0]['is_joint_training']:
-                mean_std_evaluation_experiences_plots(
-                    file_paths, metric_list, title_list, ylabel_list, start_exp=0, end_exp=0, num_exp=1,
+            for set_type in ['eval', 'test']: #TODO Sistemare!
+                file_paths = [
+                    os.path.join(
+                        result['log_folder'], f'{set_type}_results_experience.csv'
+                    ) for result in results if result is not None
+                ]
+                if (len(file_paths) != len(results)) and (len(tasks_list) < num_jobs):
+                    raise RuntimeError(f"Something went wrong during training: {len(file_paths)} vs. {len(results)}")
+                save_folder = os.path.dirname(file_paths[0])
+                # Save csv files for mean and std values
+                get_means_std_over_evaluation_experiences_multiple_runs(
+                    file_paths,
+                    os.path.join(save_folder, f'{set_type}_mean_values.csv'),
+                    os.path.join(save_folder, f'{set_type}_std_values.csv')
                 )
-            else:
-                mean_std_evaluation_experiences_plots(file_paths, metric_list, title_list, ylabel_list)
+                # Plot mean and std values
+                task = results[0]['task']
+                metric_list = get_metric_names_list(task)
+                title_list = get_title_names_list(task)
+                ylabel_list = get_ylabel_names_list(task)
+                if results[0]['is_joint_training']:
+                    mean_std_evaluation_experiences_plots(
+                        file_paths, metric_list, title_list, ylabel_list,
+                        start_exp=0, end_exp=0, num_exp=1, set_type=set_type
+                    )
+                else:
+                    mean_std_evaluation_experiences_plots(
+                        file_paths, metric_list, title_list, ylabel_list, set_type=set_type
+                    )

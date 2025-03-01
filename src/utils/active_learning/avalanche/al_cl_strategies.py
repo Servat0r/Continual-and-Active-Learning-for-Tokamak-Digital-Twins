@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from avalanche.training.templates import SupervisedTemplate
 
 from .al_plugins import *
-from ...strategies import PercentageReplay
+from ...strategies import PercentageReplay, EWCReplay
 
 
 def al_cl_strategy_converter(cl_strategy_class: Type[SupervisedTemplate]) -> Type[SupervisedTemplate]:
@@ -31,7 +31,8 @@ def al_cl_strategy_converter(cl_strategy_class: Type[SupervisedTemplate]) -> Typ
         GEM: ALGEM,
         MAS: ALMAS,
         EWC: ALEWC,
-        Cumulative: ALCumulative
+        Cumulative: ALCumulative,
+        EWCReplay: ALEWCReplay
     }
     converted_class = _dict.get(cl_strategy_class, None)
     if converted_class is None:
@@ -435,6 +436,50 @@ class ALCumulative(ALCLTemplate):
         return Cumulative
 
 
+class ALEWCReplay(ALEWC):
+    def __init__(
+        self,
+        *,
+        model: Module,
+        optimizer: Optimizer,
+        criterion: CriterionType,
+        ewc_lambda: float,
+        mode: str = "separate",
+        decay_factor: Optional[float] = None,
+        keep_importance_data: bool = False,
+        train_mb_size: int = 1,
+        train_epochs: int = 1,
+        eval_mb_size: Optional[int] = None,
+        device: Union[str, torch.device] = "cpu",
+        plugins: Optional[List[SupervisedPlugin]] = None,
+        evaluator: Union[
+            EvaluationPlugin, Callable[[], EvaluationPlugin]
+        ] = default_evaluator,
+        eval_every=-1,
+        mem_size: int = 200,
+        batch_size: Optional[int] = None,
+        batch_size_mem: Optional[int] = None,
+        task_balanced_dataloader: bool = False,
+        storage_policy: Optional["ExemplarsBuffer"] = None,
+        **base_kwargs
+    ):
+        replay_plugin = ALReplayPlugin(
+            mem_size=mem_size,
+            batch_size=batch_size,
+            batch_size_mem=batch_size_mem,
+            task_balanced_dataloader=task_balanced_dataloader,
+            storage_policy=storage_policy
+        )
+        plugins = plugins if plugins is not None else []
+        plugins.append(replay_plugin)
+        super(ALEWCReplay, self).__init__(
+            model=model, optimizer=optimizer, criterion=criterion, ewc_lambda=ewc_lambda,
+            mode=mode, decay_factor=decay_factor, keep_importance_data=keep_importance_data,
+            train_mb_size=train_mb_size, train_epochs=train_epochs, eval_mb_size=eval_mb_size,
+            device=device, plugins=plugins, evaluator=evaluator, eval_every=eval_every, **base_kwargs
+        )
+
+
 __all__ = [
     'al_cl_strategy_converter',
     'ALCLTemplate',
@@ -445,5 +490,6 @@ __all__ = [
     'ALGEM',
     'ALMAS',
     'ALEWC',
-    'ALCumulative'
+    'ALCumulative',
+    'ALEWCReplay'
 ]

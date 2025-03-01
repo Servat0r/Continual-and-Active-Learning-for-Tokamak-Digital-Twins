@@ -106,6 +106,26 @@ class CustomCSVLogger(BaseLogger):
                     file=file,
                     flush=True,
                 )
+        for filetype, file in self.test_files.items():
+            if filetype == 'epoch':
+                print(
+                    "training_exp",
+                    "epoch",
+                    "lr",
+                    *self.metric_names[filetype],
+                    sep=",",
+                    file=file,
+                    flush=True,
+                )
+            else:
+                print(
+                    "eval_exp",
+                    "training_exp",
+                    *self.metric_names[filetype],
+                    sep=",",
+                    file=file,
+                    flush=True,
+                )
         self.val_stream = None
         self.val_experiences = None
         if val_stream is not None:

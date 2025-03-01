@@ -14,11 +14,21 @@ parser.add_argument(
 )
 parser.add_argument("--task_id", type=int, default=0, help="Task ID")
 parser.add_argument('--extra_log_folder', type=str, default='Base')
+parser.add_argument(
+    "--window_size", type=int, default=1,
+    help="Size of the window over which to compute the (smoothed) average per epoch"
+)
+parser.add_argument("--start_exp", type=int, default=0, help="Starting Experience")
+parser.add_argument("--end_exp", type=int, default=9, help="Ending Experience")
 
 if __name__ == '__main__':
     args = parser.parse_args()
     pow_type, cluster_type, dataset_type, task, simulator_type = \
         args.pow_type, args.cluster_type, args.dataset_type, args.task, args.simulator_type
+    
+    window_size = args.window_size
+    if not (window_size % 2): # window_size is even
+        raise RuntimeError(f"Window size must be odd, got {window_size}.")
 
     # Get log folder from config
     config = LoggingConfiguration(
@@ -58,7 +68,9 @@ if __name__ == '__main__':
     )
 
     # Get number of experiences
-    num_experiences = train_df['training_exp'].nunique()
+    #num_experiences = train_df['training_exp'].nunique()
+    start_exp, end_exp = args.start_exp, args.end_exp
+    num_experiences = end_exp - start_exp + 1
     # Calculate optimal number of rows and columns for subplots
     # Find factors of num_experiences
     m = int(np.sqrt(num_experiences))
@@ -72,25 +84,63 @@ if __name__ == '__main__':
         axes = np.array([axes])
     axes = axes.flatten()
 
-    for exp in range(num_experiences):
+    for exp in range(start_exp, start_exp + num_experiences):
         # Get data for this experience
         train_exp_data = train_df[train_df['training_exp'] == exp]
         val_exp_data = val_df[val_df['training_exp'] == exp]
-        print(len(val_exp_data))
+        print(f"Experience {exp} has {len(val_exp_data)} epochs")
+        exp_offset = exp - start_exp
+
+        # Helper function to compute windowed average
+        def compute_window_average(data, epochs, window_size):
+            # Compute moving average of losses with window_size
+            half_window = (window_size - 1) // 2
+            smoothed = np.zeros(len(epochs))
+            for i, epoch in enumerate(epochs):
+                # Get window boundaries
+                window_start = max(0, epoch - half_window)
+                window_end = min(epochs[-1], epoch + half_window)
+                
+                # Get indices within window
+                window_mask = (epochs >= window_start) & (epochs <= window_end)
+                
+                # Compute average over window
+                smoothed[i] = np.mean(data[window_mask])
+            return smoothed
+
+        # Smooth training loss
+        train_epochs = train_exp_data['epoch'].values
+        train_loss = train_exp_data['Loss_Epoch'].values
+        train_exp_data['Loss_Epoch_Smoothed'] = compute_window_average(train_loss, train_epochs, window_size)
+
+        # Smooth validation loss 
+        val_epochs = val_exp_data['epoch'].values
+        val_loss = val_exp_data['Loss_Epoch'].values
+        val_exp_data['Loss_Epoch_Smoothed'] = compute_window_average(val_loss, val_epochs, window_size)
 
         # Plot training loss
-        axes[exp].plot(train_exp_data['epoch'], train_exp_data['Loss_Epoch'], 
+        axes[exp_offset].plot(train_exp_data['epoch'], train_exp_data['Loss_Epoch'], 
                       label='Training Loss', color='blue')
         
+        # Plot smoothed training loss
+        if window_size != 1:
+            axes[exp_offset].plot(train_exp_data['epoch'], train_exp_data['Loss_Epoch_Smoothed'], 
+                        label='Smoothed Training Loss', color='black')
+        
         # Plot validation loss
-        axes[exp].plot(val_exp_data['epoch'], val_exp_data['Loss_Epoch'],
+        axes[exp_offset].plot(val_exp_data['epoch'], val_exp_data['Loss_Epoch'],
                       label='Validation Loss', color='red')
 
-        axes[exp].set_title(f'Experience {exp}')
-        axes[exp].set_xlabel('Epoch')
-        axes[exp].set_ylabel('Loss')
-        axes[exp].legend()
-        axes[exp].grid(True)
+        # Plot smoothed validation loss
+        if window_size != 1:
+            axes[exp_offset].plot(val_exp_data['epoch'], val_exp_data['Loss_Epoch_Smoothed'], 
+                        label='Smoothed Validation Loss', color='orange')
+        
+        axes[exp_offset].set_title(f'Experience {exp}')
+        axes[exp_offset].set_xlabel('Epoch')
+        axes[exp_offset].set_ylabel('Loss')
+        axes[exp_offset].legend()
+        axes[exp_offset].grid(True)
 
     plt.tight_layout()
     plt.savefig(os.path.join(log_folder, f'training_validation_loss_task_{args.task_id}.png'))

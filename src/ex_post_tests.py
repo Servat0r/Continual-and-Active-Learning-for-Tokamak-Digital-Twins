@@ -232,7 +232,7 @@ def outputs_direction_report(model, inputs, targets, ef_columns=None, mult_facto
 
 
 def get_mean_std_metric_values(
-    dataset, log_folder, mean_filename='mean_values.csv', std_filename='std_values.csv',
+    dataset, log_folder, mean_filename='eval_mean_values.csv', std_filename='std_values.csv',
     metric='Forgetting_Exp', num_exp=10, include_future_experiences=False
 ):
     mean_file_path = os.path.join(log_folder, mean_filename)
@@ -264,7 +264,8 @@ def get_mean_std_metric_values(
 
 
 def mean_std_df_wrapper(    
-    logging_config: LoggingConfiguration, metric='Forgetting_Exp', count=0, include_future_experiences=False
+    logging_config: LoggingConfiguration, mean_filepath: str, std_filepath: str,
+    metric='Forgetting_Exp', count=0, include_future_experiences=False,
 ):
     try:
         log_folder = logging_config.get_log_folder(count=count, task_id=0)
@@ -276,7 +277,8 @@ def mean_std_df_wrapper(
             task=task, simulator_type=simulator_type
         )
         mean_std_df = get_mean_std_metric_values(
-            eval_data, log_folder, metric=metric, include_future_experiences=include_future_experiences
+            eval_data, log_folder, mean_filename=mean_filepath, std_filename=std_filepath,
+            metric=metric, include_future_experiences=include_future_experiences
         )
         return mean_std_df
     except Exception as ex:
@@ -286,10 +288,10 @@ def mean_std_df_wrapper(
 # Comparing multiple strategies on a metric
 def mean_std_strategy_plots_wrapper(
     logging_config: LoggingConfiguration, strategy_dicts: dict[str, str | tuple[str, str]],
-    internal_metric_name: str = 'Forgetting_Exp', plot_metric_name: str = 'Forgetting',
-    count: int = 0, title: str = None, save: bool = False, savepath: str = None,
-    show: bool = True, grid: bool = True, legend: bool = True,
-    colors_and_linestyle_dict: dict[str, tuple[str, str]] = None,
+    mean_filename: str, std_filename: str, internal_metric_name: str = 'Forgetting_Exp',
+    plot_metric_name: str = 'Forgetting', count: int = 0, title: str = None,
+    save: bool = False, savepath: str = None, show: bool = True, grid: bool = True,
+    legend: bool = True, colors_and_linestyle_dict: dict[str, tuple[str, str]] = None,
     include_future_experiences: bool = False
 ):
     """
@@ -311,6 +313,7 @@ def mean_std_strategy_plots_wrapper(
         logging_config.extra_log_folder = extra_folder
         mean_std_df = mean_std_df_wrapper(
             logging_config, metric=internal_metric_name, count=count,
+            mean_filepath=mean_filename, std_filepath=std_filename,
             include_future_experiences=include_future_experiences
         )
         if mean_std_df is not None:
@@ -327,10 +330,10 @@ def mean_std_strategy_plots_wrapper(
 
 def mean_std_al_plots_wrapper(
     logging_config: LoggingConfiguration, al_methods_dict: dict[str, tuple[str, str]],
-    internal_metric_name: str = 'Forgetting_Exp', plot_metric_name: str = 'Forgetting',
-    count: int = 0, title: str = None, save: bool = False, savepath: str = None,
-    show: bool = True, grid: bool = True, legend: bool = True,
-    colors_and_linestyle_dict: dict[str, tuple[str, str]] = None,
+    mean_filename: str, std_filename: str, internal_metric_name: str = 'Forgetting_Exp',
+    plot_metric_name: str = 'Forgetting', count: int = 0, title: str = None,
+    save: bool = False, savepath: str = None, show: bool = True, grid: bool = True,
+    legend: bool = True, colors_and_linestyle_dict: dict[str, tuple[str, str]] = None,
     pure_cl_strategy: str = None, pure_cl_extra_log_folder: str = None,
     include_future_experiences: bool = False
 ):
@@ -349,6 +352,7 @@ def mean_std_al_plots_wrapper(
         logging_config.extra_log_folder = pure_cl_extra_log_folder
         mean_std_df = mean_std_df_wrapper(
             logging_config, metric=internal_metric_name, count=count,
+            mean_filepath=mean_filename, std_filepath=std_filename,
             include_future_experiences=include_future_experiences
         )
         if mean_std_df is not None:
@@ -361,7 +365,8 @@ def mean_std_al_plots_wrapper(
         logging_config.al_method = al_method
         logging_config.extra_log_folder = extra_log_folder
         mean_std_df = mean_std_df_wrapper(
-            logging_config, metric=internal_metric_name, count=count
+            logging_config, metric=internal_metric_name, count=count,
+            mean_filepath=mean_filename, std_filepath=std_filename
         )
         if mean_std_df is not None:
             al_method_dfs[al_method_metric_name] = (mean_std_df, color, linestyle)
