@@ -27,7 +27,12 @@ from ..utils.active_learning import al_cl_strategy_converter
 from ..utils.strategies.plugins import PercentageReplayPlugin
 
 
-def downsample_experience(train_exp: DatasetExperience, downsampling_factor: int, seed: int = 42) -> DatasetExperience:
+def downsample_experience(
+        train_exp: DatasetExperience,
+        downsampling_factor: int,
+        seed: int = 42,
+        factor_type: str = 'proportional' # proportional => length // factor; absolute => factor
+) -> DatasetExperience:
     """
     Downsample a training experience by randomly selecting 1/downsampling_factor of the data,
     attempting to maintain stratification across orders of magnitude.
@@ -44,7 +49,7 @@ def downsample_experience(train_exp: DatasetExperience, downsampling_factor: int
     
     if downsampling_factor <= 1:
         return train_exp
-        
+
     # Get inputs and targets from the dataset
     dataset = train_exp.dataset._datasets[0]
     X, y = dataset.inputs, dataset.targets
@@ -59,10 +64,31 @@ def downsample_experience(train_exp: DatasetExperience, downsampling_factor: int
     
     selected_indices = []
     
+    sampled_sizes = None
+    if factor_type == 'absolute':
+        sampled_sizes = []
+        for stratum in unique_strata:
+            stratum_indices = torch.where(combined_magnitudes == stratum)[0]
+            current_sample_size = int(round(len(stratum_indices) / len(combined_magnitudes) * downsampling_factor, 0))
+            stdout_debug_print(f"Preliminarily sampling {current_sample_size} items", color='green')
+            sampled_sizes.append(current_sample_size)
+        total = sum(sampled_sizes)
+        stdout_debug_print(f"Preliminary total = {total}", color='green')
+        i = 0
+        while total + i < downsampling_factor:
+            sampled_sizes[i % len(sampled_sizes)] += 1
+            i += 1
+        stdout_debug_print(f"Final sample sizes = {sampled_sizes}", color='green')
+    
     # Sample from each stratum
-    for stratum in unique_strata:
+    for idx, stratum in enumerate(unique_strata):
         stratum_indices = torch.where(combined_magnitudes == stratum)[0]
-        num_to_sample = max(len(stratum_indices) // downsampling_factor, 0) # NOTE: Previously was 1
+        if factor_type == 'proportional':
+            num_to_sample = max(len(stratum_indices) // downsampling_factor, 0) # NOTE: Previously was 1
+        elif factor_type == 'absolute':
+            num_to_sample = sampled_sizes[idx]
+        else:
+            raise RuntimeError(f"Unknown factor_type = \"{factor_type}\"")
         stdout_debug_print(f"Sampled = {num_to_sample}", color='cyan')
         
         # Randomly sample indices from this stratum
@@ -127,6 +153,7 @@ def task_training_loop(
     dtype = config_parser['dtype']
     task = config_parser['task']
     full_first_train_set = config_parser['full_first_train_set']
+    first_train_set_size = config_parser['first_train_set_size']
     # Dataset
     input_columns = config_parser['input_columns']
     output_columns = config_parser['output_columns']
@@ -365,8 +392,13 @@ def task_training_loop(
                     stdout_debug_print(f"Starting training experience {idx}: ", color='green')
                     index_condition = (idx > 0) if full_first_train_set else True
                     if (mode == 'CL') or \
-                    (mode == 'AL(CL)' and len(train_exp.dataset) / downsampling_factor <= max_batch_size) or \
-                    (mode == 'AL(CL)' and not index_condition):
+                    (mode == 'AL(CL)' and not index_condition) or \
+                    (mode == 'AL(CL)' and len(train_exp.dataset) / downsampling_factor <= max_batch_size):
+                        if first_train_set_size is not None:
+                            # E.g., we want 5120 examples in the first training experience
+                            train_exp = downsample_experience(
+                                train_exp, first_train_set_size, factor_type='absolute'
+                            )
                         # Training Cycle
                         cl_strategy.train(train_exp)
                         if mode == 'AL(CL)':

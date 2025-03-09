@@ -99,5 +99,27 @@ class RootMSELoss(nn.Module):
             raise ValueError(f"Invalid reduction mode: {self.reduction}")
 
 
+class WeightedMSELoss(nn.Module):
+    def __init__(self, reduction='mean'):
+        """
+        Weighted Mean Square Error Loss.
+        :param reduction: Specifies the reduction to apply: 'none', 'mean', or 'sum'.
+        """
+        super(WeightedMSELoss, self).__init__()
+        self.reduction = reduction
+        if reduction not in ['mean', 'sum', 'none']:
+            raise ValueError(f"Invalid reduction mode: {reduction}")
 
-__all__ = ["GaussianNLLLoss", "MSECosineSimilarityLoss", "RootMSELoss"]
+    def forward(self, outputs, targets, weights=None):
+        """
+        Forward pass of weighted MSE loss.
+        :param outputs: Model predictions
+        :param targets: Ground truth values
+        :param weights: Optional tensor of weights per sample. Must be same length as outputs.
+        :return: Weighted MSE loss
+        """
+        return F.mse_loss(outputs, targets, reduction='none', weight=weights)
+
+
+
+__all__ = ["GaussianNLLLoss", "MSECosineSimilarityLoss", "RootMSELoss", "WeightedMSELoss"]

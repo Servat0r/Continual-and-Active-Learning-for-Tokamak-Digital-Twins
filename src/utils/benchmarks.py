@@ -100,6 +100,12 @@ def make_benchmark(
             mult = 1 if x['has_turbulence'] == 1 else -1
             return x['campaign'] * mult
         data['stratify'] = data.apply(stratification_function, axis=1)
+        # Now ensure that no class has just one sample
+        counts = data['stratify'].value_counts()
+        valid_classes = counts[counts > 1].index
+        stdout_debug_print(f"Before filtering out classes with less than 2 samples: {len(data)} items", color='red')
+        data = data[data['stratify'].isin(valid_classes)]
+        stdout_debug_print(f"After having filtered out classes with less than 2 samples: {len(data)} items", color='red')
         # Split the data into train and test sets with stratification
         dev_data, test_data = train_test_split(
             data, test_size=test_size, random_state=42, shuffle=True, stratify=data.stratify

@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 from .al_plugins import *
 from ...strategies import PercentageReplay, EWCReplay
+from ...misc import stdout_debug_print
 
 
 def al_cl_strategy_converter(cl_strategy_class: Type[SupervisedTemplate]) -> Type[SupervisedTemplate]:
@@ -430,6 +431,10 @@ class ALCumulative(ALCLTemplate):
         elif not self.is_in_active_learning():
             self.dataset = concat_datasets([self.dataset, exp.dataset])
         self.adapted_dataset = self.dataset
+    
+    def _before_training_exp(self, **kwargs):
+        super()._before_training_exp(**kwargs)
+        stdout_debug_print(f"Adapted dataset has {len(self.adapted_dataset)} elements", color='green')
     
     @classmethod
     def base_cl_class(cls):

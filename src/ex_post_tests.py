@@ -32,6 +32,27 @@ def get_normalization_transforms(
     return transform, target_transform
 
 
+def load_complete_dataset(
+    pow_type: str, cluster_type: str, dataset_type: str ='not_null', simulator_type: str = 'qualikiz'
+):
+    """
+    Loads the complete dataset for the given parameters. If dataset_type == "not_null", drops the entries
+    with "has_turbulence = False".
+    """
+    data_folder = f'data/{simulator_type}/cleaned/{pow_type}_cluster/{cluster_type}'
+    df = pd.read_csv(f"{data_folder}/complete_dataset.csv")
+    if simulator_type == 'tglf':
+        for column in TGLF_HIGHPOW_OUTPUTS:
+            df = df[df[column] <= 500.0]
+        df = df[df['efe'] >= 0.0]
+        df = df[df['efi'] >= 0.0]
+    print(f"Complete dataset has {len(df)} items")
+    if dataset_type == 'not_null':
+        df = df[df['has_turbulence'] == True]
+        print(f"Filtered dataset has {len(df)} items")
+    return df
+
+
 def load_baseline_csv_data(
         pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
         raw_or_final: str = 'final', train: bool = True,
@@ -329,7 +350,8 @@ def mean_std_strategy_plots_wrapper(
 
 
 def mean_std_al_plots_wrapper(
-    logging_config: LoggingConfiguration, al_methods_dict: dict[str, tuple[str, str]],
+    #logging_config: LoggingConfiguration, al_methods_dict: dict[str, tuple[str, str]],
+    configs_and_dicts: list[tuple[LoggingConfiguration, dict[str, tuple[str, str]]]],
     mean_filename: str, std_filename: str, internal_metric_name: str = 'Forgetting_Exp',
     plot_metric_name: str = 'Forgetting', count: int = 0, title: str = None,
     save: bool = False, savepath: str = None, show: bool = True, grid: bool = True,
@@ -342,34 +364,35 @@ def mean_std_al_plots_wrapper(
     al_methods_dict = {Uncertainty: uncertainty_sketch_grad}
     colors_and_linestyle_dict = {Random: ('red', '-')}
     """
-    logging_config.active_learning = True
-    # Get mean_std_df for each AL method
     al_method_dfs = {}
-    if pure_cl_strategy is not None:
-        al = logging_config.active_learning
-        elf = logging_config.extra_log_folder
-        logging_config.active_learning = False
-        logging_config.extra_log_folder = pure_cl_extra_log_folder
-        mean_std_df = mean_std_df_wrapper(
-            logging_config, metric=internal_metric_name, count=count,
-            mean_filepath=mean_filename, std_filepath=std_filename,
-            include_future_experiences=include_future_experiences
-        )
-        if mean_std_df is not None:
-            al_method_dfs[f"Pure {pure_cl_strategy}"] = (mean_std_df, 'blue', '-')
-        logging_config.active_learning = al
-        logging_config.extra_log_folder = elf
+    for (logging_config, al_methods_dict) in configs_and_dicts:
+        logging_config.active_learning = True
+        # Get mean_std_df for each AL method
+        if pure_cl_strategy is not None:
+            al = logging_config.active_learning
+            elf = logging_config.extra_log_folder
+            logging_config.active_learning = False
+            logging_config.extra_log_folder = pure_cl_extra_log_folder
+            mean_std_df = mean_std_df_wrapper(
+                logging_config, metric=internal_metric_name, count=count,
+                mean_filepath=mean_filename, std_filepath=std_filename,
+                include_future_experiences=include_future_experiences
+            )
+            if mean_std_df is not None:
+                al_method_dfs[f"Pure {pure_cl_strategy}"] = (mean_std_df, 'blue', '-')
+            logging_config.active_learning = al
+            logging_config.extra_log_folder = elf
 
-    for al_method_metric_name, (al_method, extra_log_folder) in al_methods_dict.items():
-        color, linestyle = colors_and_linestyle_dict[al_method_metric_name]
-        logging_config.al_method = al_method
-        logging_config.extra_log_folder = extra_log_folder
-        mean_std_df = mean_std_df_wrapper(
-            logging_config, metric=internal_metric_name, count=count,
-            mean_filepath=mean_filename, std_filepath=std_filename
-        )
-        if mean_std_df is not None:
-            al_method_dfs[al_method_metric_name] = (mean_std_df, color, linestyle)
+        for al_method_metric_name, (al_method, extra_log_folder) in al_methods_dict.items():
+            color, linestyle = colors_and_linestyle_dict[al_method_metric_name]
+            logging_config.al_method = al_method
+            logging_config.extra_log_folder = extra_log_folder
+            mean_std_df = mean_std_df_wrapper(
+                logging_config, metric=internal_metric_name, count=count,
+                mean_filepath=mean_filename, std_filepath=std_filename
+            )
+            if mean_std_df is not None:
+                al_method_dfs[al_method_metric_name] = (mean_std_df, color, linestyle)
     # Plot metrics across AL methods
     if al_method_dfs:
         plot_metric_over_multiple_strategies(
@@ -433,7 +456,7 @@ def get_datasets_sizes_report(
 
 
 __all__ = [
-    'load_models', 'load_baseline_csv_data',
+    'load_models', 'load_baseline_csv_data', 'load_complete_dataset',
     'build_full_datasets', 'build_experience_datasets',
     'outputs_direction_report', 'get_mean_std_metric_values',
     'mean_std_df_wrapper', 'mean_std_strategy_plots_wrapper',

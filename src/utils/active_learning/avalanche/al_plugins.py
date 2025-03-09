@@ -3,6 +3,7 @@ from typing import Any, Optional, TYPE_CHECKING, TextIO
 from abc import ABC
 import sys
 import torch
+from avalanche.core import Template
 
 from avalanche.training.plugins.strategy_plugin import SupervisedPlugin
 from avalanche.models import avalanche_forward
@@ -41,7 +42,11 @@ class ContinualActiveLearningPlugin(SupervisedPlugin, supports_distributed=True)
     def get_train_exp_counter(self) -> int:
         return self._train_exp_counter
     
+    def before_training_exp(self, strategy: Any, *args, **kwargs) -> Any:
+        super().before_training_exp(strategy, *args, **kwargs)
+    
     def after_training_exp(self, strategy: Any, *args, **kwargs) -> Any:
+        super().after_training_exp(strategy, *args, **kwargs)
         if not self.is_in_active_learning():
             self._train_exp_counter += 1
 
@@ -71,11 +76,11 @@ class ALReplayPlugin(ContinualActiveLearningPlugin, ReplayPlugin):
         drop_last: bool = False,
         **kwargs
     ):
-        return super().before_training_exp(strategy, num_workers, shuffle, drop_last, **kwargs)
+        super().before_training_exp(strategy, num_workers, shuffle, drop_last, **kwargs)
     
-    def after_eval_exp(self, strategy: Any, *args, **kwargs) -> Any:
+    def after_training_exp(self, strategy: Any, *args, **kwargs) -> Any:
         if not self.is_in_active_learning():
-            return super().after_eval_exp(strategy, *args, **kwargs)
+            super().after_training_exp(strategy, *args, **kwargs)
 
 
 class ALGEMPlugin(ContinualActiveLearningPlugin, GEMPlugin):

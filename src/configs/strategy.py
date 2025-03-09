@@ -20,6 +20,7 @@ __strategy_dict = {
     'MAS': MAS,
     'LFL': LFL,
     'DoubleLFL': DoubleLFL,
+    'LFLEWC': LFLEWC,
     'EWCReplay': EWCReplay,
     'MASReplay': MASReplay,
     'GEMReplay': GEMReplay,
