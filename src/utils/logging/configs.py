@@ -52,13 +52,14 @@ class LoggingConfiguration:
     def __base_log_folder(self) -> str:
         outputs_string = self.outputs if isinstance(self.outputs, str) else '_'.join(self.outputs)
         simulator_prefix = simulator_prefixes[self.simulator_type]
-        base_extra_name = f'{simulator_prefix}{self.extra_log_folder} ({self.batch_size} batch size) '.lstrip() + \
+        base_extra_name = f'{self.extra_log_folder} ({self.batch_size} batch size) '.lstrip() + \
             f"({self.hidden_size} hidden size)"
         if (self.simulator_type == 'tglf') or (self.hidden_layers != 2):
             base_extra_name = base_extra_name + f' ({self.hidden_layers} hidden layers)'
         if self.active_learning:
             al_base_extra_name = self.get_al_log_folder()
             base_extra_name = f'{al_base_extra_name}/{base_extra_name}'
+        base_extra_name = f'{simulator_prefix}{base_extra_name}'
         index_dir = os.path.join(
             'logs', self.pow_type, self.cluster_type, self.task, self.dataset_type,
             outputs_string, self.strategy, base_extra_name
@@ -69,7 +70,6 @@ class LoggingConfiguration:
         full_first_set_str = ('' if self.al_full_first_set else 'non-') + 'full first set'
         reload_weights_str = ('' if self.al_reload_weights else 'no ') + 'reload weights'
         downsampling_factor_str = f'downsampling {float(self.al_downsampling_factor)}'
-        print(self.al_batch_size, self.al_max_batch_size, self.al_method)
         return os.path.join(
             "AL(CL)", "Continual", self.al_method,
             f"Batches {self.al_batch_size} {self.al_max_batch_size} " + \

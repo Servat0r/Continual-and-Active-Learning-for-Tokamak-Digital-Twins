@@ -101,7 +101,7 @@ class MASReplay(MAS):
             lambda_reg=lambda_reg, alpha=alpha, verbose=verbose,
             train_mb_size=train_mb_size, train_epochs=train_epochs,
             eval_mb_size=eval_mb_size, device=device, evaluator=evaluator,
-            eval_every=eval_every, **base_kwargs,
+            eval_every=eval_every, plugins=plugins, **base_kwargs,
         )
 
 
@@ -147,7 +147,7 @@ class GEMReplay(GEM):
             patterns_per_exp=patterns_per_exp, memory_strength=memory_strength,
             train_mb_size=train_mb_size, train_epochs=train_epochs,
             eval_mb_size=eval_mb_size, device=device, evaluator=evaluator,
-            eval_every=eval_every, **base_kwargs,
+            eval_every=eval_every, plugins=plugins, **base_kwargs,
         )
 
 
@@ -192,7 +192,7 @@ class SIReplay(SynapticIntelligence):
             model=model, optimizer=optimizer, criterion=criterion, si_lambda=si_lambda,
             eps=eps, train_mb_size=train_mb_size, train_epochs=train_epochs,
             eval_mb_size=eval_mb_size, device=device, evaluator=evaluator,
-            eval_every=eval_every, **base_kwargs,
+            eval_every=eval_every, plugins=plugins, **base_kwargs,
         )
 
 
@@ -236,7 +236,7 @@ class LFLReplay(LFL):
             model=model, optimizer=optimizer, criterion=criterion, lambda_e=lambda_e,
             train_mb_size=train_mb_size, train_epochs=train_epochs,
             eval_mb_size=eval_mb_size, device=device, evaluator=evaluator,
-            eval_every=eval_every, **base_kwargs,
+            eval_every=eval_every, plugins=plugins, **base_kwargs,
         )
 
 

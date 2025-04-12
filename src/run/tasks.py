@@ -5,8 +5,6 @@ import os
 from typing import Any, Optional
 from datetime import datetime
 import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
 
 from tqdm import tqdm
 from avalanche.benchmarks import AvalancheDataset
@@ -14,8 +12,8 @@ from avalanche.benchmarks.scenarios.dataset_scenario import DatasetExperience
 
 from avalanche.logging import InteractiveLogger
 from avalanche.evaluation.metrics import loss_metrics
-from avalanche.training import GenerativeReplay, JointTraining, Replay, Naive, Cumulative
-from avalanche.training.plugins import EvaluationPlugin, ReplayPlugin, FromScratchTrainingPlugin
+from avalanche.training import GenerativeReplay, JointTraining
+from avalanche.training.plugins import EvaluationPlugin, FromScratchTrainingPlugin
 
 from bmdal_reg.bmdal.feature_data import TensorFeatureData
 
@@ -70,15 +68,15 @@ def downsample_experience(
         for stratum in unique_strata:
             stratum_indices = torch.where(combined_magnitudes == stratum)[0]
             current_sample_size = int(round(len(stratum_indices) / len(combined_magnitudes) * downsampling_factor, 0))
-            stdout_debug_print(f"Preliminarily sampling {current_sample_size} items", color='green')
+            #stdout_debug_print(f"Preliminarily sampling {current_sample_size} items", color='green')
             sampled_sizes.append(current_sample_size)
         total = sum(sampled_sizes)
-        stdout_debug_print(f"Preliminary total = {total}", color='green')
+        #stdout_debug_print(f"Preliminary total = {total}", color='green')
         i = 0
         while total + i < downsampling_factor:
             sampled_sizes[i % len(sampled_sizes)] += 1
             i += 1
-        stdout_debug_print(f"Final sample sizes = {sampled_sizes}", color='green')
+        #stdout_debug_print(f"Final sample sizes = {sampled_sizes}", color='green')
     
     # Sample from each stratum
     for idx, stratum in enumerate(unique_strata):
@@ -89,7 +87,7 @@ def downsample_experience(
             num_to_sample = sampled_sizes[idx]
         else:
             raise RuntimeError(f"Unknown factor_type = \"{factor_type}\"")
-        stdout_debug_print(f"Sampled = {num_to_sample}", color='cyan')
+        #stdout_debug_print(f"Sampled = {num_to_sample}", color='cyan')
         
         # Randomly sample indices from this stratum
         if len(stratum_indices) > 0:

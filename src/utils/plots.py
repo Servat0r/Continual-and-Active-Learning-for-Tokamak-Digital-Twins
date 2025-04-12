@@ -150,11 +150,13 @@ def plot_metric_over_evaluation_experiences_multiple_runs(
             x_values[index:], (mean_values - std_vals)[index:],
             (mean_values + std_vals)[index:], alpha=0.2
         )
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.title(title, fontsize=20)
+    plt.xlabel(xlabel, fontsize=25)
+    plt.ylabel(ylabel, fontsize=25)
     plt.grid(grid)
-    if legend: plt.legend()
+    plt.xticks(fontsize=30)
+    plt.yticks(fontsize=30)
+    if legend: plt.legend(fontsize=18)
     if show: plt.show()
     if save: plt.savefig(savepath)
     plt.close()
@@ -163,7 +165,7 @@ def plot_metric_over_evaluation_experiences_multiple_runs(
 def plot_metric_over_multiple_strategies(
     file_paths_or_bufs: dict[str, tuple[str | pd.DataFrame, str, str]], grid: bool = True,
     legend: bool = True, show: bool = True, save: bool = True, savepath: str = None,
-    title: str = None, xlabel: str = None, ylabel: str = None,
+    title: str = None, xlabel: str = None, ylabel: str = None, include_std: bool = True
 ):
     plt.figure(figsize=(12, 8))
     for strategy_name, (df, color, linestyle) in file_paths_or_bufs.items():
@@ -177,28 +179,29 @@ def plot_metric_over_multiple_strategies(
         label = strategy_name
         
         plt.plot(x_values, mean_values, label=label, marker='o', linestyle=linestyle, color=color)
-        plt.fill_between(
-            x_values,
-            mean_values - std_values,
-            mean_values + std_values,
-            alpha=0.2,
-            color=color
-        )
+        if include_std:
+            plt.fill_between(
+                x_values,
+                mean_values - std_values,
+                mean_values + std_values,
+                alpha=0.2,
+                color=color
+            )
 
     base_title = title if title is not None else "Performance Over Experiences"
     base_xlabel = xlabel if xlabel is not None else "Experience"
     base_ylabel = ylabel if ylabel is not None else "Metric Value"
     
-    plt.title(base_title, fontsize=14)
-    plt.xlabel(base_xlabel, fontsize=12)
-    plt.ylabel(base_ylabel, fontsize=12)
-    plt.xticks(fontsize=10)
-    plt.yticks(fontsize=10)
+    plt.title(base_title, fontsize=20)
+    plt.xlabel(base_xlabel, fontsize=25)
+    plt.ylabel(base_ylabel, fontsize=25)
+    plt.xticks(fontsize=30)
+    plt.yticks(fontsize=30)
     
     if grid:
         plt.grid(True, linestyle='--')
     if legend:
-        plt.legend(fontsize=10)
+        plt.legend(fontsize=20)
     if save and savepath is not None:
         plt.savefig(savepath, bbox_inches='tight')
     if show:

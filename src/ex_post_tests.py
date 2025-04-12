@@ -1,6 +1,7 @@
 # Tests for results after training
 from typing import *
 import json
+import copy
 import os.path
 from pathlib import Path
 
@@ -284,6 +285,36 @@ def get_mean_std_metric_values(
     })
 
 
+def get_max_metric_value(
+    log_folder, mean_filename='eval_mean_values.csv', std_filename='eval_std_values.csv',
+    metric='Forgetting_Exp', num_exp=10, include_future_experiences=False
+):
+    mean_file_path = os.path.join(log_folder, mean_filename)
+    std_file_path = os.path.join(log_folder, std_filename)
+    mean_df = pd.read_csv(mean_file_path)
+    std_df = pd.read_csv(std_file_path)
+    last_exp = num_exp - 1
+    last_exp_df = mean_df[mean_df.training_exp == last_exp]
+    last_exp_arr = last_exp_df[metric].to_numpy()
+    index = np.argmax(last_exp_arr)
+    return index, last_exp_arr[index].item()
+
+
+def get_min_metric_value(
+    log_folder, mean_filename='eval_mean_values.csv', std_filename='eval_std_values.csv',
+    metric='Forgetting_Exp', num_exp=10, include_future_experiences=False
+):
+    mean_file_path = os.path.join(log_folder, mean_filename)
+    std_file_path = os.path.join(log_folder, std_filename)
+    mean_df = pd.read_csv(mean_file_path)
+    std_df = pd.read_csv(std_file_path)
+    last_exp = num_exp - 1
+    last_exp_df = mean_df[mean_df.training_exp == last_exp]
+    last_exp_arr = last_exp_df[metric].to_numpy()
+    index = np.argmin(last_exp_arr)
+    return index, last_exp_arr[index].item()
+
+
 def mean_std_df_wrapper(    
     logging_config: LoggingConfiguration, mean_filepath: str, std_filepath: str,
     metric='Forgetting_Exp', count=0, include_future_experiences=False,
@@ -303,6 +334,7 @@ def mean_std_df_wrapper(
         )
         return mean_std_df
     except Exception as ex:
+        print(f"Directory {logging_config.get_log_folder(suffix=False, count=count, task_id=0)} not found")
         return None
 
 
@@ -313,7 +345,7 @@ def mean_std_strategy_plots_wrapper(
     plot_metric_name: str = 'Forgetting', count: int = 0, title: str = None,
     save: bool = False, savepath: str = None, show: bool = True, grid: bool = True,
     legend: bool = True, colors_and_linestyle_dict: dict[str, tuple[str, str]] = None,
-    include_future_experiences: bool = False
+    include_future_experiences: bool = False, include_std: bool = True
 ):
     """
     strategy_dicts = {Naive: Base}
@@ -346,6 +378,7 @@ def mean_std_strategy_plots_wrapper(
             show=show, save=save, savepath=savepath, 
             title=f"{plot_metric_name} Over Experiences" or title,
             xlabel="Experience", ylabel=plot_metric_name,
+            include_std=include_std
         )
 
 
@@ -357,7 +390,7 @@ def mean_std_al_plots_wrapper(
     save: bool = False, savepath: str = None, show: bool = True, grid: bool = True,
     legend: bool = True, colors_and_linestyle_dict: dict[str, tuple[str, str]] = None,
     pure_cl_strategy: str = None, pure_cl_extra_log_folder: str = None,
-    include_future_experiences: bool = False
+    include_future_experiences: bool = False, include_std: bool = True
 ):
     """
     al_methods_dict = {Random: random_sketch_grad}
@@ -400,6 +433,53 @@ def mean_std_al_plots_wrapper(
             show=show, save=save, savepath=savepath,
             title=f"{plot_metric_name} Over Experiences" or title,
             xlabel="Experience", ylabel=plot_metric_name,
+            include_std=include_std
+        )
+
+
+def mean_std_params_plots_wrapper(
+    logging_config: LoggingConfiguration, param_name: str, params_list: list[int | float],
+    strategy_name: str, strategy_label: str, extra_log_folder: str,
+    mean_filename: str, std_filename: str, internal_metric_name: str = 'Forgetting_Exp',
+    plot_metric_name: str = 'Forgetting', count: int = 0, title: str = None,
+    save: bool = False, savepath: str = None, show: bool = True, grid: bool = True,
+    legend: bool = True, colors_and_linestyle_list: list[tuple[str, str]] = None,
+    include_future_experiences: bool = False, include_std: bool = True
+):
+    """
+    param_name = 'batch_size'
+    params_list = [512, 1024, 2048, 4096]
+    strategy_name = 'Replay'
+    strategy_label = 'Replay (2000)'
+    extra_log_folder = 'Buffer 2000'
+    strategy_dicts = {Naive: Base}
+    strategy_dicts = {Replay (2000): (Replay, Buffer 2000)}
+    colors_and_linestyle_list = [('red', '-'), ...]
+    """
+    # Get mean_std_df for each strategy
+    strategy_dfs = {}
+    logging_config_bak = copy.deepcopy(logging_config)
+    logging_config.strategy = strategy_name
+    logging_config.extra_log_folder = extra_log_folder
+    for param_value, (color, linestyle) in zip(params_list, colors_and_linestyle_list):
+        setattr(logging_config, param_name, param_value)
+        mean_std_df = mean_std_df_wrapper(
+            logging_config, metric=internal_metric_name, count=count,
+            mean_filepath=mean_filename, std_filepath=std_filename,
+            include_future_experiences=include_future_experiences
+        )
+        strategy_metric_name = f"{strategy_label} ({param_value} {param_name.replace('_', ' ')})"
+        if mean_std_df is not None:
+            strategy_dfs[strategy_metric_name] = (mean_std_df, color, linestyle)
+    logging_config = logging_config_bak
+    # Plot metrics across strategies
+    if strategy_dfs:
+        plot_metric_over_multiple_strategies(
+            strategy_dfs, grid=grid, legend=legend,
+            show=show, save=save, savepath=savepath, 
+            title=f"{plot_metric_name} Over Experiences" or title,
+            xlabel="Experience", ylabel=plot_metric_name,
+            include_std=include_std
         )
 
 
@@ -459,6 +539,8 @@ __all__ = [
     'load_models', 'load_baseline_csv_data', 'load_complete_dataset',
     'build_full_datasets', 'build_experience_datasets',
     'outputs_direction_report', 'get_mean_std_metric_values',
+    'get_max_metric_value', 'get_min_metric_value',
     'mean_std_df_wrapper', 'mean_std_strategy_plots_wrapper',
-    'mean_std_al_plots_wrapper', 'get_datasets_sizes_report'
+    'mean_std_al_plots_wrapper', 'get_datasets_sizes_report',
+    'mean_std_params_plots_wrapper'
 ]

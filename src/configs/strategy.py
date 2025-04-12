@@ -21,11 +21,13 @@ __strategy_dict = {
     'LFL': LFL,
     'DoubleLFL': DoubleLFL,
     'LFLEWC': LFLEWC,
+    'ConstantSizeGEM': ConstantSizeGEM,
     'EWCReplay': EWCReplay,
     'MASReplay': MASReplay,
     'GEMReplay': GEMReplay,
     'SIReplay': SIReplay,
-    'LFLReplay': LFLReplay
+    'LFLReplay': LFLReplay,
+    'ConstantSizeGEMReplay': ConstantSizeGEMReplay
 }
 
 

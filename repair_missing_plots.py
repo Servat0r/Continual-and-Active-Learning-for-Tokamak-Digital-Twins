@@ -30,14 +30,28 @@ parser.add_argument('--hidden_size', type=int, default=1024, help='Hidden size')
 parser.add_argument('--hidden_layers', type=int, default=2, help='Number of hidden layers')
 parser.add_argument('--count', type=int, default=-1, help='Run ordinal number')
 parser.add_argument('--set_type', type=str, default='eval', help='Set type: either "eval" or "test"')
+parser.add_argument('--mode', type=str, default='cl', help='Mode: either "cl" or "al_cl"')
+parser.add_argument(
+    '--al_method', type=str, default='random_sketch_grad', help='Single AL method to use (only for al_cl mode)'
+)
+parser.add_argument('--al_batch_size', type=int, default=128, help='Batch size for active learning')
+parser.add_argument('--al_max_batch_size', type=int, default=2048, help='Maximum batch size for active learning')
+parser.add_argument('--full_first_set', type=bool, default=False, help='Whether to use full first set in active learning')
+parser.add_argument(
+    '--reload_weights', type=bool, default=False, help='Whether to reload weights between active learning iterations'
+)
+parser.add_argument('--downsampling', type=float, default=0.5, help='Downsampling ratio for active learning')
+
 
 args = parser.parse_args()
-
+is_active_learning = args.mode == 'al_cl'
 logging_config = LoggingConfiguration(
     pow_type=args.pow_type, cluster_type=args.cluster_type, dataset_type=args.dataset_type,
     task=args.task, strategy=args.strategy, extra_log_folder=args.extra_log_folder,
     simulator_type=args.simulator_type, hidden_size=args.hidden_size, hidden_layers=args.hidden_layers,
-    batch_size=args.batch_size, active_learning=False
+    batch_size=args.batch_size, active_learning=is_active_learning, al_batch_size=args.al_batch_size,
+    al_max_batch_size=args.al_max_batch_size, al_method=args.al_method, al_full_first_set=args.full_first_set,
+    al_reload_weights=args.reload_weights, al_downsampling_factor=args.downsampling
 )
 
 file_paths = []

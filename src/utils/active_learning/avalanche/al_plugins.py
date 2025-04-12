@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from avalanche.training.templates import SupervisedTemplate
 
 from ...strategies.plugins import PercentageReplayPlugin
-from ...misc import stdout_debug_print
 
 
 # TODO: Add a Stopping Criterion? (Object that tells when to stop the AL cycle)

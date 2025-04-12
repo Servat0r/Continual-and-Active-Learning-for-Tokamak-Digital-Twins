@@ -13,7 +13,7 @@ from avalanche.training.plugins import (
 )
 from avalanche.training.templates import SupervisedTemplate
 from avalanche.training.templates.strategy_mixin_protocol import CriterionType
-from avalanche.training import Replay, GEM, MAS, EWC, Cumulative, Naive, FromScratchTraining
+from avalanche.training import Replay, GEM, MAS, EWC, Cumulative, Naive, FromScratchTraining, JointTraining
 
 if TYPE_CHECKING:
     from avalanche.training.templates import SupervisedTemplate
@@ -32,6 +32,7 @@ def al_cl_strategy_converter(cl_strategy_class: Type[SupervisedTemplate]) -> Typ
         GEM: ALGEM,
         MAS: ALMAS,
         EWC: ALEWC,
+        JointTraining: JointTraining,
         Cumulative: ALCumulative,
         EWCReplay: ALEWCReplay
     }

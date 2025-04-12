@@ -40,11 +40,12 @@ def _bmdal_params_handler(parameters: dict):
                 'sel_with_train': True
             })
         elif method == 'badge':
+            sigma = parameters.get('sigma', 0.01) # sigma = 0.1 by default
             parameters.update({
                 'selection_method': 'kmeanspp',
                 'initial_selection_method': 'kmeanspp',
                 'base_kernel': 'll',
-                'kernel_transforms': [],
+                'kernel_transforms': [('train', [sigma])],
                 'sel_with_train': False
             })
         elif method == 'bald':
