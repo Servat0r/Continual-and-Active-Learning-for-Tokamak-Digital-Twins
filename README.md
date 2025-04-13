@@ -1,5 +1,20 @@
 Final Thesis Project for Master Degree in Computer Science (AI) at University of Pisa, a.y. 2023-2024.
 
+Up to now, the follow-up paper is still not submitted, and the repository would have a pre-release version called "thesis-version-alpha" - referring to the code up to 13/04/2025, and subsequent releases for the full paper code.
+
+If you want to use this code, please include the following citation:
+
+<pre><code>@mastersthesis{salvatorecorrenti2025thesis,
+  author = {Salvatore Correnti},
+  title = {Continual and Active Learning for Tokamak Digital Twins},
+  school = {Università di Pisa},
+  year = {2025},
+  type = {Master's Thesis},
+  address = {Pisa, Italy},
+  note = {\url{https://github.com/Servat0r/Continual-and-Active-Learning-for-Tokamak-Digital-Twins}}
+} </code></pre>
+
+
 ## Project Structure:
 - `data` folder contains all used datasets, with `qualikiz` and `tglf` being the two datasets used for the thesis. `<dataset_name>/cleaned/<power_type>/<cluster_type>` contains reworked datasets for thesis experiments, in particular:
   - `complete_dataset.csv` is the whole dataset
