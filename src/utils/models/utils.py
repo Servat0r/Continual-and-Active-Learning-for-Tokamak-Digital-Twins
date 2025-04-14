@@ -48,6 +48,15 @@ def initialize_weights_low(module, scale=1e-2):
             nn.init.uniform_(module.bias, -scale, scale)  # Small bias values
 
 
+def get_model_log_descriptor(model_class_name: str):
+    if model_class_name in ['MLP', 'mlp']:
+        return ['hidden_size', 'hidden_layers']
+    elif model_class_name in ['Transformer', 'transformer']:
+        return ['d_model', 'nhead', 'num_layers', 'dropout']
+    else:
+        raise NotImplementedError(f"Model class \"{model_class_name}\" is still not implemented")
+
+
 __all__ = [
-    'get_model_size', 'get_dtype_from_str', 'are_models_equal', 'initialize_weights_low'
+    'get_model_size', 'get_dtype_from_str', 'are_models_equal', 'initialize_weights_low', 'get_model_log_descriptor'
 ]

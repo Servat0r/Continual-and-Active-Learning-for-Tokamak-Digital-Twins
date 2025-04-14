@@ -1,5 +1,6 @@
 # Plotting for multiple configurations of a single strategy
 import os
+import copy
 from rich import print
 
 from .common import *
@@ -11,6 +12,7 @@ if __name__ == '__main__':
     # al_cl: AL(CL), choose one CL strategy and compares multiple AL methods over it
     parser = common_parser_build()
     args = parser.parse_args()
+    args.show = bool(args.show)
     is_active_learning = args.mode == 'al_cl'
 
     cl_strategies_dictionary = get_cl_strategies_dictionary(
@@ -41,6 +43,7 @@ if __name__ == '__main__':
 
     outputs = args.outputs
     include_future_experiences = args.include_future_experiences
+    set_type = args.set_type
 
     simulator_prefix = simulator_prefixes[args.simulator_type]
     if args.internal_metric_name.endswith('_Exp'):
@@ -61,22 +64,27 @@ if __name__ == '__main__':
     )
     
     strategies_dict = {}
-    al_methods_dict = {}
+    #al_methods_dict = {}
     colors_dict = {}
-    include_future_experiences_str = '/Full Experiences' if include_future_experiences else ''
-    conf_str = f"{outputs}/{simulator_type}/{pow_type}/{cluster_type}/{plot_metric_name}{include_future_experiences_str}"
-
-    if args.mode == 'cl':
-        savefolder = f"plots/Pure CL/Strategy Config Comparisons/{conf_str}"
-    else:
-        savefolder = f"plots/AL(CL)/Strategy and Method Config Comparisons/{conf_str}"
-    savepath = f"{savefolder}/{', '.join(strategies)} {args.hidden_size}-{args.hidden_layers} on Eval Set.png"
+    savefolder, savepath = get_savepath(
+        args, include_future_experiences, plot_metric_name, is_active_learning,
+        'Strategy Config Comparisons', 'Strategy and Method Config Comparisons',
+        strategies=strategies
+    )
+    if args.savepath is not None:
+        savepath = args.savepath
+        savefolder = os.path.dirname(savepath)
+    print(f"Savefolder = {savefolder}\nSavepath = {savepath}")
     os.makedirs(savefolder, exist_ok=True)
 
+    logging_config_base = copy.deepcopy(logging_config)
+    configs_and_dicts = []
     for strategy, strategy_data in strategies.items():
         for (proxy, extra_log_folder) in strategy_data:
+            logging_config = copy.deepcopy(logging_config_base)
             logging_config.strategy = strategy
             logging_config.extra_log_folder = extra_log_folder
+            al_methods_dict = {}
             if args.mode == 'cl':
                 try:
                     folder_path = logging_config.get_log_folder(count=-1, task_id=0, suffix=True)
@@ -103,18 +111,23 @@ if __name__ == '__main__':
                     except FileNotFoundError as ex:
                         folder_path = logging_config.get_log_folder(count=-1, task_id=0, suffix=False)
                         stdout_debug_print(f"{folder_path}: {ex.args[1:]}", color='green')
+                configs_and_dicts.append((logging_config, al_methods_dict))
     
     if args.mode == 'cl':
         mean_std_strategy_plots_wrapper(
             logging_config, strategies_dict, internal_metric_name=args.internal_metric_name,
-            plot_metric_name=plot_metric_name, show=True, save=True, savepath=savepath,
+            mean_filename=f"{set_type}_mean_values.csv", std_filename=f"{set_type}_std_values.csv",
+            plot_metric_name=plot_metric_name, show=args.show, save=True, savepath=savepath,
             grid=True, legend=True, count=-1, colors_and_linestyle_dict=colors_dict,
-            include_future_experiences=include_future_experiences
+            include_future_experiences=include_future_experiences,
+            include_std=bool(args.include_std)
         )
     else:
         mean_std_al_plots_wrapper(
-            logging_config, al_methods_dict, internal_metric_name=args.internal_metric_name,
-            plot_metric_name=plot_metric_name, count=-1, show=True, save=True, savepath=savepath,
+            configs_and_dicts, internal_metric_name=args.internal_metric_name,
+            mean_filename=f"{set_type}_mean_values.csv", std_filename=f"{set_type}_std_values.csv",
+            plot_metric_name=plot_metric_name, count=-1, show=args.show, save=True, savepath=savepath,
             grid=True, legend=True, colors_and_linestyle_dict=colors_dict,
-            include_future_experiences=include_future_experiences
+            include_future_experiences=include_future_experiences,
+            include_std=bool(args.include_std)
         )

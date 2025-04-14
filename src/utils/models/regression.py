@@ -228,8 +228,100 @@ class SimpleConv1DModel(nn.Module):
         return x
 
 
+class TransformerRegressor(nn.Module):
+    def __init__(self, input_size, output_size, d_model=64, nhead=8, num_layers=2, dropout=0.25):
+        """
+        Initializes a Transformer-based model for tabular regression.
+
+        Args:
+            input_size (int): Number of features (columns) in the tabular dataset.
+            output_size (int): Number of regression outputs.
+            d_model (int): Dimension of the embedding and hidden representations.
+            nhead (int): Number of attention heads.
+            num_layers (int): Number of Transformer encoder layers.
+            dropout (float): Dropout probability used in encoder layers.
+        """
+        super(TransformerRegressor, self).__init__()
+        self.input_size = input_size
+        self.output_size = output_size
+        self.d_model = d_model
+        self.nhead = nhead
+        self.num_layers = num_layers
+        self.dropout = dropout
+
+        # Embed each scalar feature into a d_model-dimensional vector.
+        self.embedding = nn.Linear(1, d_model)
+        
+        # Create one Transformer encoder layer.
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model, 
+            nhead=nhead, 
+            dropout=dropout, 
+            activation='relu'
+        )
+        # Stack encoder layers.
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        
+        # Adaptive average pooling to aggregate outputs over token dimension.
+        self.pool = nn.AdaptiveAvgPool1d(1)
+        
+        self.first_fc = nn.Linear(self.d_model * self.input_size, self.d_model * 2)
+        self.second_fc = nn.Linear(self.d_model * 2, self.d_model)
+
+        # Final fully connected layer maps d_model to output_size.
+        self.fc = nn.Linear(d_model, output_size)
+    
+    def forward(self, x):
+        """
+        Forward pass through the Transformer model.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, input_size)
+            
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, output_size) containing regression predictions.
+        """
+        # x has shape: (batch_size, input_size)
+        # Unsqueeze to shape (batch_size, input_size, 1) so that each feature can be embedded.
+        x = x.unsqueeze(-1)
+        
+        # Embed each scalar input to shape (batch_size, input_size, d_model)
+        x = self.embedding(x)
+        
+        # Transformer encoder expects (seq_length, batch_size, d_model)
+        # Here each token represents a feature so seq_length = input_size.
+        x = x.transpose(0, 1)
+        
+        # Pass through the Transformer encoder (no positional encoding applied).
+        x = self.transformer_encoder(x)
+        
+        # Transpose back to (batch_size, input_size, d_model)
+        x = x.transpose(0, 1)
+
+        # Reshape x into (batch_size, d_model * input_size)
+        x = x.reshape(x.size(0), -1)
+
+        # Apply two fully connected layers with ReLU activation
+        x = nn.functional.relu(self.first_fc(x))
+        x = self.second_fc(x)
+        """
+        # OLD CODE!
+        
+        # Rearrange tensor to (batch_size, d_model, input_size) for pooling.
+        x = x.transpose(1, 2)
+        
+        # Pool across the feature tokens to produce (batch_size, d_model, 1), then squeeze.
+        x = self.pool(x).squeeze(-1)  # shape becomes (batch_size, d_model)
+        """
+        
+        # Final regression outputs.
+        output = self.fc(x)  # shape (batch_size, output_size)
+        return output
+
+
 __all__ = [
     "SimpleRegressionMLP",
     "GaussianRegressionMLP",
-    "SimpleConv1DModel"
+    "SimpleConv1DModel",
+    "TransformerRegressor"
 ]

@@ -6,7 +6,7 @@ from .common import *
 
 
 if __name__ == '__main__':
-    parser = common_parser_build(with_mode=False, with_al_method=False, with_strategies=False)
+    parser = common_parser_build(with_mode=True, with_al_method=False, with_strategies=False)
     parser.add_argument('--al_methods', nargs='+', type=str, default=[])
     parser.add_argument('--strategy', type=str, default='Cumulative')
     parser.add_argument('--extra_log_folder', type=str, default='Base')
@@ -32,6 +32,7 @@ if __name__ == '__main__':
         al_methods[method] = al_cl_methods_dictionary[method]
     
     outputs = args.outputs
+    set_type = args.set_type
 
     simulator_prefix = simulator_prefixes[args.simulator_type]
     if args.internal_metric_name.endswith('_Exp'):
@@ -50,14 +51,21 @@ if __name__ == '__main__':
         al_full_first_set=args.full_first_set, al_reload_weights=args.reload_weights,
         al_downsampling_factor=args.downsampling
     )
-    
+
+    args.mode = 'al_cl'    
     strategies_dict = {}
     al_methods_dict = {}
     colors_dict = {}
-    savefolder = f"plots/AL(CL)/Multiple Method Comparisons/{outputs}/{simulator_type}/{pow_type}/{cluster_type}/{outputs}/{plot_metric_name}"
-    savepath = f"{savefolder}/{', '.join(strategies)} {args.hidden_size}-{args.hidden_layers} on Eval Set.png"
-
+    include_future_experiences = args.include_future_experiences
+    is_active_learning = True
+    
+    a, b = strategies[strategy]
+    savefolder, savepath = get_savepath(
+        args, include_future_experiences, plot_metric_name, is_active_learning,
+        '', 'Multiple Method Comparisons', strategies=[f"{a} {b}"]
+    )
     os.makedirs(savefolder, exist_ok=True)
+    
     for strategy, (proxy, extra_log_folder) in strategies.items():
         logging_config.strategy = strategy
         logging_config.extra_log_folder = extra_log_folder
@@ -78,8 +86,10 @@ if __name__ == '__main__':
                 folder_path = logging_config.get_log_folder(count=-1, task_id=0, suffix=False)
                 stdout_debug_print(f"{folder_path}: {ex.args[1:]}", color='green')
     mean_std_al_plots_wrapper(
-        logging_config, al_methods_dict, internal_metric_name=args.internal_metric_name,
-        plot_metric_name=plot_metric_name, count=-1, show=True, save=True, savepath=savepath,
-        grid=True, legend=True, colors_and_linestyle_dict=colors_dict,
-        pure_cl_strategy=strategy, pure_cl_extra_log_folder=extra_log_folder
+        [(logging_config, al_methods_dict)], internal_metric_name=args.internal_metric_name,
+        mean_filename=f"{set_type}_mean_values.csv", std_filename=f"{set_type}_std_values.csv",
+        plot_metric_name=plot_metric_name, count=-1, show=args.show, save=True,
+        savepath=savepath, grid=True, legend=True, colors_and_linestyle_dict=colors_dict,
+        pure_cl_strategy=strategy, pure_cl_extra_log_folder=extra_log_folder,
+        include_std=bool(args.include_std)
     )

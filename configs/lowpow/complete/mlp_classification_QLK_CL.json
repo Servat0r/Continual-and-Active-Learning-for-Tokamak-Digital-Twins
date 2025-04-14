@@ -40,7 +40,7 @@
     }
   },
   "optimizer": {
-    "name": "Adam",
+    "name": "AdamW",
     "parameters": {
       "lr": 2e-3,
       "weight_decay": 1e-4

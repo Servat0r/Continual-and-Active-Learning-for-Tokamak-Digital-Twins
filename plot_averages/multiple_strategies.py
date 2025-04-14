@@ -11,6 +11,7 @@ if __name__ == '__main__':
     # al_cl: AL(CL), choose one AL method and compares multiple CL strategies over it
     parser = common_parser_build()
     args = parser.parse_args()
+    args.show = bool(args.show)
     is_active_learning = args.mode == 'al_cl'
 
     cl_strategies_interest_dictionary = get_cl_strategies_interest_dictionary(
@@ -24,10 +25,11 @@ if __name__ == '__main__':
     else:
         argument_strategies = list(cl_strategies_interest_dictionary.keys())
     if args.mode == 'cl':
-        strategies = {
-            'Naive': cl_strategies_interest_dictionary['Naive'], # Lower Baseline
-            'Cumulative': cl_strategies_interest_dictionary['Cumulative'] # Upper Baseline
-        }
+        strategies = {}
+        if not args.exclude_naive:
+            strategies['Naive'] = cl_strategies_interest_dictionary['Naive'] # Lower Baseline
+        if not args.exclude_cumulative:
+            strategies['Cumulative'] = cl_strategies_interest_dictionary['Cumulative'] # Upper Baseline
         for strategy in argument_strategies:
             strategies[strategy] = cl_strategies_interest_dictionary[strategy]
         al_methods = {}
@@ -43,6 +45,7 @@ if __name__ == '__main__':
         raise ValueError(f"Invalid mode: {args.mode}")
 
     outputs = args.outputs
+    set_type = args.set_type
 
     simulator_prefix = simulator_prefixes[args.simulator_type]
     if args.internal_metric_name.endswith('_Exp'):
@@ -65,15 +68,14 @@ if __name__ == '__main__':
     strategies_dict = {}
     al_methods_dict = {}
     colors_dict = {}
+    include_future_experiences = args.include_future_experiences
 
-
-    if args.mode == 'cl':
-        savefolder = f"plots/Pure CL/Strategy Comparisons/{outputs}/{simulator_type}/{pow_type}/{cluster_type}/{outputs}/{plot_metric_name}"
-    else:
-        savefolder = f"plots/AL(CL)/Strategy and Method Comparisons/{outputs}/{simulator_type}/{pow_type}/{cluster_type}/{outputs}/{plot_metric_name}"
-    savepath = f"{savefolder}/{', '.join(strategies)} {args.hidden_size}-{args.hidden_layers} on Eval Set.png"
+    savefolder, savepath = get_savepath(
+        args, include_future_experiences, plot_metric_name, is_active_learning,
+        'Strategy Comparisons', 'Strategy and Method Comparisons'
+    )
     os.makedirs(savefolder, exist_ok=True)
-
+    
     for strategy, strategy_data in strategies.items():
         for (proxy, extra_log_folder) in strategy_data:
             logging_config.strategy = strategy
@@ -108,12 +110,16 @@ if __name__ == '__main__':
     if args.mode == 'cl':
         mean_std_strategy_plots_wrapper(
             logging_config, strategies_dict, internal_metric_name=args.internal_metric_name,
-            plot_metric_name=plot_metric_name, show=True, save=True, savepath=savepath,
-            grid=True, legend=True, count=-1, colors_and_linestyle_dict=colors_dict
+            mean_filename=f"{set_type}_mean_values.csv", std_filename=f"{set_type}_std_values.csv",
+            plot_metric_name=plot_metric_name, show=args.show, save=True, savepath=savepath,
+            grid=True, legend=True, count=-1, colors_and_linestyle_dict=colors_dict,
+            include_std=bool(args.include_std)
         )
     else:
         mean_std_al_plots_wrapper(
             logging_config, al_methods_dict, internal_metric_name=args.internal_metric_name,
-            plot_metric_name=plot_metric_name, count=-1, show=True, save=True, savepath=savepath,
-            grid=True, legend=True, colors_and_linestyle_dict=colors_dict
+            mean_filename=f"{set_type}_mean_values.csv", std_filename=f"{set_type}_std_values.csv",
+            plot_metric_name=plot_metric_name, count=-1, show=args.show, save=True,
+            savepath=savepath, grid=True, legend=True, colors_and_linestyle_dict=colors_dict,
+            include_std=bool(args.include_std)
         )

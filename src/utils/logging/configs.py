@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from ..models.utils import get_model_log_descriptor
 
 
 simulator_prefixes: dict[str, str] = {
@@ -38,8 +39,9 @@ class LoggingConfiguration:
     strategy: str = 'Naive'
     extra_log_folder: str = 'Base'
     simulator_type: str = 'qualikiz'
-    hidden_size: int = 1024
-    hidden_layers: int = 2
+    model_type: str = 'MLP' # NEW
+    #hidden_size: int = 1024
+    #hidden_layers: int = 2
     batch_size: int = 4096
     active_learning: bool = False
     al_method: str = 'random_sketch_grad'
@@ -52,6 +54,9 @@ class LoggingConfiguration:
     def __base_log_folder(self) -> str:
         outputs_string = self.outputs if isinstance(self.outputs, str) else '_'.join(self.outputs)
         simulator_prefix = simulator_prefixes[self.simulator_type]
+        # TODO Compatibility break for previous version (we now have other model classes + hidden_layers should always be included for MLPs)
+        log_descriptor_parameters: list[str] = get_model_log_descriptor(self.model_type)
+        #for ...
         base_extra_name = f'{self.extra_log_folder} ({self.batch_size} batch size) '.lstrip() + \
             f"({self.hidden_size} hidden size)"
         if (self.simulator_type == 'tglf') or (self.hidden_layers != 2):

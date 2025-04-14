@@ -38,30 +38,28 @@
   },
   "architecture": {
     "name": "saved",
-    "model_folder": "lowpow_mlp_1024_3_efe_efi_pfe_pfi_8runs_tglf",
+    "model_folder": "lowpow_mlp_256_2_efe_efi_pfe_pfi_8runs_tglf",
     "model_name": "model",
     "model_class_name": "MLP",
     "parameters": {
       "input_size": 17,
       "output_size": 4,
-      "hidden_size": 1024,
-      "hidden_layers": 3,
-      "drop_rate": 0.5
+      "hidden_size": 256,
+      "hidden_layers": 2,
+      "drop_rate": 0.25
     }
   },
   "loss": {
-    "name": "MSECosineSimilarity",
+    "name": "MSE",
     "parameters": {
-      "reduction": "mean",
-      "alpha": 0.01,
-      "beta": 100
+      "reduction": "mean"
     }
   },
   "optimizer": {
-    "name": "Adam",
+    "name": "AdamW",
     "parameters": {
-      "lr": 1e-3,
-      "weight_decay": 1e-5
+      "lr": 1e-4,
+      "weight_decay": 1e-6
     }
   },
   "scheduler": {
@@ -80,184 +78,186 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": true,
+      "extra_log_folder": "Base (drop = 0.25) (tris) (lr 1e-4)",
+      "ignore": false,
       "parameters": {
       }
     },
     {
       "name": "FromScratchTraining",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Base (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Percentage 5% (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Percentage 5% Min 500 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
-        "mem_percentage": 0.05
+        "mem_percentage": 0.05,
+        "min_buffer_size": 500
       }
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Percentage 10% (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Percentage 10% Min 2500 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
-        "mem_percentage": 0.1
+        "mem_percentage": 0.1,
+        "min_buffer_size": 2500
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Buffer 500 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Buffer 500 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
         "mem_size": 500
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Buffer 2000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Buffer 2500 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
-        "mem_size": 2000
+        "mem_size": 2500
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 5000 (drop = 0.25) (tris)",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 5000
       }
     },
     {
       "name": "EWC",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 10 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 10.0
-      }
-    },
-    {
-      "name": "EWC",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Lambda 1 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
         "mode": "separate",
         "ewc_lambda": 1.0
       }
     },
     {
-      "name": "EWCReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 10 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "name": "EWC",
+      "extra_log_folder": "Lambda 0.1 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
         "mode": "separate",
-        "ewc_lambda": 10.0,
-        "mem_size": 1000
+        "ewc_lambda": 0.1
       }
     },
     {
-      "name": "MAS",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 10 Alpha 0,5 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 1 Buffer 2000 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
-        "lambda_reg": 10.0,
-        "alpha": 0.5
+        "mode": "separate",
+        "ewc_lambda": 1.0,
+        "mem_size": 2000
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 0.1 Buffer 2000 (drop = 0.25) (tris)",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 0.1,
+        "mem_size": 2000
       }
     },
     {
       "name": "MAS",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 1 Alpha 0,5 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Lambda 1 Alpha 0.0 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
         "lambda_reg": 1.0,
-        "alpha": 0.5
+        "alpha": 0.0
       }
     },
     {
       "name": "MASReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 10 Alpha 0,5 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Lambda 1 Alpha 0.0 Buffer 2000 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
-        "lambda_reg": 10.0,
-        "alpha": 0.5,
-        "mem_size": 1000
+        "lambda_reg": 1.0,
+        "alpha": 0.0,
+        "mem_size": 2000
       }
     },
     {
       "name": "GEM",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Patterns 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Patterns 100 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
-        "patterns_per_exp": 1000
+        "patterns_per_exp": 100
       }
     },
     {
       "name": "GEM",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Patterns 2000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Patterns 400 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
-        "patterns_per_exp": 2000
+        "patterns_per_exp": 400
       }
     },
     {
       "name": "GEMReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Patterns 100 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Patterns 400 Buffer 2000 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
-        "patterns_per_exp": 100,
-        "mem_size": 1000
-      }
-    },
-    {
-      "name": "GEMReplay",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Patterns 100 Buffer 1000 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
-      "parameters": {
-        "patterns_per_exp": 1000,
-        "mem_size": 1000
+        "patterns_per_exp": 400,
+        "mem_size": 2000
       }
     },
     {
       "name": "LFL",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Lambda 1 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
         "lambda_e": 1.0
       }
     },
     {
       "name": "LFL",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 10 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Lambda 0.1 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
-        "lambda_e": 10.0
+        "lambda_e": 0.1
       }
     },
     {
       "name": "SI",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Lambda 1 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
         "si_lambda": 1.0
       }
     },
     {
       "name": "SI",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Lambda 0.1 (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Lambda 0.1 (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
         "si_lambda": 0.1
       }
     },
     {
       "name": "JointTraining",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Base (drop = 0.25) (tris)",
+      "ignore": true,
       "parameters": {
         "eval_every": 0
       }
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "TGLF/MSECOS 0.01 100/Base (4096 batch size) (1024 hidden size) (3 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Base (drop = 0.25) (tris) (lr 1e-4)",
+      "ignore": true,
       "parameters": {
       }
     }
@@ -273,7 +273,7 @@
   },
   "start_model_saving": {
     "save_model": false,
-    "saved_model_folder": "lowpow_mlp_1024_3_efe_efi_pfe_pfi_8runs_tglf",
+    "saved_model_folder": "lowpow_mlp_256_2_efe_efi_pfe_pfi_8runs_tglf",
     "saved_model_name": "model",
     "add_timestamp": false
   }

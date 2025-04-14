@@ -23,7 +23,7 @@
     "output_size": 4,
     "normalize_inputs": true,
     "normalize_outputs": false,
-    "load_saved_final_data": false
+    "load_saved_final_data": true
   },
   "filters": {
     "by_leq": {
@@ -47,7 +47,7 @@
       "output_size": 4,
       "hidden_size": 1024,
       "hidden_layers": 2,
-      "drop_rate": 0.5
+      "drop_rate": 0.25
     }
   },
   "loss": {
@@ -59,8 +59,8 @@
   "optimizer": {
     "name": "AdamW",
     "parameters": {
-      "lr": 1e-3,
-      "weight_decay": 1e-5
+      "lr": 5e-4,
+      "weight_decay": 5e-6
     }
   },
   "scheduler": {
@@ -79,25 +79,25 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "TGLF/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Base",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "FromScratchTraining",
-      "extra_log_folder": "TGLF/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Base",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "TGLF/Percentage 5% (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Percentage 5% Min 600",
       "ignore": true,
       "parameters": {
         "mem_percentage": 0.05,
-        "min_buffer_size": 500,
+        "min_buffer_size": 600,
         "pr_plugin_kwargs": {
           "dump": true,
           "dump_fp": "percentage_replay.log"
@@ -106,11 +106,11 @@
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "TGLF/Percentage 10% (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Percentage 10% Min 3000",
       "ignore": true,
       "parameters": {
         "mem_percentage": 0.1,
-        "min_buffer_size": 500,
+        "min_buffer_size": 3000,
         "pr_plugin_kwargs": {
           "dump": true,
           "dump_fp": "percentage_replay.log"
@@ -119,23 +119,39 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "TGLF/Buffer 500 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Buffer 600",
       "ignore": true,
       "parameters": {
-        "mem_size": 500
+        "mem_size": 600
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "TGLF/Buffer 2000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Buffer 3000",
       "ignore": true,
       "parameters": {
-        "mem_size": 2000
+        "mem_size": 3000
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 6000",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 6000
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 12000",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 12000
       }
     },
     {
       "name": "EWC",
-      "extra_log_folder": "TGLF/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Lambda 10",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -144,7 +160,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "TGLF/Lambda 1 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Lambda 1",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -152,42 +168,88 @@
       }
     },
     {
-      "name": "MAS",
-      "extra_log_folder": "TGLF/Lambda 10 Alpha 0,5 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 1 Buffer 3000",
       "ignore": true,
       "parameters": {
-        "lambda_reg": 10.0,
-        "alpha": 0.5
+        "mode": "separate",
+        "ewc_lambda": 1.0,
+        "mem_size": 3000
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 10 Buffer 3000",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 10.0,
+        "mem_size": 3000
       }
     },
     {
       "name": "MAS",
-      "extra_log_folder": "TGLF/Lambda 1 Alpha 0,5 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Lambda 1 Alpha 0.0",
       "ignore": true,
       "parameters": {
         "lambda_reg": 1.0,
-        "alpha": 0.5
+        "alpha": 0.0
+      }
+    },
+    {
+      "name": "MASReplay",
+      "extra_log_folder": "Lambda 1 Alpha 0.0 Buffer 3000",
+      "ignore": true,
+      "parameters": {
+        "lambda_reg": 1.0,
+        "alpha": 0.0,
+        "mem_size": 3000
       }
     },
     {
       "name": "GEM",
-      "extra_log_folder": "TGLF/Patterns 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Patterns 100",
       "ignore": true,
       "parameters": {
-        "patterns_per_exp": 1000
+        "patterns_per_exp": 100
       }
     },
     {
       "name": "GEM",
-      "extra_log_folder": "TGLF/Patterns 2000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Patterns 300",
+      "ignore": false,
+      "parameters": {
+        "patterns_per_exp": 300
+      }
+    },
+    {
+      "name": "ConstantSizeGEM",
+      "extra_log_folder": "Memory 3000",
       "ignore": true,
       "parameters": {
-        "patterns_per_exp": 2000
+        "mem_size": 3000
+      }
+    },
+    {
+      "name": "GEMReplay",
+      "extra_log_folder": "Patterns 300 Buffer 3000",
+      "ignore": false,
+      "parameters": {
+        "patterns_per_exp": 300,
+        "mem_size": 3000
       }
     },
     {
       "name": "LFL",
-      "extra_log_folder": "TGLF/Lambda 1 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Lambda 0.1",
+      "ignore": true,
+      "parameters": {
+        "lambda_e": 0.1
+      }
+    },
+    {
+      "name": "LFL",
+      "extra_log_folder": "Lambda 1",
       "ignore": true,
       "parameters": {
         "lambda_e": 1.0
@@ -195,7 +257,15 @@
     },
     {
       "name": "LFL",
-      "extra_log_folder": "TGLF/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Lambda 2",
+      "ignore": true,
+      "parameters": {
+        "lambda_e": 2.0
+      }
+    },
+    {
+      "name": "LFL",
+      "extra_log_folder": "Lambda 10",
       "ignore": true,
       "parameters": {
         "lambda_e": 10.0
@@ -203,7 +273,7 @@
     },
     {
       "name": "SI",
-      "extra_log_folder": "TGLF/Lambda 1 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Lambda 1",
       "ignore": true,
       "parameters": {
         "si_lambda": 1.0
@@ -211,7 +281,7 @@
     },
     {
       "name": "SI",
-      "extra_log_folder": "TGLF/Lambda 0.1 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Lambda 0.1",
       "ignore": true,
       "parameters": {
         "si_lambda": 0.1
@@ -219,7 +289,7 @@
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "TGLF/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Base",
       "ignore": true,
       "parameters": {
       }

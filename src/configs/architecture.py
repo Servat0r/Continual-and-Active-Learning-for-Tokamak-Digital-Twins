@@ -3,13 +3,14 @@ import torch
 
 from .model_saving import MODELS_DIR
 from .parser import *
-from ..utils import SimpleRegressionMLP, SimpleClassificationMLP, GaussianRegressionMLP, SimpleConv1DModel
+from ..utils import SimpleRegressionMLP, SimpleClassificationMLP, GaussianRegressionMLP, SimpleConv1DModel, TransformerRegressor
 
 __model_classes = {
     'MLP': SimpleRegressionMLP,
     'GaussianMLP': GaussianRegressionMLP,
     'ClassificationMLP': SimpleClassificationMLP,
     'ConvNet': SimpleConv1DModel,
+    'Transformer': TransformerRegressor
 }
 
 
@@ -44,6 +45,39 @@ def mlp_config(parameters: dict[str, Any], gaussian=False, task='regression', ta
         return SimpleClassificationMLP(**default_config)
     else:
         raise ValueError(f"Invalid task \"{task}\"")
+
+
+def transformer_config(parameters: dict[str, Any], gaussian=False, task='regression', task_id=0):
+    default_config = {
+        'input_size': 15,
+        'output_size': 4,
+        'd_model': 8,
+        'nhead': 8,
+        'num_layers': 2,
+        'dropout': 0.25
+    }
+    default_config.update(parameters)
+    assert isinstance(default_config['input_size'], int) and default_config['input_size'] > 0
+    assert isinstance(default_config['output_size'], int) and default_config['output_size'] > 0
+    assert isinstance(default_config['d_model'], int) and default_config['d_model'] > 0
+    assert isinstance(default_config['nhead'], int) and default_config['nhead'] > 0
+    assert isinstance(default_config['num_layers'], int) and default_config['num_layers'] > 0
+    assert isinstance(default_config['dropout'], float) and 0 <= default_config['dropout'] <= 1
+    for key in default_config:
+        assert key in [
+            'input_size', 'output_size', 'd_model', 'nhead',
+            'num_layers', 'dropout'
+        ]
+    if task == 'regression':
+        if gaussian:
+            raise NotImplementedError("Gaussian transformer not implemented yet")
+        else:
+            return TransformerRegressor(**default_config)
+    elif task == 'classification':
+        raise NotImplementedError("Classification transformer not implemented yet")
+    else:
+        raise ValueError(f"Invalid task \"{task}\"")
+
 
 
 def saved_model_handler(model_folder: str, model_name: str, model_class_name: str, **kwargs):
@@ -83,8 +117,10 @@ def architecture_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         return mlp_config(parameters, gaussian=False, task=task, task_id=task_id)
     elif (name == 'GaussianMLP') or (name == 'gaussian_mlp'):
         return mlp_config(parameters, gaussian=True, task=task, task_id=task_id)
+    elif (name == 'Transformer') or (name == 'transformer'):
+        return transformer_config(parameters, gaussian=False, task=task, task_id=task_id)
     else:
         raise ValueError(f"Invalid architecture name \"{name}\"")
 
 
-__all__ = ['mlp_config', 'saved_model_handler', 'architecture_handler']
+__all__ = ['mlp_config', 'transformer_config', 'saved_model_handler', 'architecture_handler']
