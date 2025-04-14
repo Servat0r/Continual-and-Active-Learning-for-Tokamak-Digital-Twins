@@ -1,0 +1,187 @@
+{
+  "general": {
+    "mode": "AL(CL)",
+    "full_first_train_set": false,
+    "downsampling_factor": 2,
+    "task": "regression",
+    "dtype": "float32",
+    "num_campaigns": 10,
+    "train_mb_size": 4096,
+    "eval_mb_size": 1024,
+    "train_epochs": 200
+  },
+  "active_learning": {
+    "framework": "bmdal",
+    "parameters": {
+      "batch_size": 2048,
+      "max_batch_size": 14336,
+      "reload_initial_weights": false,
+      "standard_method": "random_sketch_grad"
+    }
+  },
+  "dataset": {
+    "pow_type": "highpow",
+    "cluster_type": "tau_based",
+    "dataset_type": "not_null",
+    "simulator_type": "qualikiz",
+    "input_columns": [
+      "ane", "ate", "autor", "machtor", "x",
+      "zeff", "gammae", "q", "smag", "alpha",
+      "ani1", "ati0", "normni1", "ti_te0", "lognustar"
+    ],
+    "output_columns": ["efe", "efi", "pfe", "pfi"],
+    "input_size": 15,
+    "output_size": 4,
+    "normalize_inputs": true,
+    "normalize_outputs": false,
+    "load_saved_final_data": true
+  },
+  "architecture": {
+    "name": "saved",
+    "model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
+    "model_name": "model",
+    "model_class_name": "MLP",
+    "parameters": {
+      "input_size": 15,
+      "output_size": 4,
+      "hidden_size": 256,
+      "hidden_layers": 2,
+      "drop_rate": 0.5
+    }
+  },
+  "loss": {
+    "name": "MSE",
+    "parameters": {
+      "reduction": "mean"
+    }
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "parameters": {
+      "lr": 2e-3,
+      "weight_decay": 1e-5
+    }
+  },
+  "scheduler": {
+    "name": "ReduceLROnPlateau",
+    "parameters": {
+      "metric": "train_loss",
+      "first_exp_only": false,
+      "factor": 0.5,
+      "patience": 21,
+      "mode": "min",
+      "threshold_mode": "abs",
+      "threshold": 1.0,
+      "min_lr": 1e-4
+    }
+  },
+  "strategy": [
+    {
+      "name": "JointTraining",
+      "extra_log_folder": "Base",
+      "ignore": false,
+      "parameters": {
+        "eval_every": 0
+      }
+    },
+    {
+      "name": "Naive",
+      "extra_log_folder": "Base",
+      "ignore": true,
+      "parameters": {
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 2000",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 2000
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 10000",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 10000
+      }
+    },
+    {
+      "name": "PercentageReplay",
+      "extra_log_folder": "Percentage 5% Base 2000",
+      "ignore": true,
+      "parameters": {
+        "mem_percentage": 0.05,
+        "min_buffer_size": 2000
+      }
+    },
+    {
+      "name": "PercentageReplay",
+      "extra_log_folder": "Percentage 10% Base 10000",
+      "ignore": true,
+      "parameters": {
+        "mem_percentage": 0.10,
+        "min_buffer_size": 10000
+      }
+    },
+    {
+      "name": "GEM",
+      "extra_log_folder": "Patterns 400",
+      "ignore": true,
+      "parameters": {
+        "patterns_per_exp": 400
+      }
+    },
+    {
+      "name": "GEM",
+      "extra_log_folder": "Patterns 1024",
+      "ignore": true,
+      "parameters": {
+        "patterns_per_exp": 1024
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 1 Buffer 2000",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 1.0,
+        "mem_size": 2000
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 1 Buffer 10000",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 1.0,
+        "mem_size": 10000
+      }
+    },
+    {
+      "name": "Cumulative",
+      "extra_log_folder": "Base",
+      "ignore": true,
+      "parameters": {
+      }
+    }
+  ],
+  "early_stopping": {
+    "patience": 10,
+    "delta": 0.1,
+    "val_stream_name": "eval_stream",
+    "min_epochs": 10
+  },
+  "validation_stream": {
+    "val_stream": "eval_stream"
+  },
+  "start_model_saving": {
+    "save_model": false,
+    "saved_model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
+    "saved_model_name": "model",
+    "add_timestamp": false
+  }
+}

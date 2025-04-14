@@ -1,0 +1,380 @@
+{
+  "general": {
+    "mode": "CL",
+    "task": "regression",
+    "dtype": "float32",
+    "num_campaigns": 10,
+    "train_mb_size": 1024,
+    "eval_mb_size": 1024,
+    "train_epochs": 200
+  },
+  "dataset": {
+    "pow_type": "highpow",
+    "cluster_type": "tau_based",
+    "dataset_type": "not_null",
+    "input_columns": [
+      "ane", "ate", "autor", "machtor", "x",
+      "zeff", "gammae", "q", "smag", "alpha",
+      "ani1", "ati0", "normni1", "ti_te0", "lognustar"
+    ],
+    "output_columns": ["efe"],
+    "input_size": 15,
+    "output_size": 1,
+    "normalize_inputs": true,
+    "normalize_outputs": false,
+    "load_saved_final_data": true
+  },
+  "architecture": {
+    "name": "saved",
+    "model_folder": "highpow_mlp_256_2_efe_4runs",
+    "model_name": "model",
+    "model_class_name": "MLP",
+    "parameters": {
+      "input_size": 15,
+      "output_size": 1,
+      "hidden_size": 256,
+      "hidden_layers": 2,
+      "drop_rate": 0.5
+    }
+  },
+  "loss": {
+    "name": "MSE",
+    "parameters": {
+      "reduction": "mean"
+    }
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "parameters": {
+      "lr": 2e-3,
+      "weight_decay": 1e-5
+    }
+  },
+  "scheduler": {
+    "name": "ReduceLROnPlateau",
+    "parameters": {
+      "metric": "train_loss",
+      "first_exp_only": false,
+      "factor": 0.5,
+      "patience": 21,
+      "mode": "min",
+      "threshold_mode": "abs",
+      "threshold": 1.0,
+      "min_lr": 1e-4
+    }
+  },
+  "strategy": [
+    {
+      "name": "Naive",
+      "extra_log_folder": "Base",
+      "ignore": true,
+      "parameters": {
+      }
+    },
+    {
+      "name": "FromScratchTraining",
+      "extra_log_folder": "Base",
+      "ignore": true,
+      "parameters": {
+      }
+    },
+    {
+      "name": "PercentageReplay",
+      "extra_log_folder": "Percentage 5%",
+      "ignore": true,
+      "parameters": {
+        "mem_percentage": 0.05,
+        "min_buffer_size": 2000,
+        "pr_plugin_kwargs": {
+          "dump": true,
+          "dump_fp": "percentage_replay_5.log"
+        }
+      }
+    },
+    {
+      "name": "PercentageReplay",
+      "extra_log_folder": "Percentage 10%",
+      "ignore": true,
+      "parameters": {
+        "mem_percentage": 0.1,
+        "min_buffer_size": 10000,
+        "pr_plugin_kwargs": {
+          "dump": true,
+          "dump_fp": "percentage_replay_10.log"
+        }
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 1000",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 1000
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 2000",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 2000
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 2000 from_scratch",
+      "ignore": true,
+      "from_scratch": true,
+      "parameters": {
+        "mem_size": 2000
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "Buffer 10000",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 10000
+      }
+    },
+    {
+      "name": "GSS_Greedy",
+      "extra_log_folder": "Buffer 2048 Strength 1 Update Every 100 Epochs",
+      "ignore": false,
+      "parameters": {
+        "mem_size": 2048,
+        "mem_strength": 100,
+        "input_size": [15],
+        "output_size": [1],
+        "update_every": 100
+      }
+    },
+    {
+      "name": "EWC",
+      "extra_log_folder": "Lambda 10",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 10.0
+      }
+    },
+    {
+      "name": "EWC",
+      "extra_log_folder": "Lambda 1",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 1.0
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 1 Buffer 2000",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 1.0,
+        "mem_size": 2000
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 1 Buffer 10000",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 1.0,
+        "mem_size": 10000
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 10 Buffer 10000",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 10.0,
+        "mem_size": 10000
+      }
+    },
+    {
+      "name": "EWCGEM",
+      "extra_log_folder": "Lambda 10 Patterns 400",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 10.0,
+        "patterns_per_exp": 400,
+        "memory_strength": 0.0
+      }
+    },
+    {
+      "name": "MAS",
+      "extra_log_folder": "Lambda 10 Alpha 0.0",
+      "ignore": true,
+      "parameters": {
+        "lambda_reg": 10.0,
+        "alpha": 0.0
+      }
+    },
+    {
+      "name": "MAS",
+      "extra_log_folder": "Lambda 1 Alpha 0.0",
+      "ignore": true,
+      "parameters": {
+        "lambda_reg": 1.0,
+        "alpha": 0.0
+      }
+    },
+    {
+      "name": "IncrementalMAS",
+      "extra_log_folder": "Lambda 0.0 1.0 5.0 Alpha 0.0",
+      "ignore": true,
+      "parameters": {
+        "lambda_reg": 0.0,
+        "alpha": 0.0,
+        "lambda_step": 1.0,
+        "lambda_max": 5.0
+      }
+    },
+    {
+      "name": "EWCMAS",
+      "extra_log_folder": "EWC 1 MAS 1 Alpha 0.0",
+      "ignore": true,
+      "parameters": {
+        "ewc_lambda": 1.0,
+        "mode": "separate",
+        "lambda_reg": 1.0,
+        "alpha": 0.0
+      }
+    },
+    {
+      "name": "MASReplay",
+      "extra_log_folder": "Lambda 1 Alpha 0.0 Buffer 10000",
+      "ignore": true,
+      "parameters": {
+        "lambda_reg": 1.0,
+        "alpha": 0.0,
+        "mem_size": 10000
+      }
+    },
+    {
+      "name": "GEM",
+      "extra_log_folder": "Patterns 1000 Gamma 0.01",
+      "ignore": true,
+      "parameters": {
+        "patterns_per_exp": 1000,
+        "memory_strength": 0.01
+      }
+    },
+    {
+      "name": "GEM",
+      "extra_log_folder": "Patterns 1000 Gamma 0.5",
+      "ignore": true,
+      "parameters": {
+        "patterns_per_exp": 1000,
+        "memory_strength": 0.5
+      }
+    },
+    {
+      "name": "GEM",
+      "extra_log_folder": "Patterns 2000",
+      "ignore": true,
+      "parameters": {
+        "patterns_per_exp": 2000
+      }
+    },
+    {
+      "name": "GEMReplay",
+      "extra_log_folder": "Patterns 100 Buffer 1000",
+      "ignore": true,
+      "parameters": {
+        "patterns_per_exp": 100,
+        "mem_size": 1000
+      }
+    },
+    {
+      "name": "GEMReplay",
+      "extra_log_folder": "Patterns 100 Buffer 1000",
+      "ignore": true,
+      "parameters": {
+        "patterns_per_exp": 1000,
+        "mem_size": 1000
+      }
+    },
+    {
+      "name": "VariableGEM",
+      "extra_log_folder": "Patterns 2000 2000 400",
+      "ignore": true,
+      "parameters": {
+        "special_patterns_per_exp": {
+          "0": 2000,
+          "1": 2000
+        },
+        "default_patterns_per_exp": 400
+      }
+    },
+    {
+      "name": "LFL",
+      "extra_log_folder": "Lambda 1",
+      "ignore": true,
+      "parameters": {
+        "lambda_e": 1.0
+      }
+    },
+    {
+      "name": "LFL",
+      "extra_log_folder": "Lambda 10",
+      "ignore": true,
+      "parameters": {
+        "lambda_e": 10.0
+      }
+    },
+    {
+      "name": "SI",
+      "extra_log_folder": "Lambda 1",
+      "ignore": true,
+      "parameters": {
+        "si_lambda": 1.0
+      }
+    },
+    {
+      "name": "SI",
+      "extra_log_folder": "Lambda 0.1",
+      "ignore": true,
+      "parameters": {
+        "si_lambda": 0.1
+      }
+    },
+    {
+      "name": "JointTraining",
+      "extra_log_folder": "Base",
+      "ignore": true,
+      "parameters": {
+        "eval_every": 0
+      }
+    },
+    {
+      "name": "Cumulative",
+      "extra_log_folder": "Base",
+      "ignore": true,
+      "parameters": {
+      }
+    }
+  ],
+  "early_stopping": {
+    "patience": 50,
+    "delta": 0.1,
+    "val_stream_name": "eval_stream",
+    "min_epochs": 100
+  },
+  "validation_stream": {
+    "val_stream": "eval_stream"
+  },
+  "start_model_saving": {
+    "save_model": false,
+    "saved_model_folder": "highpow_mlp_256_2_efe_4runs",
+    "saved_model_name": "model",
+    "add_timestamp": false
+  }
+}

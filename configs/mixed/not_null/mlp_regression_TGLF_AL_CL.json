@@ -1,0 +1,177 @@
+{
+  "general": {
+    "mode": "AL(CL)",
+    "full_first_train_set": false,
+    "downsampling_factor": 2,
+    "task": "regression",
+    "dtype": "float32",
+    "num_campaigns": 10,
+    "train_mb_size": 4096,
+    "eval_mb_size": 1024,
+    "train_epochs": 200
+  },
+  "active_learning": {
+    "framework": "bmdal",
+    "parameters": {
+      "batch_size": 128,
+      "max_batch_size": 2048,
+      "reload_initial_weights": false,
+      "selection_method": "random",
+      "initial_selection_method": "random",
+      "sel_with_train": true,
+      "base_kernel": "grad",
+      "kernel_transforms": [
+        ["rp", [512]]
+      ]
+    }
+  },
+  "dataset": {
+    "pow_type": "highpow",
+    "cluster_type": "tau_based",
+    "dataset_type": "not_null",
+    "simulator_type": "tglf",
+    "input_columns": [
+      "rmin_loc", "drmajdx_loc", "kappa_loc", "delta_loc", "q_loc",
+      "q_prime_loc", "vexb_shear", "rlns_1", "rlts_1", "rlns_2",
+      "rlts_2", "taus_2", "as_2", "rlns_3", "zeff", "betae", "xnue"
+    ],
+    "output_columns": ["efe", "efi", "pfe", "pfi"],
+    "input_size": 17,
+    "output_size": 4,
+    "normalize_inputs": true,
+    "normalize_outputs": false,
+    "load_saved_final_data": false
+  },
+  "filters": {
+    "by_leq": {
+      "efe": 200.0,
+      "efi": 200.0,
+      "pfe": 200.0,
+      "pfi": 200.0
+    },
+    "by_geq": {
+      "efe": 0.0,
+      "efi": 0.0
+    }
+  },
+  "architecture": {
+    "name": "saved",
+    "model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs_tglf",
+    "model_name": "model",
+    "model_class_name": "MLP",
+    "parameters": {
+      "input_size": 17,
+      "output_size": 4,
+      "hidden_size": 1024,
+      "hidden_layers": 2,
+      "drop_rate": 0.5
+    }
+  },
+  "loss": {
+    "name": "MSE",
+    "parameters": {
+      "reduction": "mean"
+    }
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "parameters": {
+      "lr": 1e-3,
+      "weight_decay": 1e-5
+    }
+  },
+  "scheduler": {
+    "name": "ReduceLROnPlateau",
+    "parameters": {
+      "metric": "train_loss",
+      "first_exp_only": false,
+      "factor": 0.5,
+      "patience": 21,
+      "mode": "min",
+      "threshold_mode": "abs",
+      "threshold": 0.1,
+      "min_lr": 1e-4
+    }
+  },
+  "strategy": [
+    {
+      "name": "Naive",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": false,
+      "parameters": {
+      }
+    },
+    {
+      "name": "Replay",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Buffer 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
+      "parameters": {
+        "mem_size": 1000
+      }
+    },
+    {
+      "name": "EWC",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 10.0
+      }
+    },
+    {
+      "name": "MAS",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 Alpha 0.5 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
+      "parameters": {
+        "lambda_reg": 10.0,
+        "alpha": 0.5
+      }
+    },
+    {
+      "name": "GEM",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Patterns 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": false,
+      "parameters": {
+        "patterns_per_exp": 1000
+      }
+    },
+    {
+      "name": "LFL",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
+      "parameters": {
+        "lambda_e": 10.0
+      }
+    },
+    {
+      "name": "SI",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 1 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
+      "parameters": {
+        "si_lambda": 1.0
+      }
+    },
+    {
+      "name": "Cumulative",
+      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "ignore": true,
+      "parameters": {
+      }
+    }
+  ],
+  "early_stopping": {
+    "patience": 10,
+    "delta": 0.05,
+    "val_stream_name": "eval_stream",
+    "min_epochs": 10
+  },
+  "validation_stream": {
+    "val_stream": "eval_stream"
+  },
+  "start_model_saving": {
+    "save_model": false,
+    "saved_model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs_tglf",
+    "saved_model_name": "model",
+    "add_timestamp": false
+  }
+}
