@@ -11,13 +11,11 @@ venv/*
 logs/lowpow/pca_based/*
 logs/highpow/pca_based/*
 gitadd.sh
-*.pt
 stdout.txt
 logs/*
 logs
 plots/*
-plots
-models/*
+models/ignore/*
 strange/*
 ignore/*
 images/*
