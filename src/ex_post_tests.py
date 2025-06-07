@@ -8,6 +8,7 @@ from pathlib import Path
 import torch
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from torch.nn.functional import cosine_similarity
 
 from src.utils import *
@@ -90,6 +91,51 @@ def load_baseline_csv_data(
     return train_data, eval_data, test_data
 
 
+# TODO: Not very meaningful, see if to remove it!
+def load_baseline_csv_data_from_config(
+    config: LoggingConfiguration, raw_or_final: str = 'final',
+    train: bool = True, validation: bool = True, test: bool = True
+):
+    simulator_type, pow_type, cluster_type, dataset_type, task = config.get_common_params(end=5)
+    return load_baseline_csv_data(
+        pow_type, cluster_type, dataset_type, raw_or_final, train, validation, test, task, simulator_type
+    )
+
+
+def extract_dataset_weights(
+    simulator_type: str, pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
+    raw_or_final: str = 'final', task: str = 'regression', folder_path='.', weights_source: str = 'train'
+) -> np.ndarray:
+    """
+    Loads a dataset and saves the length of each campaign to be used for weighted evaluations.
+    """
+    train_data, eval_data, test_data = load_baseline_csv_data(
+        pow_type, cluster_type, dataset_type, raw_or_final, task=task, simulator_type=simulator_type
+    )
+    file_path = os.path.join(folder_path, f"{weights_source}_weights_{simulator_type}_{pow_type}_{cluster_type}_{dataset_type}_{raw_or_final}_{task}.txt")
+    if weights_source == 'train':
+        absolute_weights = train_data.groupby('campaign').size().to_numpy()
+    elif weights_source == 'eval':
+        absolute_weights = eval_data.groupby('campaign').size().to_numpy()
+    elif weights_source == 'test':
+        absolute_weights = test_data.groupby('campaign').size().to_numpy()
+    print(absolute_weights, absolute_weights.dtype)
+    np.savetxt(file_path, absolute_weights, fmt='%d')
+    return absolute_weights
+
+
+def load_dataset_weights(
+    simulator_type: str, pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
+    raw_or_final: str = 'final', task: str = 'regression', folder_path='.', weights_source: str = 'train'
+) -> np.ndarray[np.intp]:
+    """
+    Loads saved dataset weights from a txt file.
+    """
+    file_path = os.path.join(folder_path, f"{weights_source}_weights_{simulator_type}_{pow_type}_{cluster_type}_{dataset_type}_{raw_or_final}_{task}.txt")
+    absolute_weights = np.loadtxt(file_path, dtype=np.intp)
+    return absolute_weights
+
+
 def load_models(
         pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
         task: str = 'regression', outputs: str = 'efe_efi_pfe_pfi',
@@ -98,8 +144,8 @@ def load_models(
 ) -> dict[int, torch.nn.Module]:
     """
     Loads saved models according to experiment data.
-    :param pow_type: One of {"highpow", "lowpow"}
-    :param cluster_type: One of {"Ip_Pin_based", "tau_based", "pca_based"}
+    :param pow_type: One of {"highpow", "lowpow", "mixed"}
+    :param cluster_type: One of {"Ip_Pin_based", "tau_based", "wmhd_based", "beta_based"}
     :param dataset_type: One of {"complete", "not_null"}
     :param task: One of {"classification", "regression"}
     :param outputs: Output columns string, e.g. "efe_efi_pfe_pfi"
@@ -235,6 +281,9 @@ def build_experience_datasets(
 
 
 def outputs_direction_report(model, inputs, targets, ef_columns=None, mult_factor: float = 1.0, zero_negs: bool = False):
+    """
+    Quick visualization of predicted and target outputs directions, with cosine similarity and negative outputs count.
+    """
     predicted = model(inputs) * mult_factor
     if zero_negs:
         predicted[:, ef_columns][predicted[:, ef_columns] < 0] = 0
@@ -254,14 +303,17 @@ def outputs_direction_report(model, inputs, targets, ef_columns=None, mult_facto
 
 
 def get_mean_std_metric_values(
-    dataset, log_folder, mean_filename='eval_mean_values.csv', std_filename='std_values.csv',
-    metric='Forgetting_Exp', num_exp=10, include_future_experiences=False
+    dataset, log_folder, mean_filename='eval_mean_values.csv', std_filename='eval_std_values.csv',
+    metric='Forgetting_Exp', num_exp=10, include_future_experiences=False, absolute_weights: np.ndarray = None
 ):
+    """
+    Returns mean and std metric values for past and current experimental campaigns.
+    """
     mean_file_path = os.path.join(log_folder, mean_filename)
     std_file_path = os.path.join(log_folder, std_filename)
     mean_df = pd.read_csv(mean_file_path)
     std_df = pd.read_csv(std_file_path)
-    absolute_weights = np.array([
+    absolute_weights = absolute_weights if absolute_weights is not None else np.array([
         len(dataset[dataset.campaign == i]) for i in range(num_exp)
     ])
     mean_data = []
@@ -285,34 +337,48 @@ def get_mean_std_metric_values(
     })
 
 
-def get_max_metric_value(
-    log_folder, mean_filename='eval_mean_values.csv', std_filename='eval_std_values.csv',
-    metric='Forgetting_Exp', num_exp=10, include_future_experiences=False
+def get_stat_metric_value_last_experience(
+    log_folder, mean_filename='eval_mean_values.csv',
+    std_filename='eval_std_values.csv', metric='Forgetting_Exp',
+    stat: Literal["min", "max"] = "max"
 ):
+    """
+    Returns 
+    """
     mean_file_path = os.path.join(log_folder, mean_filename)
     std_file_path = os.path.join(log_folder, std_filename)
     mean_df = pd.read_csv(mean_file_path)
     std_df = pd.read_csv(std_file_path)
+    num_exp = len(mean_df['training_exp'].unique())
     last_exp = num_exp - 1
     last_exp_df = mean_df[mean_df.training_exp == last_exp]
     last_exp_arr = last_exp_df[metric].to_numpy()
-    index = np.argmax(last_exp_arr)
+    if stat == "max":
+        index = np.argmax(last_exp_arr)
+    elif stat == "min":
+        index = np.argmin(last_exp_arr)
+    else:
+        raise ValueError(f"Unknown stat \"{stat}\"")
     return index, last_exp_arr[index].item()
 
 
-def get_min_metric_value(
-    log_folder, mean_filename='eval_mean_values.csv', std_filename='eval_std_values.csv',
-    metric='Forgetting_Exp', num_exp=10, include_future_experiences=False
-):
+def get_stat_metric_value_per_experience(
+    log_folder: str, mean_filename='test_mean_values.csv',
+    std_filename='test_std_values.csv', metric='Forgetting_Exp',
+    stat: Literal["min", "max"] = "max"
+) -> np.ndarray:
     mean_file_path = os.path.join(log_folder, mean_filename)
     std_file_path = os.path.join(log_folder, std_filename)
     mean_df = pd.read_csv(mean_file_path)
     std_df = pd.read_csv(std_file_path)
-    last_exp = num_exp - 1
-    last_exp_df = mean_df[mean_df.training_exp == last_exp]
-    last_exp_arr = last_exp_df[metric].to_numpy()
-    index = np.argmin(last_exp_arr)
-    return index, last_exp_arr[index].item()
+    mean_df['training_exp'] = mean_df['training_exp'].apply(int)
+    std_df['training_exp'] = std_df['training_exp'].apply(int)
+    if stat == "max":
+        return mean_df.groupby('training_exp')[metric].apply(list).apply(lambda vals: vals.index(max(vals))).to_numpy()
+    elif stat == "min":
+        return mean_df.groupby('training_exp')[metric].apply(list).apply(lambda vals: vals.index(min(vals))).to_numpy()
+    else:
+        raise ValueError(f"Unknown stat \"{stat}\"")
 
 
 def mean_std_df_wrapper(    
@@ -535,12 +601,188 @@ def get_datasets_sizes_report(
     return result
 
 
+def mean_and_separated_plots(
+    logging_config: LoggingConfiguration, internal_metric_name: str = 'Forgetting_Exp', plot_metric_name: str = 'Forgetting',
+    count: int = 0, title: str = None, xlabel: str = 'Experimental Campaign', ylabel: str = None,
+    save: bool = False, savepath: str = None, show: bool = True, grid: bool = True, legend: bool = True,
+    mean_filename: str = 'test_mean_values.csv', std_filename: str = 'test_std_values.csv',
+    include_std: bool = True, means: bool = True, weighted_means: bool = True
+):
+    log_folder = logging_config.get_log_folder(count=count)
+    print(log_folder)
+    df = pd.read_csv(f"{log_folder}/{mean_filename}")
+    num_exp = len(df['training_exp'].unique())
+    for i in range(num_exp):
+        mask = (df['eval_exp'] == float(i)) & (df['training_exp'] >= i)
+        target_df = df[mask][[internal_metric_name, 'training_exp']].reset_index(drop=True)
+        plt.plot(target_df['training_exp'].astype(int), target_df[internal_metric_name], marker='o', linestyle='-', label=f"Campaign {i}")
+    if means:
+        if weighted_means:
+            simulator_type, pow_type, cluster_type, dataset_type, task = logging_config.get_common_params(0, 5)
+            absolute_weights = load_dataset_weights(
+                simulator_type, pow_type, cluster_type, dataset_type, raw_or_final='final', task=task, weights_source='test'
+            )
+            mean_label = 'Weighted Mean'
+        else:
+            absolute_weights = np.ones(num_exp, dtype=np.intp)
+            mean_label = 'Arithmetic Mean'
+        mean_values, std_values = [], []
+        for j in range(num_exp): # j = training experience
+            mask = (df['training_exp'] == j) & (df['eval_exp'] <= j)
+            current_data: np.ndarray[np.float64] = df[mask][internal_metric_name].reset_index(drop=True).to_numpy()
+            relative_weights: np.ndarray[np.float64] = absolute_weights[:j+1] / absolute_weights[:j+1].sum()
+            combined: np.ndarray[np.float64] = current_data * relative_weights
+            mu = combined.sum()
+            sigma = np.sqrt((relative_weights * np.square(current_data - mu)).sum())
+            mean_values.append(mu)
+            std_values.append(sigma)
+        print(mean_values, std_values, sep='\n')
+        mean_values_arr: np.ndarray[np.float64] = np.array(mean_values)
+        std_values_arr: np.ndarray[np.float64] = np.array(std_values)
+        plt.plot(np.arange(num_exp), mean_values_arr, marker='o', linestyle='-', label=mean_label, color='black')
+        if include_std:
+            plt.fill_between(np.arange(num_exp), mean_values_arr - std_values_arr, mean_values_arr + std_values_arr, alpha=0.2, color='black')
+    plt.grid(grid)
+    if legend: plt.legend(fontsize=10)
+    if title: plt.title(title)
+    if xlabel: plt.xlabel("Experimental Campaign")
+    ylabel = ylabel if ylabel is not None else f"{plot_metric_name} Values"
+    plt.ylabel(ylabel)
+    if save and savepath is not None:
+        plt.savefig(savepath, bbox_inches='tight')
+    if show: plt.show()
+
+
+def mean_vs_weighted_mean_plots(
+    logging_config: LoggingConfiguration, internal_metric_name: str = 'Forgetting_Exp', plot_metric_name: str = 'Forgetting',
+    count: int = 0, title: str = None, xlabel: str = 'Experimental Campaign', ylabel: str = None,
+    save: bool = False, savepath: str = None, show: bool = True, grid: bool = True, legend: bool = True,
+    mean_filename: str = 'test_mean_values.csv', std_filename: str = 'test_std_values.csv', include_std: bool = True,
+):
+    log_folder = logging_config.get_log_folder(count=count)
+    print(log_folder)
+    df = pd.read_csv(f"{log_folder}/{mean_filename}")
+    num_exp = len(df['training_exp'].unique())
+    simulator_type, pow_type, cluster_type, dataset_type, task = logging_config.get_common_params(0, 5)
+    
+    weighted_absolute_weights = load_dataset_weights(
+        simulator_type, pow_type, cluster_type, dataset_type, raw_or_final='final', task=task, weights_source='test'
+    )
+    arithmetic_absolute_weights = np.ones(num_exp)
+
+    weighted_mean_label = 'Weighted Mean'
+    weighted_mean_values, weighted_std_values = [], []
+    arithmetic_mean_label = 'Arithmetic Mean'
+    arithmetic_mean_values, arithmetic_std_values = [], []
+
+    for j in range(num_exp): # j = training experience
+        mask = (df['training_exp'] == j) & (df['eval_exp'] <= j)
+        current_data: np.ndarray[np.float64] = df[mask][internal_metric_name].reset_index(drop=True).to_numpy()
+
+        weighted_relative_weights: np.ndarray[np.float64] = weighted_absolute_weights[:j+1] / weighted_absolute_weights[:j+1].sum()
+        arithmetic_relative_weights: np.ndarray[np.float64] = arithmetic_absolute_weights[:j+1] / arithmetic_absolute_weights[:j+1].sum()
+        
+        weighted_combined: np.ndarray[np.float64] = current_data * weighted_relative_weights
+        arithmetic_combined: np.ndarray[np.float64] = current_data * arithmetic_relative_weights
+        
+        weighted_mu, arithmetic_mu = weighted_combined.sum(), arithmetic_combined.sum()
+        weighted_sigma = np.sqrt((weighted_relative_weights * np.square(current_data - weighted_mu)).sum())
+        arithmetic_sigma = np.sqrt((arithmetic_relative_weights * np.square(current_data - arithmetic_mu)).sum())
+
+        weighted_mean_values.append(weighted_mu)
+        weighted_std_values.append(weighted_sigma)
+
+        arithmetic_mean_values.append(arithmetic_mu)
+        arithmetic_std_values.append(arithmetic_sigma)
+    
+    weighted_mean_values_arr: np.ndarray[np.float64] = np.array(weighted_mean_values)
+    weighted_std_values_arr: np.ndarray[np.float64] = np.array(weighted_std_values)
+
+    arithmetic_mean_values_arr: np.ndarray[np.float64] = np.array(arithmetic_mean_values)
+    arithmetic_std_values_arr: np.ndarray[np.float64] = np.array(arithmetic_std_values)
+
+    plt.plot(np.arange(num_exp), weighted_mean_values_arr, marker='o', linestyle='-', label=weighted_mean_label, color='blue')
+    if include_std:
+        left = weighted_mean_values_arr - weighted_std_values_arr
+        right = weighted_mean_values_arr + weighted_std_values_arr
+        plt.fill_between(np.arange(num_exp), left, right, alpha=0.2, color='blue')
+    
+    plt.plot(np.arange(num_exp), arithmetic_mean_values_arr, marker='o', linestyle='-', label=arithmetic_mean_label, color='red')    
+    if include_std:
+        left = arithmetic_mean_values_arr - arithmetic_std_values_arr
+        right = arithmetic_mean_values_arr + arithmetic_std_values_arr
+        plt.fill_between(np.arange(num_exp), left, right, alpha=0.2, color='red')
+    
+    plt.grid(grid)
+    if legend: plt.legend(fontsize=8)
+    if title: plt.title(title)
+    if xlabel: plt.xlabel("Experimental Campaign")
+    ylabel = ylabel if ylabel is not None else f"{plot_metric_name} Values"
+    plt.ylabel(ylabel)
+    if save and savepath is not None:
+        plt.savefig(savepath, bbox_inches='tight')
+    if show: plt.show()
+
+
+def get_training_times(
+    config: LoggingConfiguration, num_tasks: int = 4
+) -> tuple[np.ndarray[np.float64], float]:
+    all_times = []
+    all_sums = []
+    for task_id in range(num_tasks):
+        log_folder = config.get_log_folder(count=-1, task_id=task_id)
+        df = pd.read_csv(os.path.join(log_folder, "training_results_epoch.csv"))
+        times_array = df.groupby('training_exp')['Time_Epoch'].apply(lambda g: g.sum()).to_numpy()
+        all_times.append(times_array)
+        all_sums.append(times_array.sum().item())
+    all_means: np.ndarray = np.array(all_times).mean(axis=0)
+    final_mean: float = np.array(all_sums).mean().item()
+    return all_means, final_mean
+
+
+def get_num_epochs(config: LoggingConfiguration, num_tasks: int = 4):
+    all_times = []
+    all_sums = []
+    for task_id in range(num_tasks):
+        log_folder = config.get_log_folder(count=-1, task_id=task_id)
+        df = pd.read_csv(os.path.join(log_folder, "training_results_epoch.csv"))
+        times_array = df.groupby('training_exp')['epoch'].apply(lambda g: len(g)).to_numpy()
+        all_times.append(times_array)
+        all_sums.append(times_array.sum().item())
+    all_means: np.ndarray = np.array(all_times).mean(axis=0)
+    final_mean: float = np.array(all_sums).mean().item()
+    return all_means, final_mean
+
+
+def computeR_from_config(
+    config: LoggingConfiguration, naive_values: pd.DataFrame, cumulative_values: pd.DataFrame,
+    mean_filename: str = 'test_mean_values.csv', std_filename: str = 'test_std_values.csv'
+) -> np.ndarray:
+    metric = "Mean R2Score_Exp"
+    simulator_type, pow_type, cluster_type, dataset_type, task = config.get_common_params(end=5)
+    absolute_weights: np.ndarray = load_dataset_weights(
+        simulator_type, pow_type, cluster_type, dataset_type,
+        raw_or_final='final', task=task, weights_source='test'
+    )
+    strategy_values = get_mean_std_metric_values(
+        None, config.get_log_folder(count=-1), mean_filename, std_filename,
+        metric[5:], absolute_weights=absolute_weights
+    )
+    result = (strategy_values[metric] - naive_values[metric]) / (cumulative_values[metric] - naive_values[metric])
+    return result.to_numpy()
+
+
+def computeT_from_config(config: LoggingConfiguration, naive_time: float, num_tasks: int = 4) -> float:
+    per_exp_times, total_time = get_training_times(config, num_tasks=num_tasks)
+    return total_time / naive_time
+
+
 __all__ = [
-    'load_models', 'load_baseline_csv_data', 'load_complete_dataset',
-    'build_full_datasets', 'build_experience_datasets',
-    'outputs_direction_report', 'get_mean_std_metric_values',
-    'get_max_metric_value', 'get_min_metric_value',
-    'mean_std_df_wrapper', 'mean_std_strategy_plots_wrapper',
-    'mean_std_al_plots_wrapper', 'get_datasets_sizes_report',
-    'mean_std_params_plots_wrapper'
+    'load_models', 'load_baseline_csv_data', 'extract_dataset_weights', 'load_dataset_weights',
+    'load_complete_dataset', 'build_full_datasets', 'build_experience_datasets',
+    'outputs_direction_report', 'get_mean_std_metric_values', 'get_stat_metric_value_last_experience',
+    'get_stat_metric_value_per_experience', 'mean_std_df_wrapper', 'mean_std_strategy_plots_wrapper',
+    'mean_std_al_plots_wrapper', 'get_datasets_sizes_report', 'mean_std_params_plots_wrapper',
+    'mean_and_separated_plots', 'mean_vs_weighted_mean_plots', 'get_training_times',
+    'computeR_from_config', 'computeT_from_config', 'get_num_epochs'
 ]

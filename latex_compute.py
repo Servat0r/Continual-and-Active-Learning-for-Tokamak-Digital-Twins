@@ -83,7 +83,9 @@ if __name__ == '__main__':
     mean_forgetting = last_row['Mean Forgetting_Exp'].item()
     std_forgetting = last_row['Std Forgetting_Exp'].item()
 
-    maxf_index, maxf_value = get_max_metric_value(folder_paths[0], f'{set_type}_mean_values.csv', f'{set_type}_std_values.csv')
+    maxf_index, maxf_value = get_stat_metric_value_last_experience(
+        folder_paths[0], f'{set_type}_mean_values.csv', f'{set_type}_std_values.csv', stat="max"
+    )
     
     if args.time_type == 'training':
         for path in folder_paths:

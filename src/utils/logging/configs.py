@@ -40,8 +40,8 @@ class LoggingConfiguration:
     extra_log_folder: str = 'Base'
     simulator_type: str = 'qualikiz'
     model_type: str = 'MLP' # NEW
-    #hidden_size: int = 1024
-    #hidden_layers: int = 2
+    hidden_size: int = 1024
+    hidden_layers: int = 2
     batch_size: int = 4096
     active_learning: bool = False
     al_method: str = 'random_sketch_grad'
@@ -103,6 +103,13 @@ class LoggingConfiguration:
             raise ValueError(f"Not found any directory in \"{index_dir}\" ending with \"task_{task_id}\"")
         else:
             return index_dir
+    
+    def get_common_params(self, start: int = 0, end: int = 8):
+        data = [
+            self.simulator_type, self.pow_type, self.cluster_type, self.dataset_type,
+            self.task, self.outputs, self.strategy, self.extra_log_folder
+        ]
+        return tuple(data[start:end])
 
 
 __all__ = [

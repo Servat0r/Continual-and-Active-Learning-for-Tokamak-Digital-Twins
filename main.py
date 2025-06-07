@@ -5,6 +5,7 @@ import sys
 import os
 
 from joblib import Parallel, delayed
+from types import MappingProxyType
 
 sys.path.append(os.path.dirname(__file__))  # Add src directory to sys.path
 
@@ -32,6 +33,9 @@ def filtered_task_training_loop(
     else:
         debug_print(f"[red]Ignoring task {task_id} ...[/red]", file=STDOUT)
         return None
+
+
+ConfigParser._ConfigParser__parsing_dict__ = MappingProxyType(ConfigParser._ConfigParser__parsing_dict__)
 
 
 if __name__ == '__main__':

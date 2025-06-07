@@ -10,7 +10,7 @@
   },
   "dataset": {
     "pow_type": "mixed",
-    "cluster_type": "beta_based",
+    "cluster_type": "wmhd_based",
     "dataset_type": "not_null",
     "input_columns": [
       "ane", "ate", "autor", "machtor", "x",
@@ -26,13 +26,13 @@
   },
   "architecture": {
     "name": "saved",
-    "model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
+    "model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
     "model_name": "model",
     "model_class_name": "MLP",
     "parameters": {
       "input_size": 15,
       "output_size": 4,
-      "hidden_size": 256,
+      "hidden_size": 1024,
       "hidden_layers": 2,
       "drop_rate": 0.5
     }
@@ -115,7 +115,7 @@
     {
       "name": "Replay",
       "extra_log_folder": "Buffer 2000",
-      "ignore": true,
+      "ignore": false,
       "parameters": {
         "mem_size": 2000
       }
@@ -288,7 +288,7 @@
     {
       "name": "GEM",
       "extra_log_folder": "Patterns 400",
-      "ignore": false,
+      "ignore": true,
       "parameters": {
         "patterns_per_exp": 400
       }
@@ -328,20 +328,20 @@
     },
     {
       "name": "GEMReplay",
-      "extra_log_folder": "Patterns 100 Buffer 1000",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 1000,
-        "mem_size": 1000
-      }
-    },
-    {
-      "name": "GEMReplay",
       "extra_log_folder": "Patterns 1000 Buffer 10000",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 1000,
         "mem_size": 10000
+      }
+    },
+    {
+      "name": "GEMReplay",
+      "extra_log_folder": "Patterns 1000 Buffer 2000",
+      "ignore": true,
+      "parameters": {
+        "patterns_per_exp": 1000,
+        "mem_size": 2000
       }
     },
     {
@@ -439,7 +439,7 @@
   },
   "start_model_saving": {
     "save_model": false,
-    "saved_model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
+    "saved_model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
     "saved_model_name": "model",
     "add_timestamp": false
   }

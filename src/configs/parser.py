@@ -42,12 +42,12 @@ class ConfigParser:
         ]
 
     @classmethod
-    def register_handler(cls, key: str):
+    def register_handler(cls, key: str, *, replace: bool = False):
         def decorator(func):
+            if (key in cls.__parsing_dict__) and not replace:
+                raise KeyError(f"Handler for {key} already registered!")
             cls.__parsing_dict__[key] = func
-            def wrapper(*args, **kwargs):
-                return func(*args, **kwargs)
-            return wrapper
+            return func
         return decorator
 
     def __init__(
