@@ -1,17 +1,19 @@
 # Tests for results after training
 from typing import *
-import json
 import copy
 import os.path
-from pathlib import Path
 
-import torch
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.nn.functional import cosine_similarity
 
 from src.utils import *
+
+
+def get_db_filename(config: ScenarioConfig):
+    sim_type = 'qlk' if config.simulator_type == 'qualikiz' else config.simulator_type
+    return f'db_{sim_type}_{config.pow_type}_{config.cluster_type}.json'
 
 
 def get_normalization_transforms(
@@ -34,53 +36,45 @@ def get_normalization_transforms(
     return transform, target_transform
 
 
-def load_complete_dataset(
-    pow_type: str, cluster_type: str, dataset_type: str ='not_null', simulator_type: str = 'qualikiz'
-):
+def load_complete_dataset(config: ScenarioConfig):
     """
     Loads the complete dataset for the given parameters. If dataset_type == "not_null", drops the entries
     with "has_turbulence = False".
     """
-    data_folder = f'data/{simulator_type}/cleaned/{pow_type}_cluster/{cluster_type}'
+    data_folder = get_cleaned_data_folder(config)
     df = pd.read_csv(f"{data_folder}/complete_dataset.csv")
-    if simulator_type == 'tglf':
+    if config.simulator_type == 'tglf':
         for column in TGLF_HIGHPOW_OUTPUTS:
             df = df[df[column] <= 500.0]
         df = df[df['efe'] >= 0.0]
         df = df[df['efi'] >= 0.0]
     print(f"Complete dataset has {len(df)} items")
-    if dataset_type == 'not_null':
+    if config.dataset_type == 'not_null':
         df = df[df['has_turbulence'] == True]
         print(f"Filtered dataset has {len(df)} items")
     return df
 
 
 def load_baseline_csv_data(
-        pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
-        raw_or_final: str = 'final', train: bool = True,
-        validation: bool = True, test: bool = True, task: str = 'regression',
-        simulator_type: str = 'qualikiz'
+        config: ScenarioConfig, raw_or_final: str = 'final',
+        train: bool = True, validation: bool = True, test: bool = True
 ) -> tuple[pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None]:
     """
     Returns the triple (train_data, eval_data, test_data) as pandas DataFrames according to the
     specific baseline dataset selected.
-    :param pow_type: One of {"highpow", "lowpow"}
-    :param cluster_type: One of {"Ip_Pin_based", "tau_based", "pca_based"}
-    :param dataset_type: One of {"complete", "not_null"}
     :param raw_or_final: One of {"raw", "final"}. If "raw", loads unprocessed data just right after
     train-eval-test split. If "final", loads already processed data after subsampling and zero-drops,
     but BEFORE normalization (this is done for allowing training with non-normalized data).
     :param train: If True, loads train data.
     :param validation: If True, loads validation data.
     :param test: If True, loads test data.
-    :param task: Either "classification" or "regression".
     :return: The triple (train_data, eval_data, test_data) as pandas DataFrames, with each value being
     None if the corresponding train/validation/test input parameter is False.
     """
-    data_folder = f'data/{simulator_type}/cleaned/{pow_type}_cluster/{cluster_type}'
-    train_filename = f'{raw_or_final}_train_data_{task}_{dataset_type}.csv'
-    eval_filename = f'{raw_or_final}_eval_data_{task}_{dataset_type}.csv'
-    test_filename = f'{raw_or_final}_test_data_{task}_{dataset_type}.csv'
+    data_folder = get_cleaned_data_folder(config)
+    train_filename = get_raw_or_final_filename(config, raw_or_final, 'train')
+    eval_filename = get_raw_or_final_filename(config, raw_or_final, 'eval')
+    test_filename = get_raw_or_final_filename(config, raw_or_final, 'test')
     train_data, eval_data, test_data = None, None, None
     if train:
         train_data = pd.read_csv(f'{data_folder}/{train_filename}')
@@ -91,28 +85,20 @@ def load_baseline_csv_data(
     return train_data, eval_data, test_data
 
 
-# TODO: Not very meaningful, see if to remove it!
-def load_baseline_csv_data_from_config(
-    config: LoggingConfiguration, raw_or_final: str = 'final',
-    train: bool = True, validation: bool = True, test: bool = True
-):
-    simulator_type, pow_type, cluster_type, dataset_type, task = config.get_common_params(end=5)
-    return load_baseline_csv_data(
-        pow_type, cluster_type, dataset_type, raw_or_final, train, validation, test, task, simulator_type
-    )
+def dataset_weights_file(config: ScenarioConfig, weights_source: str, raw_or_final: str):
+    return f"{weights_source}_weights_{config.simulator_type}_{config.pow_type}_" + \
+        f"{config.cluster_type}_{config.dataset_type}_{raw_or_final}_{config.task}.txt"
 
 
 def extract_dataset_weights(
-    simulator_type: str, pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
-    raw_or_final: str = 'final', task: str = 'regression', folder_path='.', weights_source: str = 'train'
+    config: ScenarioConfig, raw_or_final: str = 'final',
+    folder_path='.', weights_source: str = 'train'
 ) -> np.ndarray:
     """
     Loads a dataset and saves the length of each campaign to be used for weighted evaluations.
     """
-    train_data, eval_data, test_data = load_baseline_csv_data(
-        pow_type, cluster_type, dataset_type, raw_or_final, task=task, simulator_type=simulator_type
-    )
-    file_path = os.path.join(folder_path, f"{weights_source}_weights_{simulator_type}_{pow_type}_{cluster_type}_{dataset_type}_{raw_or_final}_{task}.txt")
+    train_data, eval_data, test_data = load_baseline_csv_data(config, raw_or_final)
+    file_path = os.path.join(folder_path, dataset_weights_file(config, weights_source, raw_or_final))
     if weights_source == 'train':
         absolute_weights = train_data.groupby('campaign').size().to_numpy()
     elif weights_source == 'eval':
@@ -125,61 +111,15 @@ def extract_dataset_weights(
 
 
 def load_dataset_weights(
-    simulator_type: str, pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
-    raw_or_final: str = 'final', task: str = 'regression', folder_path='.', weights_source: str = 'train'
+    config: ScenarioConfig, raw_or_final: str = 'final',
+    folder_path='.', weights_source: str = 'train'
 ) -> np.ndarray[np.intp]:
     """
     Loads saved dataset weights from a txt file.
     """
-    file_path = os.path.join(folder_path, f"{weights_source}_weights_{simulator_type}_{pow_type}_{cluster_type}_{dataset_type}_{raw_or_final}_{task}.txt")
+    file_path = os.path.join(folder_path, dataset_weights_file(config, weights_source, raw_or_final))
     absolute_weights = np.loadtxt(file_path, dtype=np.intp)
     return absolute_weights
-
-
-def load_models(
-        pow_type: str, cluster_type: str, dataset_type: str = 'not_null',
-        task: str = 'regression', outputs: str = 'efe_efi_pfe_pfi',
-        strategy: str = 'Naive', extra_log_folder: str = 'Base',
-        task_ids: int | list[int] = 0, params_to_remove: list[str] = None,
-) -> dict[int, torch.nn.Module]:
-    """
-    Loads saved models according to experiment data.
-    :param pow_type: One of {"highpow", "lowpow", "mixed"}
-    :param cluster_type: One of {"Ip_Pin_based", "tau_based", "wmhd_based", "beta_based"}
-    :param dataset_type: One of {"complete", "not_null"}
-    :param task: One of {"classification", "regression"}
-    :param outputs: Output columns string, e.g. "efe_efi_pfe_pfi"
-    :param strategy: Strategy class name, e.g. "Naive" or "Replay"
-    :param extra_log_folder: Extra log folder name (see README), e.g. "Base" or "Buffer 2000"
-    :param task_ids: For which run(s) we want to load final model(s).
-    :param params_to_remove: Parameters to remove from the configuration (for backward
-    compatibility).
-    :return: A dictionary of the form `task_id -> model`.
-    """
-    base_log_folder = \
-        f'logs/{pow_type}/{cluster_type}/{task}/{dataset_type}/{outputs}/{strategy}/{extra_log_folder}'
-    if not isinstance(task_ids, list):
-        task_ids = [task_ids]
-    task_ids.sort()
-    path = Path(base_log_folder)
-    directories = [
-        os.path.join(base_log_folder, d.name) for d in path.iterdir() if d.is_dir()
-    ]
-    # Order as task_0, task_1, task_2 etc
-    directories = sorted(directories, key=lambda x: int(x[-1]))
-    models = {}
-    for task_id in task_ids:
-        state_dict = torch.load(os.path.join(directories[task_id], 'model.pt'))
-        config_filename = os.path.join(directories[task_id], 'config.json')
-        config = json.load(open(config_filename))
-        model_parameters = config['architecture']['parameters']
-        for param in params_to_remove:
-            model_parameters.pop(param, None)
-        model_class = SimpleRegressionMLP if task == 'regression' else SimpleClassificationMLP # TODO REWORK TO INCLUDE OTHER MODELS
-        model = model_class(**model_parameters)
-        model.load_state_dict(state_dict)
-        models[task_id] = model
-    return models
 
 
 def build_full_datasets(
@@ -761,8 +701,7 @@ def computeR_from_config(
     metric = "Mean R2Score_Exp"
     simulator_type, pow_type, cluster_type, dataset_type, task = config.get_common_params(end=5)
     absolute_weights: np.ndarray = load_dataset_weights(
-        simulator_type, pow_type, cluster_type, dataset_type,
-        raw_or_final='final', task=task, weights_source='test'
+        config.scenario, raw_or_final='final', weights_source='test'
     )
     strategy_values = get_mean_std_metric_values(
         None, config.get_log_folder(count=-1), mean_filename, std_filename,
@@ -772,17 +711,12 @@ def computeR_from_config(
     return result.to_numpy()
 
 
-def computeT_from_config(config: LoggingConfiguration, naive_time: float, num_tasks: int = 4) -> float:
-    per_exp_times, total_time = get_training_times(config, num_tasks=num_tasks)
-    return total_time / naive_time
-
-
 __all__ = [
-    'load_models', 'load_baseline_csv_data', 'extract_dataset_weights', 'load_dataset_weights',
+    'load_baseline_csv_data', 'extract_dataset_weights', 'load_dataset_weights',
     'load_complete_dataset', 'build_full_datasets', 'build_experience_datasets',
     'outputs_direction_report', 'get_mean_std_metric_values', 'get_stat_metric_value_last_experience',
     'get_stat_metric_value_per_experience', 'mean_std_df_wrapper', 'mean_std_strategy_plots_wrapper',
     'mean_std_al_plots_wrapper', 'get_datasets_sizes_report', 'mean_std_params_plots_wrapper',
     'mean_and_separated_plots', 'mean_vs_weighted_mean_plots', 'get_training_times',
-    'computeR_from_config', 'computeT_from_config', 'get_num_epochs'
+    'computeR_from_config', 'get_num_epochs', 'get_db_filename'
 ]

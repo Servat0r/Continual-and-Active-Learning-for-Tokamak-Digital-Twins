@@ -274,7 +274,7 @@ def make_benchmark(
             train_data, eval_data, test_data, input_columns=input_columns, output_columns=output_columns,
             filter_by={'campaign': [campaign]}, float_precision=float_precision,
             device='cpu', transform=transform, target_transform=target_transform,
-            filter_by_leq=filter_by_leq, filter_by_geq=filter_by_geq,
+            filter_by_leq=filter_by_leq, filter_by_geq=filter_by_geq, task_label=campaign
         )
         X, y = train_dataset[0]
         print(

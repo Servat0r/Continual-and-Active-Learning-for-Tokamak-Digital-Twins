@@ -230,7 +230,6 @@ class CustomCSVLogger(BaseLogger):
         metric_values: list["MetricValue"],
         **kwargs,
     ):
-        #super().after_training_epoch(strategy, metric_values, **kwargs)
         if self.is_open and self.working:
             self.print_train_metrics(
                 self.training_exp_id,

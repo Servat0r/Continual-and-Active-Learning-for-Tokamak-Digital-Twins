@@ -1,13 +1,13 @@
 from typing import *
 
-import json
-import sys
-import os
+import json, sys, os
+import numpy as np
+import pandas as pd
 
 from joblib import Parallel, delayed
 from types import MappingProxyType
 
-sys.path.append(os.path.dirname(__file__))  # Add src directory to sys.path
+sys.path.append(os.path.dirname(__file__))
 
 from src.utils import *
 from src.configs import *
@@ -35,19 +35,10 @@ def filtered_task_training_loop(
         return None
 
 
-ConfigParser._ConfigParser__parsing_dict__ = MappingProxyType(ConfigParser._ConfigParser__parsing_dict__)
+ConfigParser.__parsing_dict__ = MappingProxyType(ConfigParser.__parsing_dict__)
 
 
 if __name__ == '__main__':
-    # Config
-    if len(sys.argv) < 2:
-        print(f"[red]Usage[/red]: [cyan](python) {sys.argv[0]} configuration_file_name.json [OPTIONS] [/cyan]")
-        print(f"[cyan]Options: [/cyan]")
-        print(f"[cyan]--num_tasks=<int> (parallel execution on multiple model instances)[/cyan]")
-        print(f"[cyan]--tasks=<list of int> (if you want to filter by tasks)[/cyan]")
-        print(f"[cyan]-h[/cyan] or [cyan]--help[/cyan] (help messages)")
-        sys.exit(1)
-
     cmd_arg_parser = build_argparser()
     # Parse arguments
     cmd_args = cmd_arg_parser.parse_args()
@@ -98,7 +89,7 @@ if __name__ == '__main__':
             ]
         # Plot means and standard deviations
         if num_jobs > 1:
-            for set_type in ['eval', 'test']: #TODO Sistemare!
+            for set_type in ['eval', 'test']:
                 file_paths = [
                     os.path.join(
                         result['log_folder'], f'{set_type}_results_experience.csv'
@@ -107,12 +98,17 @@ if __name__ == '__main__':
                 if (len(file_paths) != len(results)) and (len(tasks_list) < num_jobs):
                     raise RuntimeError(f"Something went wrong during training: {len(file_paths)} vs. {len(results)}")
                 save_folder = os.path.dirname(file_paths[0])
-                # Save csv files for mean and std values
-                get_means_std_over_evaluation_experiences_multiple_runs(
-                    file_paths,
-                    os.path.join(save_folder, f'{set_type}_mean_values.csv'),
-                    os.path.join(save_folder, f'{set_type}_std_values.csv')
-                )
+                dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths]
+                columns = dfs[0].columns
+                mean_df = pd.DataFrame(columns=columns)
+                std_df = pd.DataFrame(columns=columns)
+                for column in columns:
+                    values = [df[column].to_numpy(dtype=np.float32) for df in dfs]
+                    arr = np.round(np.vstack(values), decimals=8)
+                    mean_df[column] = arr.mean(axis=0)
+                    std_df[column] = arr.std(axis=0)
+                mean_df.to_csv(os.path.join(save_folder, f'{set_type}_mean_values.csv'), index=False)
+                std_df.to_csv(os.path.join(save_folder, f'{set_type}_std_values.csv'), index=False)
                 # Plot mean and std values
                 task = results[0]['task']
                 metric_list = get_metric_names_list(task)

@@ -2,7 +2,7 @@ import torch
 from avalanche.models import BaseModel
 from torch import nn as nn
 
-from src.utils import get_dtype_from_str
+from ..misc import get_dtype_from_str
 
 
 class SimpleClassificationMLP(nn.Module, BaseModel):

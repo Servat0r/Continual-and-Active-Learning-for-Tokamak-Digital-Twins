@@ -1,9 +1,50 @@
-from typing import Iterable
+from typing import Iterable, Optional, Any
+from dataclasses import dataclass
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from .scenarios import *
+from .logging.configs import *
 
-from .misc import extract_metric_values_over_evaluation_experiences
+
+# Colors and linestyles
+DEFAULT_COLORS = 2 * [
+    # Default matplotlib colors
+    '#1f77b4',  # blue
+    '#ff7f0e',  # orange
+    '#2ca02c',  # green
+    '#d62728',  # red
+    '#9467bd',  # purple
+    '#8c564b',  # brown
+    '#e377c2',  # pink
+    '#7f7f7f',  # gray
+    '#bcbd22',  # olive
+    '#17becf',  # cyan
+    'black', 'gold', 'brown', 'darkblue'
+]
+
+DEFAULT_LINESTYLES = ['-' for _ in range(len(DEFAULT_COLORS)//2)] + ['--' for _ in range(len(DEFAULT_COLORS)//2)]
+
+
+@dataclass
+class PlottingConfig:
+    
+    logging_config: LoggingConfiguration
+    title: str
+    xlabel: str
+    ylabel: str
+    grid: bool = True
+    show_legend: bool = True
+    title_font: Optional[int] = None
+    xlabel_font: Optional[int] = None
+    ylabel_font: Optional[int] = None
+    legend_font: Optional[int] = None
+    show: bool = True
+    save: bool = True
+    savepath: str = None
+    from_beginning: bool = True
+    linestyles: str = '-'
+    color: str = None
 
 
 def plot_metric_over_evaluation_experiences(
@@ -214,4 +255,5 @@ __all__ = [
     'plot_metrics_over_training_experiences',
     'plot_metric_over_evaluation_experiences_multiple_runs',
     'plot_metric_over_multiple_strategies',
+    'PlottingConfig', 'DEFAULT_COLORS', 'DEFAULT_LINESTYLES'
 ]

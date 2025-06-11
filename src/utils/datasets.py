@@ -5,6 +5,14 @@ import torch
 from avalanche.benchmarks import AvalancheDataset
 from torch.utils.data import Dataset
 from avalanche.benchmarks.utils import TransformGroups, DataAttribute
+from .scenarios import *
+
+
+def get_cleaned_data_folder(config: ScenarioConfig):
+    return f'data/{config.simulator_type}/cleaned/{config.pow_type}_cluster/{config.cluster_type}'
+
+def get_raw_or_final_filename(config: ScenarioConfig, raw_or_final: str = 'final', type: str = 'train'):
+    return f'{raw_or_final}_{type}_data_{config.task}_{config.dataset_type}.csv'
 
 
 class CSVRegressionDataset(Dataset):
@@ -142,11 +150,11 @@ def make_complete_dataset(
 
 def get_avalanche_csv_regression_datasets(
         train_data, eval_data, test_data, input_columns: list[str], output_columns: list[str], # todo modify later
-        transform=None, target_transform=None, filter_by: dict[str, list] = None,
-        float_precision: str = 'float32', device=None, *, indices: list[int] | None = None,
-        data_attributes: list[DataAttribute] | None = None, transform_groups: TransformGroups | None = None,
-        frozen_transform_groups: TransformGroups | None = None, collate_fn: Callable[[list], Any] | None = None,
-        filter_by_leq: dict[str, int | float] = None, filter_by_geq: dict[str, int | float] = None,
+        transform=None, target_transform=None, filter_by: dict[str, list] = None, float_precision: str = 'float32',
+        device=None, *, indices: list[int] | None = None, data_attributes: list[DataAttribute] | None = None,
+        transform_groups: TransformGroups | None = None, frozen_transform_groups: TransformGroups | None = None,
+        collate_fn: Callable[[list], Any] | None = None, filter_by_leq: dict[str, int | float] = None,
+        filter_by_geq: dict[str, int | float] = None, task_label: int | None = None
 ) -> tuple[AvalancheDataset, AvalancheDataset, AvalancheDataset]:
     """
     Builds AvalancheDataset objects on top of CSVRegressionDataset ones.
@@ -173,6 +181,7 @@ def get_avalanche_csv_regression_datasets(
     :param filter_by_geq: A dictionary for filtering data according to columns values.
     Specifically, for each (column -> value), each row such that row[column] < value
     will be filtered out.
+    :param task_label: If not None, task labels will be included in the dataset.
     :return: The triple (train_dataset, eval_dataset, test_dataset).
     """
     base_train_dataset = CSVRegressionDataset(
@@ -191,21 +200,48 @@ def get_avalanche_csv_regression_datasets(
         device=device, filter_by_geq=filter_by_geq, filter_by_leq=filter_by_leq,
     )
 
-    train_dataset = AvalancheDataset(
-        [base_train_dataset], indices=indices, data_attributes=data_attributes,
-        transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
-        collate_fn=collate_fn
-    )
-    eval_dataset = AvalancheDataset(
-        [base_eval_dataset], indices=indices, data_attributes=data_attributes,
-        transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
-        collate_fn=collate_fn
-    )
-    test_dataset = AvalancheDataset(
-        [base_test_dataset], indices=indices, data_attributes=data_attributes,
-        transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
-        collate_fn=collate_fn
-    )
+    base_data_attributes = data_attributes if data_attributes is not None else []
+    if task_label is not None:
+        train_task_labels = DataAttribute(
+            name="targets_task_labels", data=len(base_train_dataset) * [task_label]
+        )
+        eval_task_labels = DataAttribute(
+            name="targets_task_labels", data=len(base_eval_dataset) * [task_label]
+        )
+        test_task_labels = DataAttribute(
+            name="targets_task_labels", data=len(base_test_dataset) * [task_label]
+        )    
+        train_dataset = AvalancheDataset(
+            [base_train_dataset], indices=indices, data_attributes=base_data_attributes+[train_task_labels],
+            transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
+            collate_fn=collate_fn
+        )
+        eval_dataset = AvalancheDataset(
+            [base_eval_dataset], indices=indices, data_attributes=base_data_attributes+[eval_task_labels],
+            transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
+            collate_fn=collate_fn
+        )
+        test_dataset = AvalancheDataset(
+            [base_test_dataset], indices=indices, data_attributes=base_data_attributes+[test_task_labels],
+            transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
+            collate_fn=collate_fn
+        )
+    else:
+        train_dataset = AvalancheDataset(
+            [base_train_dataset], indices=indices, data_attributes=data_attributes,
+            transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
+            collate_fn=collate_fn
+        )
+        eval_dataset = AvalancheDataset(
+            [base_eval_dataset], indices=indices, data_attributes=data_attributes,
+            transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
+            collate_fn=collate_fn
+        )
+        test_dataset = AvalancheDataset(
+            [base_test_dataset], indices=indices, data_attributes=data_attributes,
+            transform_groups=transform_groups, frozen_transform_groups=frozen_transform_groups,
+            collate_fn=collate_fn
+        )
     return train_dataset, eval_dataset, test_dataset
 
 
@@ -253,6 +289,7 @@ TGLF_MIXED_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
 
 
 __all__ = [
+    'get_cleaned_data_folder', 'get_raw_or_final_filename',
     'CSVRegressionDataset', 'get_avalanche_csv_regression_datasets',
     'QUALIKIZ_HIGHPOW_INPUTS', 'QUALIKIZ_HIGHPOW_OUTPUTS',
     'QUALIKIZ_LOWPOW_INPUTS', 'QUALIKIZ_LOWPOW_OUTPUTS',
