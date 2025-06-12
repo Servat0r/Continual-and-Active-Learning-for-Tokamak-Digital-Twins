@@ -17,7 +17,7 @@
       "batch_size": 256,
       "max_batch_size": 1024,
       "reload_initial_weights": false,
-      "standard_method": "batchbald"
+      "standard_method": "badge"
     }
   },
   "dataset": {
@@ -39,13 +39,13 @@
   },
   "architecture": {
     "name": "saved",
-    "model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
+    "model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
     "model_name": "model",
     "model_class_name": "MLP",
     "parameters": {
       "input_size": 15,
       "output_size": 4,
-      "hidden_size": 256,
+      "hidden_size": 1024,
       "hidden_layers": 2,
       "drop_rate": 0.5
     }
@@ -87,7 +87,7 @@
     {
       "name": "Replay",
       "extra_log_folder": "Buffer 2000",
-      "ignore": true,
+      "ignore": false,
       "parameters": {
         "mem_size": 2000
       }
@@ -139,7 +139,7 @@
     {
       "name": "Cumulative",
       "extra_log_folder": "Base",
-      "ignore": false,
+      "ignore": true,
       "parameters": {
       }
     }
@@ -155,7 +155,7 @@
   },
   "start_model_saving": {
     "save_model": false,
-    "saved_model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
+    "saved_model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
     "saved_model_name": "model",
     "add_timestamp": false
   }

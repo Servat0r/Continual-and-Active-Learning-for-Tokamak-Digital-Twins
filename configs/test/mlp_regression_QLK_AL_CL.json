@@ -1,7 +1,8 @@
 {
   "general": {
     "mode": "AL(CL)",
-    "full_first_train_set": false,
+    "full_first_train_set": true,
+    "first_train_set_size": 0,
     "downsampling_factor": 2,
     "task": "regression",
     "dtype": "float32",
@@ -13,8 +14,8 @@
   "active_learning": {
     "framework": "bmdal",
     "parameters": {
-      "batch_size": 128,
-      "max_batch_size": 2048,
+      "batch_size": 256,
+      "max_batch_size": 1024,
       "reload_initial_weights": false,
       "standard_method": "lcmd_sketch_grad"
     }
@@ -38,13 +39,13 @@
   },
   "architecture": {
     "name": "saved",
-    "model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
     "model_name": "model",
     "model_class_name": "MLP",
     "parameters": {
       "input_size": 15,
       "output_size": 4,
-      "hidden_size": 1024,
+      "hidden_size": 256,
       "hidden_layers": 2,
       "drop_rate": 0.5
     }
@@ -78,48 +79,84 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "AL(CL)/test/Continual/lcmd_sketch_grad/Batches 128 2048 non-full first set no reload weights downsampling 0.5/(4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "[test] Base (Full Size)",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "AL(CL)/test/Continual/lcmd_sketch_grad/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Buffer 1000 (4096 batch size) (1024 hidden size)",
-      "ignore": true,
-      "parameters": {
-        "mem_size": 1000
-      }
-    },
-    {
-      "name": "EWC",
-      "extra_log_folder": "AL(CL)/test/Continual/lcmd_sketch_grad/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "[test] Buffer 2000 (Full Size)",
       "ignore": false,
       "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 10.0
+        "mem_size": 2000
       }
     },
     {
-      "name": "MAS",
-      "extra_log_folder": "AL(CL)/test/Continual/lcmd_sketch_grad/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 Alpha 0,5 (4096 batch size) (1024 hidden size)",
+      "name": "Replay",
+      "extra_log_folder": "Buffer 10000 (Full Size)",
       "ignore": true,
       "parameters": {
-        "lambda_reg": 10.0,
-        "alpha": 0.5
+        "mem_size": 10000
+      }
+    },
+    {
+      "name": "PercentageReplay",
+      "extra_log_folder": "Percentage 5% Base 2000 (Full Size)",
+      "ignore": true,
+      "parameters": {
+        "mem_percentage": 0.05,
+        "min_buffer_size": 2000
+      }
+    },
+    {
+      "name": "PercentageReplay",
+      "extra_log_folder": "Percentage 10% Base 10000 (Full Size)",
+      "ignore": true,
+      "parameters": {
+        "mem_percentage": 0.10,
+        "min_buffer_size": 10000
       }
     },
     {
       "name": "GEM",
-      "extra_log_folder": "AL(CL)/test/Continual/lcmd_sketch_grad/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Patterns 1000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Patterns 400 (Full Size)",
       "ignore": true,
       "parameters": {
-        "patterns_per_exp": 1000
+        "patterns_per_exp": 400
+      }
+    },
+    {
+      "name": "GEM",
+      "extra_log_folder": "Patterns 1024 (Full Size)",
+      "ignore": true,
+      "parameters": {
+        "patterns_per_exp": 1024
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 1 Buffer 2000 (Full Size)",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 1.0,
+        "mem_size": 2000
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 1 Buffer 10000 (Full Size)",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 1.0,
+        "mem_size": 10000
       }
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "AL(CL)/test/Continual/lcmd_sketch_grad/Batches 128 2048 non-full first set no reload weights downsampling 0.5/(4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Base (Full Size)",
       "ignore": true,
       "parameters": {
       }
@@ -136,7 +173,7 @@
   },
   "start_model_saving": {
     "save_model": false,
-    "saved_model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "saved_model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
     "saved_model_name": "model",
     "add_timestamp": false
   }

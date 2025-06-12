@@ -6,7 +6,7 @@
     "num_campaigns": 10,
     "train_mb_size": 4096,
     "eval_mb_size": 1024,
-    "train_epochs": 200
+    "train_epochs": 20
   },
   "dataset": {
     "pow_type": "highpow",
@@ -66,21 +66,21 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "Base (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "[test] Base (cuda sync)",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "FromScratchTraining",
-      "extra_log_folder": "Base (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Base",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "Percentage 1% (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Percentage 1%",
       "ignore": true,
       "parameters": {
         "mem_percentage": 0.01,
@@ -93,7 +93,7 @@
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "Percentage 5% (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Percentage 5%",
       "ignore": true,
       "parameters": {
         "mem_percentage": 0.05,
@@ -106,7 +106,7 @@
     },
     {
       "name": "PercentageReplay",
-      "extra_log_folder": "Percentage 10% (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Percentage 10%",
       "ignore": true,
       "parameters": {
         "mem_percentage": 0.1,
@@ -119,7 +119,7 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 200 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Buffer 200",
       "ignore": true,
       "parameters": {
         "mem_size": 200
@@ -127,7 +127,7 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 2000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Buffer 2000",
       "ignore": true,
       "parameters": {
         "mem_size": 2000
@@ -135,7 +135,7 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 2000 from_scratch (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Buffer 2000 from_scratch",
       "ignore": true,
       "from_scratch": true,
       "parameters": {
@@ -144,15 +144,15 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 10000 (4096 batch size) (1024 hidden size)",
-      "ignore": true,
+      "extra_log_folder": "[test] Buffer 10000 (no sync)",
+      "ignore": false,
       "parameters": {
         "mem_size": 10000
       }
     },
     {
       "name": "EWC",
-      "extra_log_folder": "Lambda 50 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 50",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -161,7 +161,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "Lambda 10 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 10",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -170,7 +170,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "Lambda 1 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 1",
       "ignore": true,
       "parameters": {
         "mode": "online",
@@ -180,7 +180,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "Lambda 1 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 1",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -189,7 +189,7 @@
     },
     {
       "name": "EWC",
-      "extra_log_folder": "Lambda 100 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 100",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -198,7 +198,7 @@
     },
     {
       "name": "EWCReplay",
-      "extra_log_folder": "Lambda 10 Buffer 2000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 10 Buffer 2000",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -208,7 +208,7 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "Lambda 10 Alpha 0.0 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 10 Alpha 0.0",
       "ignore": true,
       "parameters": {
         "lambda_reg": 10.0,
@@ -217,7 +217,7 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "Lambda 1 Alpha 0.0 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 1 Alpha 0.0",
       "ignore": true,
       "parameters": {
         "lambda_reg": 1.0,
@@ -226,7 +226,7 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "Lambda 5 Alpha 0.0 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 5 Alpha 0.0",
       "ignore": true,
       "parameters": {
         "lambda_reg": 5.0,
@@ -235,7 +235,7 @@
     },
     {
       "name": "MAS",
-      "extra_log_folder": "Lambda 2 Alpha 0.0 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 2 Alpha 0.0",
       "ignore": true,
       "parameters": {
         "lambda_reg": 2.0,
@@ -244,7 +244,7 @@
     },
     {
       "name": "MASReplay",
-      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 1000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 1000",
       "ignore": true,
       "parameters": {
         "lambda_reg": 10.0,
@@ -254,8 +254,8 @@
     },
     {
       "name": "AGEM",
-      "extra_log_folder": "Patterns 10000 SampleSize 256 (4096 batch size) (1024 hidden size)",
-      "ignore": false,
+      "extra_log_folder": "Patterns 10000 SampleSize 256",
+      "ignore": true,
       "parameters": {
         "patterns_per_exp": 10000,
         "sample_size": 256
@@ -263,7 +263,7 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "Patterns 1000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Patterns 1000",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 1000
@@ -271,7 +271,7 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "Patterns 2000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Patterns 2000",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 2000
@@ -279,7 +279,7 @@
     },
     {
       "name": "GEMReplay",
-      "extra_log_folder": "Patterns 100 Buffer 1000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Patterns 100 Buffer 1000",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 100,
@@ -288,7 +288,7 @@
     },
     {
       "name": "GEMReplay",
-      "extra_log_folder": "Patterns 1000 Buffer 10000 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Patterns 1000 Buffer 10000",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 1000,
@@ -297,7 +297,7 @@
     },
     {
       "name": "LFL",
-      "extra_log_folder": "Lambda 1 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 1",
       "ignore": true,
       "parameters": {
         "lambda_e": 1.0
@@ -305,7 +305,7 @@
     },
     {
       "name": "LFL",
-      "extra_log_folder": "Lambda 10 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 10",
       "ignore": true,
       "parameters": {
         "lambda_e": 10.0
@@ -313,7 +313,7 @@
     },
     {
       "name": "SI",
-      "extra_log_folder": "Lambda 1 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 1",
       "ignore": true,
       "parameters": {
         "si_lambda": 1.0
@@ -321,7 +321,7 @@
     },
     {
       "name": "SI",
-      "extra_log_folder": "Lambda 0.1 (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Lambda 0.1",
       "ignore": true,
       "parameters": {
         "si_lambda": 0.1
@@ -329,7 +329,7 @@
     },
     {
       "name": "JointTraining",
-      "extra_log_folder": "Base (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Base",
       "ignore": true,
       "parameters": {
         "eval_every": 0
@@ -337,7 +337,7 @@
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "Base (4096 batch size) (1024 hidden size)",
+      "extra_log_folder": "Base",
       "ignore": true,
       "parameters": {
       }

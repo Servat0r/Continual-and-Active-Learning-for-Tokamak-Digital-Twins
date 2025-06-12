@@ -1,4 +1,5 @@
 # NOTE: QuaLiKiz only!
+from typing import Optional
 import json, sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,6 +14,10 @@ from argparse import ArgumentParser
 cl_hidden_size = 1024
 al_cl_hidden_size = 256
 hidden_layers = 2
+TICKS_FONTSIZE = 12
+LEGEND_FONTSIZE = 10
+XLABEL_SIZE = 12
+YLABEL_SIZE = 12
 
 
 def get_label_name(item: dict):
@@ -25,7 +30,7 @@ def get_label_name(item: dict):
 
 def standard_method_to_label(method: str):
     if method == 'random_sketch_grad':
-        return "Random (grad kernel)"
+        return "Random"
     elif method == 'batchbald':
         return "BatchBALD"
     elif method == 'badge':
@@ -56,7 +61,9 @@ def column_to_label(column: str):
 valid_strategies = {'Naive', 'Cumulative', 'Replay', 'PercentageReplay', 'GEM', 'EWCReplay', 'GEMReplay'}
 
 
-def plot_list(filepath: str, column: str, savepath: str = None):
+def plot_list(
+    filepath: str, column: str, savepath: str = None, x_values: Optional[np.ndarray] = None, y_values: Optional[np.ndarray] = None
+):
     db = json.load(open(filepath, 'r'))
     index = 0
     for item in db:
@@ -64,7 +71,7 @@ def plot_list(filepath: str, column: str, savepath: str = None):
             color, linestyle = DEFAULT_COLORS[index], DEFAULT_LINESTYLES[index]
             label_name = get_label_name(item)
             values: list = item[column]
-            xs: np.ndarray = np.arange(len(values))
+            xs: np.ndarray = np.arange(1, len(values)+1)
             start_index = 1 if column == 'R' else 0
             plt.plot(
                 xs[start_index:], values[start_index:], label=label_name,
@@ -72,9 +79,11 @@ def plot_list(filepath: str, column: str, savepath: str = None):
             )
             index += 1
     plt.grid(True)
-    plt.legend(fontsize=10)
-    plt.xlabel(r"Experimental Campaign ($i$)")
-    plt.ylabel(column_to_label(column))
+    plt.legend(fontsize=LEGEND_FONTSIZE)
+    plt.xlabel(r"Experimental Campaign ($i$)", fontsize=XLABEL_SIZE)
+    plt.ylabel(column_to_label(column), fontsize=YLABEL_SIZE)
+    plt.xticks(x_values, fontsize=TICKS_FONTSIZE)
+    plt.yticks(y_values, fontsize=TICKS_FONTSIZE)
     if savepath is not None:
         plt.savefig(savepath)
     plt.show()
@@ -83,7 +92,8 @@ def plot_list(filepath: str, column: str, savepath: str = None):
 def plot_al_cl_single_strategy(
     config: ScenarioConfig, al_config: ActiveLearningConfig,
     strategy: str, extra_log_folder: str, filepath: str,
-    column: str, savepath: str = None
+    column: str, savepath: str = None,
+    x_values: Optional[np.ndarray] = None, y_values: Optional[np.ndarray] = None
 ):
     db = json.load(open(filepath, 'r'))
     al_fields = ["batch_size", "max_batch_size", "full_first_set", "first_set_size", "downsampling_factor", "hidden_size"]
@@ -100,12 +110,12 @@ def plot_al_cl_single_strategy(
         "mode": "CL",
         "strategy": strategy,
         "extra_log_folder": extra_log_folder,
-        #"hidden_size": al_cl_hidden_size,
+        "hidden_size": al_cl_hidden_size,
     }
-    naive_cl_filter_data = {
+    cumulative_cl_filter_data = {
         **config.to_dict(),
         "mode": "CL",
-        "strategy": "Naive",
+        "strategy": "Cumulative",
         "extra_log_folder": "Base",
         "hidden_size": 256
     }
@@ -114,29 +124,29 @@ def plot_al_cl_single_strategy(
     for item in db:
         if all(item.get(field) == value for field, value in filter_data.items()) or \
             all(item.get(field) == value for field, value in baseline_filter_data.items()) or \
-            all(item.get(field) == value for field, value in naive_cl_filter_data.items()):
+            all(item.get(field) == value for field, value in cumulative_cl_filter_data.items()):
             color, linestyle = DEFAULT_COLORS[index], DEFAULT_LINESTYLES[index]
             if item['mode'].upper() == 'AL(CL)':
                 label_name = standard_method_to_label(item['standard_method'])
-            elif item['strategy'] == 'Naive' and item['hidden_size'] == al_cl_hidden_size:
-                label_name = f"Naive CL Baseline ({al_cl_hidden_size} hidden size)"
+            elif item['strategy'] == 'Cumulative' and item['hidden_size'] == al_cl_hidden_size:
+                label_name = f"Cumulative CL Baseline ({al_cl_hidden_size})"
             elif item['hidden_size'] == al_cl_hidden_size:
-                label_name = f"{strategy} CL Baseline ({al_cl_hidden_size} hidden size)"
-            elif item['hidden_size'] == cl_hidden_size:
-                label_name = f"{strategy} CL Baseline ({cl_hidden_size} hidden size)"
+                label_name = f"{strategy} CL Baseline ({al_cl_hidden_size})"
             values: list = item[column]
-            xs: np.ndarray = np.arange(len(values))
+            xs: np.ndarray = np.arange(1, len(values)+1)
             start_index = 1 if column == 'R' else 0
             plt.plot(
                 xs[start_index:], values[start_index:], label=label_name,
                 marker='o', color=color, linestyle=linestyle
             )
             index += 1
-    print(index)
     plt.grid(True)
-    plt.legend(fontsize=10)
-    plt.xlabel(r"Experimental Campaign ($i$)")
-    plt.ylabel(column_to_label(column))
+    plt.legend(fontsize=LEGEND_FONTSIZE, loc='lower left')
+    plt.xlabel(r"Experimental Campaign ($i$)", fontsize=XLABEL_SIZE)
+    plt.ylabel(column_to_label(column), fontsize=YLABEL_SIZE)
+    plt.xticks(x_values, fontsize=TICKS_FONTSIZE)
+    plt.yticks(y_values, fontsize=TICKS_FONTSIZE)
+    plt.tight_layout()
     if savepath is not None:
         plt.savefig(savepath)
     plt.show()
@@ -185,5 +195,6 @@ if __name__ == '__main__':
             downsampling_factor=0.5
         )
         plot_al_cl_single_strategy(
-            config, al_config, args.strategy, args.extra_log_folder, filepath, metric, savepath
+            config, al_config, args.strategy, args.extra_log_folder, filepath, metric, savepath,
+            y_values=np.arange(start=0.72, stop=0.88, step=0.02), x_values=np.arange(start=1, stop=11, step=1)
         )

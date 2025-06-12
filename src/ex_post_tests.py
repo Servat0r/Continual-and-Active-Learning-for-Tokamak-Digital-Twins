@@ -546,7 +546,9 @@ def mean_and_separated_plots(
     count: int = 0, title: str = None, xlabel: str = 'Experimental Campaign', ylabel: str = None,
     save: bool = False, savepath: str = None, show: bool = True, grid: bool = True, legend: bool = True,
     mean_filename: str = 'test_mean_values.csv', std_filename: str = 'test_std_values.csv',
-    include_std: bool = True, means: bool = True, weighted_means: bool = True
+    include_std: bool = True, means: bool = True, weighted_means: bool = True,
+    title_size: Optional[int] = None, xlabel_size: Optional[int] = None, ylabel_size: Optional[int] = None,
+    x_values: Optional[np.ndarray] = None, y_values: Optional[np.ndarray] = None
 ):
     log_folder = logging_config.get_log_folder(count=count)
     print(log_folder)
@@ -555,13 +557,13 @@ def mean_and_separated_plots(
     for i in range(num_exp):
         mask = (df['eval_exp'] == float(i)) & (df['training_exp'] >= i)
         target_df = df[mask][[internal_metric_name, 'training_exp']].reset_index(drop=True)
-        plt.plot(target_df['training_exp'].astype(int), target_df[internal_metric_name], marker='o', linestyle='-', label=f"Campaign {i}")
+        plt.plot(
+            target_df['training_exp'].astype(int) + 1, target_df[internal_metric_name], marker='o', linestyle='-', label=f"Campaign {i}")
     if means:
         if weighted_means:
-            simulator_type, pow_type, cluster_type, dataset_type, task = logging_config.get_common_params(0, 5)
-            absolute_weights = load_dataset_weights(
-                simulator_type, pow_type, cluster_type, dataset_type, raw_or_final='final', task=task, weights_source='test'
-            )
+            #simulator_type, pow_type, cluster_type, dataset_type, task = logging_config.get_common_params(0, 5)
+            scenario = logging_config.scenario
+            absolute_weights = load_dataset_weights(scenario, raw_or_final='final', weights_source='test')
             mean_label = 'Weighted Mean'
         else:
             absolute_weights = np.ones(num_exp, dtype=np.intp)
@@ -579,15 +581,17 @@ def mean_and_separated_plots(
         print(mean_values, std_values, sep='\n')
         mean_values_arr: np.ndarray[np.float64] = np.array(mean_values)
         std_values_arr: np.ndarray[np.float64] = np.array(std_values)
-        plt.plot(np.arange(num_exp), mean_values_arr, marker='o', linestyle='-', label=mean_label, color='black')
+        plt.plot(np.arange(1, num_exp+1), mean_values_arr, marker='o', linestyle='-', label=mean_label, color='black')
         if include_std:
-            plt.fill_between(np.arange(num_exp), mean_values_arr - std_values_arr, mean_values_arr + std_values_arr, alpha=0.2, color='black')
+            plt.fill_between(np.arange(1, num_exp+1), mean_values_arr - std_values_arr, mean_values_arr + std_values_arr, alpha=0.2, color='black')
     plt.grid(grid)
-    if legend: plt.legend(fontsize=10)
-    if title: plt.title(title)
-    if xlabel: plt.xlabel("Experimental Campaign")
-    ylabel = ylabel if ylabel is not None else f"{plot_metric_name} Values"
-    plt.ylabel(ylabel)
+    if legend: plt.legend(fontsize=12)
+    if title: plt.title(title, fontsize=title_size)
+    if xlabel: plt.xlabel("Experimental Campaign", fontsize=xlabel_size)
+    ylabel = ylabel if ylabel is not None else plot_metric_name #f"{plot_metric_name} Values"
+    plt.ylabel(ylabel, fontsize=ylabel_size)
+    plt.xticks(x_values, fontsize=14)
+    plt.yticks(y_values, fontsize=14)
     if save and savepath is not None:
         plt.savefig(savepath, bbox_inches='tight')
     if show: plt.show()
@@ -598,6 +602,8 @@ def mean_vs_weighted_mean_plots(
     count: int = 0, title: str = None, xlabel: str = 'Experimental Campaign', ylabel: str = None,
     save: bool = False, savepath: str = None, show: bool = True, grid: bool = True, legend: bool = True,
     mean_filename: str = 'test_mean_values.csv', std_filename: str = 'test_std_values.csv', include_std: bool = True,
+    title_size: Optional[int] = None, xlabel_size: Optional[int] = None, ylabel_size: Optional[int] = None,
+    x_values: Optional[np.ndarray] = None, y_values: Optional[np.ndarray] = None
 ):
     log_folder = logging_config.get_log_folder(count=count)
     print(log_folder)
@@ -641,24 +647,26 @@ def mean_vs_weighted_mean_plots(
     arithmetic_mean_values_arr: np.ndarray[np.float64] = np.array(arithmetic_mean_values)
     arithmetic_std_values_arr: np.ndarray[np.float64] = np.array(arithmetic_std_values)
 
-    plt.plot(np.arange(num_exp), weighted_mean_values_arr, marker='o', linestyle='-', label=weighted_mean_label, color='blue')
+    plt.plot(np.arange(1, num_exp+1), weighted_mean_values_arr, marker='o', linestyle='-', label=weighted_mean_label, color='blue')
     if include_std:
         left = weighted_mean_values_arr - weighted_std_values_arr
         right = weighted_mean_values_arr + weighted_std_values_arr
-        plt.fill_between(np.arange(num_exp), left, right, alpha=0.2, color='blue')
+        plt.fill_between(np.arange(1, num_exp+1), left, right, alpha=0.2, color='blue')
     
-    plt.plot(np.arange(num_exp), arithmetic_mean_values_arr, marker='o', linestyle='-', label=arithmetic_mean_label, color='red')    
+    plt.plot(np.arange(1, num_exp+1), arithmetic_mean_values_arr, marker='o', linestyle='-', label=arithmetic_mean_label, color='red')    
     if include_std:
         left = arithmetic_mean_values_arr - arithmetic_std_values_arr
         right = arithmetic_mean_values_arr + arithmetic_std_values_arr
-        plt.fill_between(np.arange(num_exp), left, right, alpha=0.2, color='red')
+        plt.fill_between(np.arange(1, num_exp+1), left, right, alpha=0.2, color='red')
     
     plt.grid(grid)
-    if legend: plt.legend(fontsize=8)
-    if title: plt.title(title)
-    if xlabel: plt.xlabel("Experimental Campaign")
+    if legend: plt.legend(fontsize=10)
+    if title: plt.title(title, fontsize=title_size)
+    if xlabel: plt.xlabel("Experimental Campaign", fontsize=xlabel_size)
     ylabel = ylabel if ylabel is not None else f"{plot_metric_name} Values"
-    plt.ylabel(ylabel)
+    plt.ylabel(ylabel, fontsize=ylabel_size)
+    plt.xticks(x_values, fontsize=14)
+    plt.yticks(y_values, fontsize=14)
     if save and savepath is not None:
         plt.savefig(savepath, bbox_inches='tight')
     if show: plt.show()
