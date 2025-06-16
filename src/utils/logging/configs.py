@@ -42,45 +42,65 @@ class LoggingConfiguration:
     active_learning: bool = False
     al_config: ActiveLearningConfig = None
 
-    def __base_log_folder(self) -> str:
+    def __base_log_folder(self, mode: str = 'old') -> str:
+        """
+        Old mode is the one used during Master Thesis (e.g.: highpow/tau_based/regression/not_null/<outputs>/Cumulative/Base (...)).
+        New mode is like: qualikiz/highpow/tau_based/not_null/regression/<outputs>/CL or CLAEA/[...]
+        """
         raw_outputs = self.scenario.outputs
         outputs_string = raw_outputs if isinstance(raw_outputs, str) else '_'.join(raw_outputs)
         simulator_prefix = simulator_prefixes[self.scenario.simulator_type]
-        # TODO Compatibility break for previous version (we now have other model classes + hidden_layers should always be included for MLPs)
-        log_descriptor_parameters: list[str] = get_model_log_descriptor(self.model_type)
-        #for ...
         base_extra_name = f'{self.extra_log_folder} ({self.batch_size} batch size) '.lstrip() + \
             f"({self.hidden_size} hidden size)"
         if (self.scenario.simulator_type == 'tglf') or (self.hidden_layers != 2):
             base_extra_name = base_extra_name + f' ({self.hidden_layers} hidden layers)'
-        if self.active_learning:
-            al_base_extra_name = self.get_al_log_folder()
-            base_extra_name = f'{al_base_extra_name}/{base_extra_name}'
-        base_extra_name = f'{simulator_prefix}{base_extra_name}'
-        index_dir = os.path.join(
-            'logs', self.scenario.pow_type, self.scenario.cluster_type,
-            self.scenario.task, self.scenario.dataset_type,
-            outputs_string, self.strategy, base_extra_name
-        )
+        if mode == 'old':
+            if self.active_learning:
+                al_base_extra_name = self.get_al_log_folder(mode=mode)
+                base_extra_name = f'{al_base_extra_name}/{base_extra_name}'
+            base_extra_name = f'{simulator_prefix}{base_extra_name}'
+            index_dir = os.path.join(
+                'old_logs', self.scenario.pow_type, self.scenario.cluster_type,
+                self.scenario.task, self.scenario.dataset_type,
+                outputs_string, self.strategy, base_extra_name
+            )
+        else:
+            class_folder = 'CL'
+            if self.active_learning:
+                al_base_extra_name = self.get_al_log_folder(mode=mode)
+                class_folder = 'CLAEA'
+            index_dir = os.path.join(
+                'logs', self.scenario.simulator_type, self.scenario.pow_type, self.scenario.cluster_type,
+                self.scenario.dataset_type, self.scenario.task, outputs_string, class_folder
+            )
+            if self.active_learning:
+                index_dir = os.path.join(index_dir, al_base_extra_name)
+            index_dir = os.path.join(index_dir, self.strategy, base_extra_name)
         return index_dir
     
-    def get_al_log_folder(self) -> str:
+    def get_al_log_folder(self, mode: str = 'old') -> str:
         full_first_set_str = ('' if self.al_config.full_first_set else 'non-') + 'full first set'
         reload_weights_str = ('' if self.al_config.reload_initial_weights else 'no ') + 'reload weights'
         downsampling_factor_str = f'downsampling {float(self.al_config.downsampling_factor)}'
-        return os.path.join(
-            "AL(CL)", "Continual", self.al_config.standard_method,
-            f"Batches {self.al_config.batch_size} {self.al_config.max_batch_size} " + \
-            f"{full_first_set_str} {reload_weights_str} {downsampling_factor_str}"
-        )
+        if mode == 'old':
+            return os.path.join(
+                "AL(CL)", "Continual", self.al_config.standard_method,
+                f"Batches {self.al_config.batch_size} {self.al_config.max_batch_size} " + \
+                f"{full_first_set_str} {reload_weights_str} {downsampling_factor_str}"
+            )
+        else:
+            return os.path.join(
+                self.al_config.standard_method, f"Batches {self.al_config.batch_size} " + \
+                f"{self.al_config.max_batch_size} {full_first_set_str} {reload_weights_str} {downsampling_factor_str}"
+            )
     
-    def make_log_folder(self) -> str:
-        index_dir = self.__base_log_folder()
+    def make_log_folder(self, mode: str = 'old') -> str:
+        index_dir = self.__base_log_folder(mode=mode)
         os.makedirs(index_dir, exist_ok=True)
         return index_dir
     
-    def get_log_folder(self, count: int = -1, task_id: int = 0, suffix: bool = True) -> str:
-        index_dir = self.__base_log_folder()
+    def get_log_folder(self, count: int = -1, task_id: int = 0, suffix: bool = True, mode: str = 'old') -> str:
+        index_dir = self.__base_log_folder(mode=mode)
         if suffix:
             current_count = 0
             last_dirname = None
