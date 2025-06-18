@@ -122,16 +122,8 @@ def _bmdal_params_handler(parameters: dict):
     return parameters, method
 
 
-def _mcdropout_params_handler(parameters):
-    return parameters
-
-
-def _deep_ensemble_params_handler(parameters):
-    return parameters
-
-
-@ConfigParser.register_handler('active_learning')
-def active_learning_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
+@ConfigParser.standardizer('active_learning')
+def active_learning_std(config: dict[str, Any], key: str):
     default_config = {
         "framework": "bmdal",
         "parameters": {
@@ -144,32 +136,46 @@ def active_learning_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
             "kernel_transforms": [("rp", [512])]
         }
     }
-    default_config.update(data)
+    default_config.update(config[key])
     al_method = None
-    assert isinstance(default_config['framework'], str) and \
-        (default_config['framework'] in ['bmdal', 'mc_dropout', 'deep_ensemble'])
-    if default_config['framework'] == 'bmdal':
+    framework = default_config['framework']
+    if framework == 'bmdal':
         default_config['parameters'], al_method = _bmdal_params_handler(default_config['parameters'])
-    elif default_config['framework'] == 'mc_dropout':
-        default_config['parameters'] = _mcdropout_params_handler(default_config['parameters'])
-    elif default_config['framework'] == 'deep_ensemble':
-        default_config['parameters'] = _deep_ensemble_params_handler(default_config['parameters'])
+    elif framework in {'mc_dropout', 'deep_ensemble'}:
+        raise NotImplementedError("Frameworks \"mc_dropout\" and \"deep_ensemble\" not implemented")
     else:
-        raise ValueError(f"Unknown framework \"{default_config['framework']}\"")
-    max_batch_size = default_config['parameters'].pop("max_batch_size", 2048)
-    reload_initial_weights = default_config['parameters'].pop("reload_initial_weights", False)
-    batch_selector = _BATCH_SELECTORS[default_config['framework']](**default_config['parameters'])
-    if al_method is None:
-        params = default_config['parameters']
-        al_method = f'{params["selection_method"]} {params["initial_selection_method"]}'
-    return {
-        'parameters': default_config,
-        'batch_selector': batch_selector,
+        raise ValueError(f"Unknown framework \"{framework}\"")
+    for field, value in default_config['parameters'].items():
+        default_config[field] = value
+    default_config.pop('parameters')
+    default_config["@extra"] = {
+        'standard_method': al_method,
         'batch_size': default_config['parameters']['batch_size'],
-        'max_batch_size': max_batch_size,
-        'reload_initial_weights': reload_initial_weights,
-        'al_method': al_method
+        'max_batch_size': default_config['parameters']['max_batch_size'],
+        'reload_initial_weights': default_config['parameters']['reload_initial_weights'],
+    }
+    return default_config
+
+
+@ConfigParser.processor('active_learning')
+def active_learning_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
+    extra = data.pop("@extra")
+    params = [
+        "batch_size", "selection_method",
+        "sel_with_train", "base_kernel", "kernel_transforms"
+    ]
+    batch_selector_params = {k: data[k] for k in params}
+    max_batch_size = data["max_batch_size"]
+    reload_initial_weights = data["reload_initial_weights"]
+    framework = data['framework']
+    batch_selector = _BATCH_SELECTORS[framework](**batch_selector_params)
+    batch_selector_params['max_batch_size'] = max_batch_size
+    batch_selector_params['reload_initial_weights'] = reload_initial_weights
+    return {
+        'batch_selector': batch_selector,
+        'parameters': batch_selector_params,
+        'al_method': extra.get('standard_method', None)
     }
 
 
-__all__ = ['active_learning_handler']
+__all__ = ['active_learning_std', 'active_learning_handler']

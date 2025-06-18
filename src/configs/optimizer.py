@@ -3,7 +3,12 @@ from .parser import *
 from torch.optim import SGD, Adam, AdamW, Adagrad, RMSprop
 
 
-@ConfigParser.register_handler('optimizer')
+@ConfigParser.standardizer('optimizer')
+def optimizer_std(config: dict[str, Any], key: str):
+    return config[key]
+
+
+@ConfigParser.processor('optimizer')
 def optimizer_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
@@ -39,4 +44,4 @@ def optimizer_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         raise ValueError(f"Invalid optimizer name \"{name}\"")
 
 
-__all__ = ['optimizer_handler']
+__all__ = ['optimizer_std', 'optimizer_handler']

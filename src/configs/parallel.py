@@ -3,7 +3,7 @@ from typing import Any
 from .parser import *
 
 
-@ConfigParser.register_handler('parallel')
+@ConfigParser.processor('parallel')
 def parallel_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     return data # For now, nothing particular
 

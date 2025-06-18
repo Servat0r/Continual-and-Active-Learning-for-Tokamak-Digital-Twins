@@ -22,7 +22,17 @@ def __transform_inside_loop(data):
     return transform
 
 
-@ConfigParser.register_handler('transform')
+@ConfigParser.standardizer('transform')
+def transform_std(config: dict[str, Any], key: str):
+    return config[key]
+
+
+@ConfigParser.standardizer('target_transform')
+def target_transform_std(config: dict[str, Any], key: str):
+    return config[key]
+
+
+@ConfigParser.processor('transform')
 def transform_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     transform = __transform_inside_loop(data)
     return {
@@ -32,7 +42,7 @@ def transform_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     }
 
 
-@ConfigParser.register_handler('target_transform')
+@ConfigParser.processor('target_transform')
 def target_transform_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     transform = __transform_inside_loop(data)
     return {
@@ -42,4 +52,4 @@ def target_transform_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     }
 
 
-__all__ = ['transform_handler', 'target_transform_handler']
+__all__ = ['transform_std', 'target_transform_std', 'transform_handler', 'target_transform_handler']

@@ -31,7 +31,12 @@ __strategy_dict = {
 }
 
 
-@ConfigParser.register_handler('strategy')
+@ConfigParser.standardizer('strategy')
+def strategy_std(config: dict[str, Any], key: str):
+    return config[key]
+
+
+@ConfigParser.processor('strategy')
 def strategy_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
@@ -51,4 +56,4 @@ def strategy_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     }
 
 
-__all__ = ['strategy_handler']
+__all__ = ['strategy_std', 'strategy_handler']

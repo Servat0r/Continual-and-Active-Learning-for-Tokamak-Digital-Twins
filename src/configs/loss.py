@@ -4,7 +4,12 @@ from torch.nn import MSELoss, HuberLoss, BCELoss, BCEWithLogitsLoss
 from ..utils import GaussianNLLLoss, MSECosineSimilarityLoss, RootMSELoss
 
 
-@ConfigParser.register_handler('loss')
+@ConfigParser.standardizer('loss')
+def loss_std(config: dict[str, Any], key: str):
+    return config[key]
+
+
+@ConfigParser.processor('loss')
 def loss_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
@@ -29,4 +34,4 @@ def loss_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         raise ValueError(f"Invalid loss name \"{name}\"")
 
 
-__all__ = ['loss_handler']
+__all__ = ['loss_std', 'loss_handler']

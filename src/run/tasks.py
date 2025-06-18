@@ -164,6 +164,7 @@ def task_training_loop(
 
     # Config Processing
     config_parser.process_config()
+    print(config_parser.config)
     # General
     mode = config_parser['mode']
     train_mb_size = config_parser['train_mb_size']

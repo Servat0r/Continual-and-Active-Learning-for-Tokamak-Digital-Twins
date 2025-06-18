@@ -10,7 +10,7 @@ if __name__ == "__main__":
     print("Initializing ...")
 
     # Initialize the secure database
-    db = SecureMLExperimentDB("sqlite:///" + DEFAULT_DB_TEST_FILE, echo=False, overwrite_db=True, overwrite_consent=False)
+    db = get_test_db() #SecureMLExperimentDB("sqlite:///" + DEFAULT_DB_TEST_FILE, echo=False, overwrite_db=True, overwrite_consent=False)
     
     print("=== Secure SQLAlchemy ORM ML Experiment Database Demo ===\n")
     
@@ -259,3 +259,6 @@ if __name__ == "__main__":
         print("  Tables:")
         for table_name, info in db_info['tables'].items():
             print(f"    {table_name}: {info['record_count']} records")
+    except e:
+        print(f"Caught {e}")
+        raise

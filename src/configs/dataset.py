@@ -3,8 +3,8 @@ from .parser import *
 from ..utils import QUALIKIZ_HIGHPOW_OUTPUTS, QUALIKIZ_HIGHPOW_INPUTS
 
 
-@ConfigParser.register_handler('dataset')
-def dataset_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
+@ConfigParser.standardizer('dataset')
+def dataset_handler(config: dict[str, Any], key: str):
     default_config = {
         'input_columns': QUALIKIZ_HIGHPOW_INPUTS,
         'output_columns': QUALIKIZ_HIGHPOW_OUTPUTS,
@@ -18,7 +18,7 @@ def dataset_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         'normalize_outputs': False,
         'load_saved_final_data': False,
     }
-    default_config.update(data)
+    default_config.update(config[key])
     assert isinstance(default_config['input_columns'], list)
     assert isinstance(default_config['output_columns'], list)
     assert all([isinstance(item, str) for item in default_config['input_columns']])

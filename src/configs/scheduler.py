@@ -4,7 +4,12 @@ from .parser import *
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingLR
 
 
-@ConfigParser.register_handler('scheduler')
+@ConfigParser.standardizer('scheduler')
+def scheduler_std(config: dict[str, Any], key: str):
+    return config[key]
+
+
+@ConfigParser.processor('scheduler')
 def scheduler_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
@@ -42,4 +47,4 @@ def scheduler_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
         raise ValueError(f"Invalid scheduler name \"{name}\"")
 
 
-__all__ = ['scheduler_handler']
+__all__ = ['scheduler_std', 'scheduler_handler']

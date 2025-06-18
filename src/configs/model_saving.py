@@ -8,7 +8,7 @@ MODELS_DIR = os.getenv('MODELS_DIR', 'models')
 os.makedirs(MODELS_DIR, exist_ok=True)
 
 
-@ConfigParser.register_handler('start_model_saving')
+@ConfigParser.processor('start_model_saving')
 def start_model_saving_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     save_model = data.get('save_model', False)
     save_model_folder = f"{MODELS_DIR}/{data.get('saved_model_folder', "")}"

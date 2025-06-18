@@ -91,36 +91,66 @@ def saved_model_handler(model_folder: str, model_name: str, model_class_name: st
     return model
 
 
-@ConfigParser.register_handler('architecture')
-def architecture_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
+# Il grosso problema è QUI! "saved_model_handler" = ??? Come si sistema??
+@ConfigParser.standardizer('architecture')
+def architecture_std(config: dict[str, Any], key: str):
+    data = config[key]
     if 'name' not in data:
         raise ValueError(f"\"name\" field not present in configuration")
     if 'parameters' not in data:
         raise ValueError(f"\"parameters\" field not present in configuration")
     name, parameters = data['name'], data['parameters']
-    if 'task' in kwargs:
-        task = kwargs.pop('task')
-    elif ('general' in kwargs) and ('task' in kwargs['general']):
-        task = kwargs['general']['task']
+    if 'task' in config:
+        task = config['task'] # NOTICE: Before it was config.pop('task')
+    elif ('general' in config) and ('task' in config['general']):
+        task = config['general']['task']
     else:
         task = 'regression'
     if name == 'saved':
-        model_folder = data.get('model_folder', '')
-        model_name = data.get('model_name', 'model.pt')
-        model_class_name = data.get('model_class_name', 'MLP')
-        return saved_model_handler(
+        result = {
+            "model_type": data["model_class_name"],
+            "model_folder": data["model_folder"],
+            "parameters": parameters,
+            "@extra": {
+                "saved": True,
+                "model_name": data["model_name"],
+                "task": task
+            }
+        }
+    else:
+        result = {
+            "model_type": name,
+            "model_folder": None,
+            "parameters": parameters
+        }
+    return result
+
+
+@ConfigParser.processor('architecture')
+def architecture_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
+    extra = data.pop("@extra", None)
+    is_saved = extra.get('saved', False) if extra else False
+    if is_saved:
+        model_class_name = data['model_type']
+        model_folder = data['model_folder']
+        model_name = extra['model_name']
+        task = extra['task']
+        parameters = data['parameters']
+        return saved_model_handler( # TODO FIX!
             model_folder=model_folder, model_name=model_name,
             model_class_name=model_class_name, **parameters,
             task_id=task_id
         )
-    if (name == 'MLP') or (name == 'mlp'):
-        return mlp_config(parameters, gaussian=False, task=task, task_id=task_id)
-    elif (name == 'GaussianMLP') or (name == 'gaussian_mlp'):
-        return mlp_config(parameters, gaussian=True, task=task, task_id=task_id)
-    elif (name == 'Transformer') or (name == 'transformer'):
-        return transformer_config(parameters, gaussian=False, task=task, task_id=task_id)
     else:
-        raise ValueError(f"Invalid architecture name \"{name}\"")
+        model_type = data['model_type']
+        if model_type.upper() == 'MLP':
+            return mlp_config(parameters, gaussian=False, task=task, task_id=task_id)
+        elif model_type.replace('_', '').upper() == 'GAUSSIANMLP':
+            return mlp_config(parameters, gaussian=True, task=task, task_id=task_id)
+        elif model_type.upper() == 'TRANSFORMER':
+            return transformer_config(parameters, gaussian=False, task=task, task_id=task_id)
+        else:
+            raise ValueError(f"Invalid architecture name \"{model_type}\"")
 
 
 __all__ = ['mlp_config', 'transformer_config', 'saved_model_handler', 'architecture_handler']

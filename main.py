@@ -11,6 +11,7 @@ sys.path.append(os.path.dirname(__file__))
 
 from src.utils import *
 from src.configs import *
+from src.database import *
 from src.run import *
 
 if int(os.getenv('IGNORE_WARNINGS', '0')):
@@ -35,21 +36,22 @@ def filtered_task_training_loop(
         return None
 
 
+ConfigParser.__standardizer_dict__ = MappingProxyType(ConfigParser.__standardizer_dict__)
 ConfigParser.__parsing_dict__ = MappingProxyType(ConfigParser.__parsing_dict__)
+
+db = get_db()
 
 
 if __name__ == '__main__':
     cmd_arg_parser = build_argparser()
     # Parse arguments
     cmd_args = cmd_arg_parser.parse_args()
-    test = cmd_args.test
-    if test: sys.exit(0)
     config_file_path = cmd_args.config
     to_redirect_stdout = True if not cmd_args.no_redirect_stdout else False
     extra_log_folder = cmd_args.extra_log_folder or 'Base'
     write_intermediate_models = cmd_args.write_intermediate_models
     plot_single_runs = cmd_args.plot_single_runs
-    if cmd_args.num_tasks <= 0:
+    if (cmd_args.num_tasks <= 0) or (cmd_args.num_tasks is None):
         num_jobs = os.cpu_count() // 2
     else:
         num_jobs = cmd_args.num_tasks
@@ -69,6 +71,19 @@ if __name__ == '__main__':
             debug_print(f"[red]Running strategy: {strategy['name']} ... [/red]", file=STDOUT)
         single_config_data = config_data.copy()
         single_config_data['strategy'] = strategy
+
+        config_parser = ConfigParser(single_config_data, task_id=0) # <== TODO Fix this task_id requirement!
+        config_parser.load_config()
+        print(json.dumps(config_parser.raw_config, indent=2))
+        num_tasks = cmd_args.num_tasks
+        is_test = cmd_args.is_test or False
+        print(type(db))
+        experiment_id, experiment_name = config2db(config_parser.raw_config, db, num_tasks, is_test)
+        print(experiment_id, experiment_name)
+        # Now experiment has "init" status
+        # TODO: Need to create stuff in the database BEFORE filtered_task_training_loop!
+        # Experiment object in the database would have "init" status
+        # After Experiment object is created, any top-level error before experiment conclusion will put it in "aborted" state
         if num_jobs > 1:
             task_ids = range(num_jobs)
             results = \
