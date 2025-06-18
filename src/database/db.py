@@ -1,5 +1,5 @@
 # Generated with Claude 4 Sonnet, with further modifies by Salvatore Correnti
-from sqlalchemy import create_engine, func, JSON, Integer, Float, Boolean
+from sqlalchemy import create_engine, func, JSON, Integer, Float, Boolean, cast
 from sqlalchemy.orm import sessionmaker, Session, joinedload, undefer
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.pool import StaticPool
@@ -266,18 +266,30 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         """
         Cast JSON accessor to appropriate type based on the value being compared.
         This ensures proper type comparison for JSON fields.
-        """
-        if isinstance(value, int):
-            return json_accessor.cast(Integer)
+        """        
+        # Handle boolean FIRST (before int check since bool is subclass of int)
+        if isinstance(value, bool):
+            return cast(json_accessor.astext, Boolean) if hasattr(json_accessor, 'astext') else cast(json_accessor, Boolean) #?
+        elif isinstance(value, int):
+            return cast(json_accessor.astext, Integer) if hasattr(json_accessor, 'astext') else cast(json_accessor, Integer) #?
         elif isinstance(value, float):
-            return json_accessor.cast(Float)
-        elif isinstance(value, bool):
-            return json_accessor.cast(Boolean)
+            return cast(json_accessor.astext, Float) if hasattr(json_accessor, 'astext') else cast(json_accessor, Float) #?
         elif isinstance(value, str):
-            return json_accessor
+            return json_accessor.astext if hasattr(json_accessor, 'astext') else json_accessor #?
+        elif isinstance(value, (list, tuple)) and value:
+            # For IN operations, cast based on first element type
+            first_item = value[0]
+            if isinstance(first_item, bool):
+                return cast(json_accessor.astext, Boolean) if hasattr(json_accessor, 'astext') else cast(json_accessor, Boolean) #?
+            elif isinstance(first_item, int):
+                return cast(json_accessor.astext, Integer) if hasattr(json_accessor, 'astext') else cast(json_accessor, Integer) #?
+            elif isinstance(first_item, float):
+                return cast(json_accessor.astext, Float) if hasattr(json_accessor, 'astext') else cast(json_accessor, Float) #?
+            else:
+                return json_accessor.astext if hasattr(json_accessor, 'astext') else json_accessor #?
         else:
-            # For complex types, compare as text representation
-            return json_accessor
+            # For None, complex types, or empty lists - compare as text
+            return json_accessor.astext if hasattr(json_accessor, 'astext') else json_accessor #?
 
     def _is_json_field(self, field) -> bool:
         """Check if a SQLAlchemy field is a JSON type."""
@@ -340,7 +352,28 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Error reading {model_class.__name__} ID {record_id}: {e}")
             raise
     
-    def read_records(self, model_class: Type[TOrm], limit: int = 1000, offset: int = 0, as_dict: bool = False) -> List[Dict | TOrm]:
+    def read_record_where(
+            self, model_class: Type[TOrm], conditions: Dict, as_dict: bool = True
+    ) -> List[Dict]:
+        try:
+            with self.get_session() as session:
+                query = session.query(model_class).options(undefer('*'))
+                query = self._build_query_conditions(query, model_class, conditions)
+                record = query.first()
+                #record = records[0]
+                #if hasattr(record, "parameters"):
+                #    print(record.parameters, type(record.parameters), sep='\n')
+                if record is not None:
+                    return record.to_dict() if as_dict else record
+                else:
+                    return None
+        except (SecurityError, ValidationError):
+            raise
+        except SQLAlchemyError as e:
+            logger.error(f"Error querying {model_class.__name__}: {e}")
+            raise
+    
+    def read_records(self, model_class: Type[TOrm], limit: int = 1000, offset: int = 0, as_dict: bool = True) -> List[Dict | TOrm]:
         """
         Read all records with pagination.
         Security: Enforces reasonable limits to prevent resource exhaustion.
@@ -943,7 +976,9 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 }
                 
                 # Get table information
-                for model_class in [General, Scenario, Architecture, Loss, Optimizer, Scheduler, Strategy, Experiment]:
+                for model_class in [
+                    General, Scenario, Architecture, Loss, Optimizer, Scheduler, EarlyStopping, Strategy, ActiveLearning, Experiment
+                ]:
                     table_name = model_class.__tablename__
                     record_count = session.query(func.count(model_class.id)).scalar()
                     

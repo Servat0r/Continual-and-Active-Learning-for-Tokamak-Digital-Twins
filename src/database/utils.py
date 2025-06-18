@@ -114,14 +114,26 @@ def validate_experiment_name(name: str) -> bool:
 
 
 # Common utilities
-def positive_int():
-    return And(int, lambda x: x > 0)
+def positive_int(nullable=False):
+    if nullable:
+        return Or(And(int, lambda x: x > 0), lambda x: x is None)
+    else:
+        return And(int, lambda x: x > 0)
 
 def geq_int(low: int):
     return And(int, lambda x: x >= low)
 
 def leq_int(high: int):
     return And(int, lambda x: x <= high)
+
+def positive_float():
+    return And(float, lambda x: x > 0)
+
+def geq_float(low: int):
+    return And(float, lambda x: x >= low)
+
+def leq_float(high: int):
+    return And(float, lambda x: x <= high)
 
 def standard_string(
         max_length: int, case: Optional[Literal['upper', 'lower']] = None,
@@ -181,6 +193,7 @@ def templated_dict(required_fields: dict[str, type], optional_fields: dict[str, 
 __all__ = [
     'Base', 'TBase', 'ALLOWED_OPERATORS', 'SecurityError', 'ValidationError',
     'generate_unique_experiment_name', 'validate_experiment_name',
-    'positive_int', 'geq_int', 'leq_int', 'standard_string',
+    'positive_int', 'geq_int', 'leq_int', 'positive_float',
+    'geq_float', 'leq_float', 'standard_string',
     'tags_dict', 'metadata_dict', 'templated_dict'
 ]

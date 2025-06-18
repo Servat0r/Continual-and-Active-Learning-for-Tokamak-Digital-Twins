@@ -50,6 +50,12 @@ class BaseMLExperimentDB(ABC):
         pass
     
     @abstractmethod
+    def read_record_where(
+            self, model_class: Type[TOrm], conditions: Dict, as_dict: bool = False
+    ) -> List[Dict]:
+        pass
+    
+    @abstractmethod
     def read_records_where(
             self, model_class: Type[TOrm], conditions: Dict, 
             limit: int = 1000, offset: int = 0, as_dict: bool = False

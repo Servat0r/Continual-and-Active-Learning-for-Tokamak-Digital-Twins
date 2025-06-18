@@ -76,28 +76,28 @@ class Scenario(Base, SchemaORM):
     
     _VALIDATION_SCHEMA = Schema({
         SchemaOpt('id'): positive_int(),
-        'simulator_type': standard_string(128, 'lower', ['qualikiz', 'tglf']),
+        SchemaOpt('simulator_type'): standard_string(128, 'lower', ['qualikiz', 'tglf']),
         'pow_type': standard_string(128, 'lower', ['highpow', 'lowpow', 'mixed']),
         'cluster_type': standard_string(128, 'lower', ['tau_based', 'Ip_Pin_based', 'wmhd_based', 'beta_based']),
         'dataset_type': standard_string(128, 'lower', ['not_null', 'complete']),
         'task': standard_string(128, 'lower', ['regression', 'classification']),
         'input_columns': Or(
             standard_string(256, 'lower'), # Either already a string
-            And(list, Use(lambda x: json.dumps([y.lower().strip() for y in x]))) # Or a list that gets converted to a string
+            And(list, Use(lambda x: '+'.join([y.lower().strip() for y in x]))) # Or a list that gets converted to a string
         ),
         'output_columns': Or(
             standard_string(256, 'lower'), # Either already a string
-            And(list, Use(lambda x: json.dumps([y.lower().strip() for y in x]))) # Or a list that gets converted to a string
+            And(list, Use(lambda x: '+'.join([y.lower().strip() for y in x]))) # Or a list that gets converted to a string
         ),
         'normalize_inputs': bool,
         'normalize_outputs': bool,
-        'normalization_type': standard_string(128, 'lower', ['no-normalization', 'first-exp', 'per-exp']),
+        SchemaOpt('normalization_type'): standard_string(128, 'lower', ['no-normalization', 'first-exp', 'per-exp']),
         SchemaOpt('tags'): tags_dict(),
         SchemaOpt('other_metadata'): metadata_dict()
     })
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    simulator_type = Column(String(128), nullable=False, index=True)
+    simulator_type = Column(String(128), nullable=False, index=True, default='qualikiz')
     pow_type = Column(String(128), nullable=False)
     cluster_type = Column(String(128), nullable=False)
     dataset_type = Column(String(128), nullable=False, index=True)
@@ -106,7 +106,7 @@ class Scenario(Base, SchemaORM):
     output_columns = Column(Text, nullable=False)  # JSON string of list
     normalize_inputs = Column(Boolean, nullable=False, default=True)
     normalize_outputs = Column(Boolean, nullable=False, default=False)
-    normalization_type = Column(String(128), nullable=False, default="no-normalization") # "no-normalization", "first-exp", "per-exp"
+    normalization_type = Column(String(128), nullable=False, default="first-exp") # "no-normalization", "first-exp", "per-exp"
     tags = Column(JSON, nullable=False, default={})
     other_metadata = Column(JSON, nullable=True)
     
@@ -115,6 +115,8 @@ class Scenario(Base, SchemaORM):
     
     def __init__(self, **kwargs):
         kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        if 'input_columns' in kwargs:
+            print("**********" + kwargs['input_columns'])
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -181,7 +183,7 @@ class Architecture(Base, SchemaORM):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     model_type = Column(String(256), nullable=False, index=True, default="MLP")
-    model_folder = Column(String(512), nullable=False)
+    model_folder = Column(String(512), nullable=True)
     parameters = Column(JSON, nullable=True)  # Native JSON support
     tags = Column(JSON, nullable=False, default={})
     other_metadata = Column(JSON, nullable=True)
@@ -322,6 +324,47 @@ class Scheduler(Base, SchemaORM):
         }
 
 
+class EarlyStopping(Base, SchemaORM):
+    __tablename__ = 'earlystoppings'
+    
+    _VALIDATION_SCHEMA = Schema({
+        SchemaOpt('id'): positive_int(),
+        SchemaOpt('patience'): positive_int(),
+        SchemaOpt('delta'): positive_float(),
+        SchemaOpt('min_epochs'): positive_int(),
+        SchemaOpt('tags'): tags_dict(),
+        SchemaOpt('other_metadata'): metadata_dict()
+    })
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    patience = Column(Integer, nullable=False, default=50)
+    delta = Column(Float, nullable=False, default=0.1)
+    min_epochs = Column(Integer, nullable=False, default=100)
+    tags = Column(JSON, nullable=False, default={})
+    other_metadata = Column(JSON, nullable=True)    
+    
+    # Relationship
+    experiments = relationship("Experiment", back_populates="early_stopping")
+    
+    def __init__(self, **kwargs):
+        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        super().__init__(**kwargs)
+    
+    def __repr__(self):
+        return f"<EarlyStopping(id={self.id}, patience={self.patience}, delta={self.delta}, min_epochs={self.min_epochs})>"
+    
+    def to_dict(self) -> Dict:
+        """Convert model to dictionary."""
+        return {
+            'id': self.id,
+            'patience': self.patience,
+            'delta': self.delta,
+            'min_epochs': self.min_epochs,
+            'tags': self.tags,
+            'other_metadata': self.other_metadata
+        }
+
+
 class Strategy(Base, SchemaORM):
     __tablename__ = 'strategies'
     
@@ -440,8 +483,9 @@ class Experiment(Base, SchemaORM):
         'id_loss': positive_int(),
         'id_optimizer': positive_int(),
         'id_scheduler': positive_int(),
+        'id_early_stopping': positive_int(),
         'id_strategy': positive_int(),
-        SchemaOpt('id_active_learning'): positive_int(),
+        SchemaOpt('id_active_learning'): positive_int(nullable=True),
         SchemaOpt('name'): standard_string(128),
         SchemaOpt('start_time'): datetime,
         SchemaOpt('end_time'): datetime,
@@ -460,6 +504,7 @@ class Experiment(Base, SchemaORM):
     id_loss = Column(Integer, ForeignKey('losses.id'), nullable=False, index=True)
     id_optimizer = Column(Integer, ForeignKey('optimizers.id'), nullable=False, index=True)
     id_scheduler = Column(Integer, ForeignKey('schedulers.id'), nullable=False, index=True)
+    id_early_stopping = Column(Integer, ForeignKey('earlystoppings.id'), nullable=False, index=True)
     id_strategy = Column(Integer, ForeignKey('strategies.id'), nullable=False, index=True)
     id_active_learning = Column(Integer, ForeignKey('activelearnings.id'), nullable=True, index=True)
     name = Column(String(128), nullable=False, unique=True, index=True)  # UNIQUE constraint added
@@ -485,6 +530,7 @@ class Experiment(Base, SchemaORM):
     loss = relationship("Loss", back_populates="experiments")
     optimizer = relationship("Optimizer", back_populates="experiments")
     scheduler = relationship("Scheduler", back_populates="experiments")
+    early_stopping = relationship("EarlyStopping", back_populates="experiments")
     strategy = relationship("Strategy", back_populates="experiments")
     active_learning = relationship("ActiveLearning", back_populates="experiments")
     
@@ -511,6 +557,7 @@ class Experiment(Base, SchemaORM):
             'id_loss': self.id_loss,
             'id_optimizer': self.id_optimizer,
             'id_scheduler': self.id_scheduler,
+            'id_early_stopping': self.id_early_stopping,
             'id_strategy': self.id_strategy,
             'id_active_learning': self.id_active_learning,
             'name': self.name,
@@ -539,6 +586,8 @@ class Experiment(Base, SchemaORM):
             result.update({f"optimizer_{k}": v for k, v in self.optimizer.to_dict().items() if k != 'id'})
         if self.scheduler:
             result.update({f"scheduler_{k}": v for k, v in self.scheduler.to_dict().items() if k != 'id'})
+        if self.early_stopping:
+            result.update({f"early_stopping_{k}": v for k, v in self.early_stopping.to_dict().items() if k != 'id'})
         if self.strategy:
             result.update({f"strategy_{k}": v for k, v in self.strategy.to_dict().items() if k != 'id'})
         if self.active_learning:
@@ -546,10 +595,16 @@ class Experiment(Base, SchemaORM):
         return result
 
 
-TOrm = TypeVar('Orm', *[SchemaORM, General, Scenario, Architecture, Loss, Optimizer, Scheduler, Strategy, ActiveLearning, Experiment])
+TOrm = TypeVar(
+    'Orm', 
+    *[
+        SchemaORM, General, Scenario, Architecture, Loss, Optimizer,
+        Scheduler, EarlyStopping, Strategy, ActiveLearning, Experiment
+    ]
+)
 
 
 __all__ = [
-    'General', 'Scenario', 'Architecture', 'Loss', 'Optimizer',
-    'Scheduler', 'Strategy', 'ActiveLearning', 'Experiment', 'TOrm'
+    'General', 'Scenario', 'Architecture', 'Loss', 'Optimizer', 'Scheduler',
+    'EarlyStopping', 'Strategy', 'ActiveLearning', 'Experiment', 'TOrm'
 ]
