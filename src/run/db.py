@@ -5,26 +5,32 @@ from src.configs import *
 from src.database import *
 
 
-def __get_record_id(db: SecureMLExperimentDB, orm_class, conditions, field, results):
-    record = db.read_record_where(orm_class, conditions=conditions, as_dict=True)
-    print(f"Got {record} for class = {orm_class}")
-    if record is not None:
-        results[field] = record['id']
-    else:
-        record = orm_class(**conditions)
-        results[field] = db.create_record(record)
+def __check_eq_dicts(dict1: dict, dict2: dict):
+    l1, l2 = len(dict1), len(dict2)
+    if l1 != l2: return False
+    cond = all([field in dict2 for field in dict1])
+    if not cond: return False
+    cond = all([type(dict1[field]) == type(dict2[field]) for field in dict1])
+    if not cond: return False
+    dict_fields = sorted([field for field in dict1 if isinstance(dict1[field], dict)])
+    cond = all([__check_eq_dicts(dict1[f], dict2[f]) for f in dict_fields])
+    if not cond: return False
+    return True
 
 
-def __get_records_id(db: SecureMLExperimentDB, orm_class, conditions, field, results, parameters: dict):
-    records = db.read_records_where(orm_class, conditions=conditions, as_dict=True)
+def __get_records_id(db: SecureMLExperimentDB, orm_class, conditions, field, results):
+    json_fields = orm_class.json_fields()
+    cond_copy = {k: v for k, v in conditions.items() if '@' not in k}
+    json_conditions = {field: cond_copy.pop(field) for field in json_fields if field in conditions}
+    records = db.read_records_where(orm_class, conditions=cond_copy, as_dict=True)
     print(f"Got {len(records)} records for class = {orm_class}")
     record_to_create = False
     if records is not None:
         filtered_records = []
         for record in records:
-            record_parameters = record['parameters']
+            record_dict = {k: record[k] for k in json_conditions}
             condition = all([
-                record_parameters.get(param_name, None) == param_value for param_name, param_value in parameters.items()
+                record_dict.get(k, None) == value for k, value in record_dict.items()
             ])
             if condition:
                 filtered_records.append(record)
@@ -37,9 +43,8 @@ def __get_records_id(db: SecureMLExperimentDB, orm_class, conditions, field, res
     else:
         record_to_create = True
     if record_to_create:
-        support = conditions.copy()
-        support['parameters'] = parameters
-        record = orm_class(**support)
+        cond_copy = {k: v for k, v in conditions.items() if '@' not in k}
+        record = orm_class(**cond_copy)
         results[field] = db.create_record(record)
 
 
@@ -66,7 +71,7 @@ def config2db(
     else:
         task = None
     general.pop('dtype', None)
-    __get_record_id(db, General, general, 'id_general', results)
+    __get_records_id(db, General, general, 'id_general', results)
     # Scenario
     scenario = config['dataset']
     for field in {'input_size', 'output_size', 'load_saved_final_data'}:
@@ -74,37 +79,36 @@ def config2db(
     scenario['task'] = task
     scenario['input_columns'] = '+'.join([w.lower().strip() for w in scenario['input_columns']])
     scenario['output_columns'] = '+'.join([w.lower().strip() for w in scenario['output_columns']])
-    __get_record_id(db, Scenario, scenario, 'id_scenario', results)
+    __get_records_id(db, Scenario, scenario, 'id_scenario', results)
     # Architecture
     architecture = config['architecture']
-    architecture['model_type'] = architecture['model_class_name']
     for field in {'name', 'model_name', 'model_class_name'}:
         architecture.pop(field, None)
-    arch_params = architecture.pop('parameters')
-    __get_records_id(db, Architecture, architecture, 'id_architecture', results, arch_params)
+    __get_records_id(db, Architecture, architecture, 'id_architecture', results)
     # Loss
     loss = config['loss']
     loss['name'] = loss['name'].lower()
-    loss_parameters = loss.pop('parameters')
-    __get_records_id(db, Loss, loss, 'id_loss', results, loss_parameters)
+    __get_records_id(db, Loss, loss, 'id_loss', results)
     # Optimizer
     optimizer = config['optimizer']
-    optim_params = optimizer.pop('parameters')
-    __get_records_id(db, Optimizer, optimizer, 'id_optimizer', results, optim_params)
+    __get_records_id(db, Optimizer, optimizer, 'id_optimizer', results)
     # Scheduler
     scheduler = config['scheduler']
-    scheduler_parameters = scheduler.pop('parameters')
-    __get_records_id(db, Scheduler, scheduler, 'id_scheduler', results, scheduler_parameters)
+    __get_records_id(db, Scheduler, scheduler, 'id_scheduler', results)
     # Early Stopping
     early_stopping = config['early_stopping']
     early_stopping.pop('val_stream_name', None)
-    __get_record_id(db, EarlyStopping, early_stopping, 'id_early_stopping', results)
+    #import sys; sys.exit(0)
+    __get_records_id(db, EarlyStopping, early_stopping, 'id_early_stopping', results)
     # Strategy
     strategy = config['strategy']
     for field in {'ignore', 'extra_log_folder'}:
         strategy.pop(field)
-    strategy_params = strategy.pop('parameters')
-    __get_records_id(db, Strategy, strategy, 'id_strategy', results, strategy_params)
+    __get_records_id(db, Strategy, strategy, 'id_strategy', results)
+    # Active Learning
+    active_learning = config.get('active_learning', None)
+    if active_learning is not None:
+        ...
     # Experiment
     experiment = Experiment(
         **results, # All foreign keys

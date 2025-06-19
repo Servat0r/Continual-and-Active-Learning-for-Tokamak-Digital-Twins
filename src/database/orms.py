@@ -19,6 +19,10 @@ class SchemaORM:
     def from_dict(cls, args: Dict):
         #args = cls._VALIDATION_SCHEMA.validate(args)
         return cls(**args)
+    
+    @classmethod
+    def json_fields(cls) -> List[str]:
+        return ['tags', 'other_metadata']
 
 
 # MODEL DEFINITIONS
@@ -54,7 +58,7 @@ class General(Base, SchemaORM):
         super().__init__(**kwargs)
     
     def __repr__(self):
-        return f"<General(id={self.id}, mode='{self.mode}', campaigns={self.num_campaigns}, " + \
+        return f"<{type(self).__name__}(id={self.id}, mode='{self.mode}', campaigns={self.num_campaigns}, " + \
             f"epochs={self.train_epochs}, mb sizes=({self.train_mb_size}, {self.eval_mb_size}))>"
     
     def to_dict(self) -> Dict:
@@ -120,7 +124,7 @@ class Scenario(Base, SchemaORM):
         super().__init__(**kwargs)
     
     def __repr__(self):
-        return f"<Scenario(id={self.id}, desc='{self.simulator_type}-{self.pow_type}-{self.cluster_type}', " + \
+        return f"<{type(self).__name__}(id={self.id}, desc='{self.simulator_type}-{self.pow_type}-{self.cluster_type}', " + \
             f"dataset_type='{self.dataset_type}', task='{self.task}', inputs={self.input_columns}, outputs={self.output_columns}, " + \
             f"normalization = '{self.normalization_type} ({self.normalize_inputs}, {self.normalize_outputs})')>"
     
@@ -196,7 +200,7 @@ class Architecture(Base, SchemaORM):
         super().__init__(**kwargs)
     
     def __repr__(self):
-        return f"<Architecture(id={self.id}, type='{self.model_type}', parameters={self.parameters})>"
+        return f"<{type(self).__name__}(id={self.id}, type='{self.model_type}', parameters={self.parameters})>"
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
@@ -208,6 +212,10 @@ class Architecture(Base, SchemaORM):
             'tags': self.tags,
             'other_metadata': self.other_metadata
         }
+
+    @classmethod
+    def json_fields(cls):
+        return ['parameters'] + SchemaORM.json_fields()
 
 
 class Loss(Base, SchemaORM):
@@ -235,7 +243,7 @@ class Loss(Base, SchemaORM):
         super().__init__(**kwargs)
     
     def __repr__(self):
-        return f"<Loss(id={self.id}, name='{self.name}')>"
+        return f"<{type(self).__name__}(id={self.id}, name='{self.name}')>"
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
@@ -246,6 +254,10 @@ class Loss(Base, SchemaORM):
             'tags': self.tags,
             'other_metadata': self.other_metadata
         }
+
+    @classmethod
+    def json_fields(cls):
+        return ['parameters'] + SchemaORM.json_fields()
 
 
 class Optimizer(Base, SchemaORM):
@@ -273,7 +285,7 @@ class Optimizer(Base, SchemaORM):
         super().__init__(**kwargs)
     
     def __repr__(self):
-        return f"<Optimizer(id={self.id}, name='{self.name}')>"
+        return f"<{type(self).__name__}(id={self.id}, name='{self.name}')>"
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
@@ -284,6 +296,10 @@ class Optimizer(Base, SchemaORM):
             'tags': self.tags,
             'other_metadata': self.other_metadata
         }
+
+    @classmethod
+    def json_fields(cls):
+        return ['parameters'] + SchemaORM.json_fields()
 
 
 class Scheduler(Base, SchemaORM):
@@ -311,7 +327,7 @@ class Scheduler(Base, SchemaORM):
         super().__init__(**kwargs)
     
     def __repr__(self):
-        return f"<Scheduler(id={self.id}, name='{self.name}')>"
+        return f"<{type(self).__name__}(id={self.id}, name='{self.name}')>"
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
@@ -323,6 +339,10 @@ class Scheduler(Base, SchemaORM):
             'other_metadata': self.other_metadata
         }
 
+    @classmethod
+    def json_fields(cls):
+        return ['parameters'] + SchemaORM.json_fields()
+
 
 class EarlyStopping(Base, SchemaORM):
     __tablename__ = 'earlystoppings'
@@ -330,7 +350,12 @@ class EarlyStopping(Base, SchemaORM):
     _VALIDATION_SCHEMA = Schema({
         SchemaOpt('id'): positive_int(),
         SchemaOpt('patience'): positive_int(),
+        SchemaOpt('metric'): standard_string(128),
         SchemaOpt('delta'): positive_float(),
+        SchemaOpt('type'): standard_string(32, 'lower', ['min', 'max']),
+        SchemaOpt('restore_best_weights'): bool,
+        SchemaOpt('when_above'): Or(int, float),
+        SchemaOpt('when_below'): Or(int, float),
         SchemaOpt('min_epochs'): positive_int(),
         SchemaOpt('tags'): tags_dict(),
         SchemaOpt('other_metadata'): metadata_dict()
@@ -338,7 +363,12 @@ class EarlyStopping(Base, SchemaORM):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     patience = Column(Integer, nullable=False, default=50)
+    metric = Column(String(128), nullable=False, default='Loss')
     delta = Column(Float, nullable=False, default=0.1)
+    type = Column(String(32), nullable=False, default='min')
+    restore_best_weights = Column(Boolean, nullable=False, default=True)
+    when_above = Column(Float, nullable=False, default=float('-inf'))
+    when_below = Column(Float, nullable=False, default=float('inf'))
     min_epochs = Column(Integer, nullable=False, default=100)
     tags = Column(JSON, nullable=False, default={})
     other_metadata = Column(JSON, nullable=True)    
@@ -351,14 +381,20 @@ class EarlyStopping(Base, SchemaORM):
         super().__init__(**kwargs)
     
     def __repr__(self):
-        return f"<EarlyStopping(id={self.id}, patience={self.patience}, delta={self.delta}, min_epochs={self.min_epochs})>"
+        return f"<{type(self).__name__}(id={self.id}, metric={self.metric}, type={self.type}, " + \
+            f"patience={self.patience}, delta={self.delta}, min_epochs={self.min_epochs})>"
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
         return {
             'id': self.id,
             'patience': self.patience,
+            'metric': self.metric,
             'delta': self.delta,
+            'type': self.type,
+            'restore_best_weights': self.restore_best_weights,
+            'when_above': self.when_above,
+            'when_below': self.when_below,
             'min_epochs': self.min_epochs,
             'tags': self.tags,
             'other_metadata': self.other_metadata
@@ -392,7 +428,7 @@ class Strategy(Base, SchemaORM):
         super().__init__(**kwargs)
     
     def __repr__(self):
-        return f"<Strategy(id={self.id}, name='{self.name}')>"
+        return f"<{type(self).__name__}(id={self.id}, name='{self.name}')>"
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
@@ -404,6 +440,10 @@ class Strategy(Base, SchemaORM):
             'tags': self.tags,
             'other_metadata': self.other_metadata
         }
+
+    @classmethod
+    def json_fields(cls):
+        return ['parameters'] + SchemaORM.json_fields()
 
 
 class ActiveLearning(Base, SchemaORM):
@@ -452,7 +492,7 @@ class ActiveLearning(Base, SchemaORM):
         super().__init__(**kwargs)
     
     def __repr__(self):
-        return f"<ActiveLearning(id={self.id})>"
+        return f"<{type(self).__name__}(id={self.id})>"
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
@@ -470,6 +510,10 @@ class ActiveLearning(Base, SchemaORM):
             "tags": self.tags,
             "other_metadata": self.other_metadata,
         }
+
+    @classmethod
+    def json_fields(cls):
+        return ['custom_method'] + SchemaORM.json_fields()
 
 
 class Experiment(Base, SchemaORM):
@@ -520,7 +564,6 @@ class Experiment(Base, SchemaORM):
     # Add additional constraint for extra safety
     __table_args__ = (
         UniqueConstraint('name', name='uq_experiment_name'),
-        #Index('idx_experiment_status_time', 'status', 'start_time'), # start_time was set to nullable
     )
     
     # Relationships
@@ -540,7 +583,7 @@ class Experiment(Base, SchemaORM):
     
     def __repr__(self):
         desc = ', '.join([f"{k}={v}" for k, v in self.to_dict().items()])
-        return f"<Experiment({desc})>"
+        return f"<{type(self).__name__}({desc})>"
     
     @property
     def folder_safe_name(self) -> str:
@@ -593,6 +636,10 @@ class Experiment(Base, SchemaORM):
         if self.active_learning:
             result.update({f"active_learning_{k}": v for k, v in self.strategy.to_dict().items() if k != 'id'})
         return result
+
+    @classmethod
+    def json_fields(cls):
+        return ['logs'] + SchemaORM.json_fields()
 
 
 TOrm = TypeVar(

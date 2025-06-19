@@ -60,6 +60,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         )
         
         db_file = db_url[len('sqlite:///'):]
+        self.db_file = db_file
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         if not os.path.exists(db_file):
             self.create_tables()
@@ -807,7 +808,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Error during cleanup: {e}")
             raise
     
-    def set_init_to_pending(self, ids: List[int]) -> Tuple[int, List[Experiment]]:
+    def set_init_to_pending(self, ids: List[int]) -> Tuple[int, List[dict]]:
         """
         Sets the status of all these experiments from "init" to "pending".
 
@@ -823,14 +824,14 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 ).all()
                 for experiment in experiments:
                     experiment.status = "pending"
-                retrieved_ids = [exp.id for exp in experiments]
                 # Now write back modified experiments to database, and retrieve updated records
                 session.flush()  # Ensure changes are written to the DB
                 updated_experiments = session.query(Experiment).filter(
-                    Experiment.id.in_(retrieved_ids),
+                    Experiment.id.in_(ids),
                     Experiment.status == "pending"
                 ).all()
-                return len(updated_experiments), updated_experiments
+                exp_dicts = [exp.to_dict() for exp in updated_experiments]
+                return len(exp_dicts), exp_dicts
         except SQLAlchemyError as e:
             logger.error(f"Error during setting to \"pending\": {e}")
             raise
@@ -851,14 +852,14 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 ).all()
                 for experiment in experiments:
                     experiment.status = "running"
-                retrieved_ids = [exp.id for exp in experiments]
                 # Now write back modified experiments to database, and retrieve updated records
                 session.flush()  # Ensure changes are written to the DB
                 updated_experiments = session.query(Experiment).filter(
-                    Experiment.id.in_(retrieved_ids),
+                    Experiment.id.in_(ids),
                     Experiment.status == "running"
                 ).all()
-                return len(updated_experiments), updated_experiments
+                exp_dicts = [exp.to_dict() for exp in updated_experiments]
+                return len(exp_dicts), exp_dicts
         except SQLAlchemyError as e:
             logger.error(f"Error during setting to \"running\": {e}")
             raise
@@ -878,14 +879,14 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 ).all()
                 for experiment in experiments:
                     experiment.status = "aborted"
-                retrieved_ids = [exp.id for exp in experiments]
                 # Now write back modified experiments to database, and retrieve updated records
                 session.flush()  # Ensure changes are written to the DB
                 updated_experiments = session.query(Experiment).filter(
-                    Experiment.id.in_(retrieved_ids),
+                    Experiment.id.in_(ids),
                     Experiment.status == "aborted"
                 ).all()
-                return len(updated_experiments), updated_experiments
+                exp_dicts = [exp.to_dict() for exp in updated_experiments]
+                return len(exp_dicts), exp_dicts
         except SQLAlchemyError as e:
             logger.error(f"Error during setting to \"aborted\": {e}")
             raise
@@ -911,14 +912,14 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 for experiment in experiments:
                     experiment.status = "finished"
                     experiment.end_time = stop_time
-                retrieved_ids = [exp.id for exp in experiments]
                 # Now write back modified experiments to database, and retrieve updated records
                 session.flush()  # Ensure changes are written to the DB
                 updated_experiments = session.query(Experiment).filter(
-                    Experiment.id.in_(retrieved_ids),
+                    Experiment.id.in_(ids),
                     Experiment.status == "finished"
                 ).all()
-                return len(updated_experiments), updated_experiments
+                exp_dicts = [exp.to_dict() for exp in updated_experiments]
+                return len(exp_dicts), exp_dicts
         except SQLAlchemyError as e:
             logger.error(f"Error during setting to \"finished\": {e}")
             raise

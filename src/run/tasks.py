@@ -2,7 +2,7 @@ import gc
 import json
 import sys
 import os
-from time import perf_counter, process_time
+from time import perf_counter, process_time, sleep
 from typing import Any, Optional
 from datetime import datetime
 import torch
@@ -25,6 +25,7 @@ from .utils import *
 from .plots import *
 from ..utils.active_learning import al_cl_strategy_converter
 from ..utils.strategies.plugins import PercentageReplayPlugin
+from ..database import *
 
 
 # Optional Synchronization
@@ -147,24 +148,40 @@ def downsample_experience(
 
 def task_training_loop(
         config_data: str | dict[str, Any], task_id: int,
+        experiment_id: int, experiment_name: str,
         redirect_stdout=True, extra_log_folder='',
         write_intermediate_models=False,
-        plot_single_runs=False,
+        plot_single_runs=False, db_file: str = None
 ) -> Optional[dict]:
+    # Setup Database
+    db = get_db(db_file=db_file)
+
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     config_parser = ConfigParser(config_data, task_id=task_id)
+    print(f"Config standardization (before): {config_parser.is_standardized()}")
     config_parser.load_config()
+    print(f"Config standardization (after): {config_parser.is_standardized()}")
 
     # Relevant config names
-    config = config_parser.get_config()
-    model_type = config['architecture']['name']
-    optimizer_type = config['optimizer']['name']
-    loss_type = config['loss']['name']
-    strategy_type = config['strategy']['name']
+    raw_config = config_parser.get_raw_config()
+    model_type = raw_config['architecture']['model_type']
+    loss_type = raw_config['loss']['name']
+    strategy_type = raw_config['strategy']['name']
 
     # Config Processing
     config_parser.process_config()
-    print(config_parser.config)
+
+    import pprint
+    if task_id == 0: pprint.pprint(config_parser.config)
+    print(f"Setting {experiment_name} status to \"pending\"")
+    # Infinitely cycles, with 2 ms of sleep time, up until status is correctly set to "pending"
+    while True:
+        nset, _ = db.set_init_to_pending([experiment_id]) # nset <= 1, and if nset == 1, the experiment was set to "pending"
+        if nset > 0:
+            print(f"Experiment {experiment_name} set to \"pending\"")
+            break
+        else:
+            sleep(0.002)
     # General
     mode = config_parser['mode']
     train_mb_size = config_parser['train_mb_size']
@@ -173,13 +190,15 @@ def task_training_loop(
     num_campaigns = config_parser['num_campaigns']
     dtype = config_parser['dtype']
     task = config_parser['task']
-    full_first_train_set = config_parser['full_first_train_set']
-    first_train_set_size = config_parser['first_train_set_size']
+    if config_parser.get('active_learning'):
+        full_first_train_set = config_parser['active_learning']['full_first_set']
+        first_train_set_size = config_parser['active_learning']['first_set_size']
+    else:
+        full_first_train_set = None
+        first_train_set_size = None
     # Dataset
     input_columns = config_parser['input_columns']
     output_columns = config_parser['output_columns']
-    input_size = len(input_columns)
-    output_size = len(output_columns)
     simulator_type = config_parser['simulator_type']
     pow_type = config_parser['pow_type']
     cluster_type = config_parser['cluster_type']
@@ -187,7 +206,7 @@ def task_training_loop(
     normalize_inputs = config_parser['normalize_inputs']
     normalize_outputs = config_parser['normalize_outputs']
     load_saved_final_data = config_parser['load_saved_final_data']
-    downsampling_factor = config_parser['downsampling_factor']
+    downsampling_factor = config_parser['active_learning']['downsampling_factor'] if config_parser.get('active_learning') else None
     # Architecture
     model = config_parser['architecture']
     # Loss
@@ -198,7 +217,7 @@ def task_training_loop(
     optimizer_parameters = optimizer_config['parameters']
     optimizer = optimizer_class(model.parameters(), **optimizer_parameters)
     # Early Stopping
-    early_stopping = config_parser.get_config().get('early_stopping', None)
+    early_stopping = config_parser.get('early_stopping', None)
     # Scheduler
     scheduler_config = config_parser.get_config().get('scheduler', None)
     scheduler = make_scheduler(scheduler_config, optimizer=optimizer)
@@ -208,6 +227,7 @@ def task_training_loop(
     cl_strategy_parameters = cl_strategy_config['parameters']
     cl_strategy_from_scratch = cl_strategy_config['from_scratch']
     extra_log_folder = cl_strategy_config.get('extra_log_folder', extra_log_folder)
+
     # Filters
     filters_by_geq = None
     filters_by_leq = None
@@ -258,17 +278,19 @@ def task_training_loop(
             al_method = cl_strategy_active_learning_data['al_method']
 
     # Prepare folders for experiments
-    folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}"
+    #folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}" # OLD VERSION
+    folder_name = f"task_{task_id}"
     output_columns_str = '_'.join(output_columns)
-    hidden_size = config['architecture']['parameters']['hidden_size']
-    hidden_layers = config['architecture']['parameters']['hidden_layers']
+    hidden_size = raw_config['architecture']['parameters']['hidden_size']
+    hidden_layers = raw_config['architecture']['parameters']['hidden_layers']
     scenario_config = ScenarioConfig(
         simulator_type=simulator_type, pow_type=pow_type, cluster_type=cluster_type,
         dataset_type=dataset_type, task=task, outputs=output_columns_str
     )
     logging_config = LoggingConfiguration(
         scenario=scenario_config, strategy=strategy_type, extra_log_folder=extra_log_folder,
-        hidden_size=hidden_size, hidden_layers=hidden_layers, batch_size=train_mb_size, active_learning=False
+        hidden_size=hidden_size, hidden_layers=hidden_layers, batch_size=train_mb_size,
+        active_learning=False, experiment_name=experiment_name
     )
     if mode == 'AL(CL)':
         actual_downsampling = 1 / downsampling_factor if isinstance(downsampling_factor, int) else downsampling_factor
@@ -313,7 +335,7 @@ def task_training_loop(
             saved_model_name = start_model_saving_data['saved_model_name']
             os.makedirs(saved_model_folder, exist_ok=True)
             with open(f'{saved_model_folder}/{saved_model_name}.json', 'w') as fp:
-                json.dump(config['architecture'], fp, indent=4)
+                json.dump(raw_config['architecture'], fp, indent=4)
             torch.save(model.state_dict(), f'{saved_model_folder}/{saved_model_name}.pt')
 
         # Print model size to experiment directory
@@ -350,7 +372,7 @@ def task_training_loop(
 
         if cl_strategy_class != GenerativeReplay:
             with open(os.path.join(log_folder, 'config.json'), 'w') as fp:
-                json.dump(config, fp, indent=4)
+                json.dump(raw_config, fp, indent=4)
 
         # Get and transform metrics
         metrics = get_metrics(loss_type)
@@ -599,6 +621,16 @@ def task_training_loop(
             return results
 
         gc.collect()
+        # Set Experiment status to "running"
+        stdout_debug_print(f"Setting {experiment_name} status to \"running\"", color='green')
+        # Infinitely cycles, with 2 ms of sleep time, up until status is correctly set to "pending"
+        while True:
+            nset, _ = db.set_pending_to_running([experiment_id]) # nset <= 1, and if nset == 1, the experiment was set to "pending"
+            if nset > 0:
+                print(f"Experiment {experiment_name} set to \"running\"")
+                break
+            else:
+                sleep(0.002)
 
         debug_print("[red]Starting ...[/red]", file=STDOUT)
         try:
@@ -632,6 +664,16 @@ def task_training_loop(
                 'is_joint_training': (cl_strategy_class == JointTraining)
             }
         except Exception as ex:
+            # Set experiment to aborted
+            stdout_debug_print(f"Setting {experiment_name} status to \"aborted\"", color='green')
+            # Infinitely cycles, with 2 ms of sleep time, up until status is correctly set to "pending"
+            while True:
+                nset, _ = db.set_any_to_aborted([experiment_id]) # nset <= 1, and if nset == 1, the experiment was set to "pending"
+                if nset > 0:
+                    print(f"Experiment {experiment_name} set to \"aborted\"")
+                    break
+                else:
+                    sleep(0.002)
             raise ex
         finally:
             # Reset stdout

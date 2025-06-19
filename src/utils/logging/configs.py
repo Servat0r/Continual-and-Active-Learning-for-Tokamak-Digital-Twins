@@ -1,3 +1,4 @@
+from typing import Optional
 import os
 from dataclasses import dataclass
 from ..models.utils import get_model_log_descriptor
@@ -34,13 +35,13 @@ class LoggingConfiguration:
     """
     scenario: ScenarioConfig
     strategy: str = 'Naive'
-    extra_log_folder: str = 'Base'
-    model_type: str = 'MLP' # NEW
-    hidden_size: int = 1024
-    hidden_layers: int = 2
+    extra_log_folder: Optional[str] = 'Base'
+    hidden_size: Optional[int] = 1024
+    hidden_layers: Optional[int] = 2
     batch_size: int = 4096
     active_learning: bool = False
     al_config: ActiveLearningConfig = None
+    experiment_name: Optional[str] = None # If given, returns exactly that experiment
 
     def __base_log_folder(self, mode: str = 'old') -> str:
         """
@@ -75,7 +76,9 @@ class LoggingConfiguration:
             )
             if self.active_learning:
                 index_dir = os.path.join(index_dir, al_base_extra_name)
-            index_dir = os.path.join(index_dir, self.strategy, base_extra_name)
+            index_dir = os.path.join(index_dir, self.strategy)
+        if self.experiment_name:
+            index_dir = os.path.join(index_dir, self.experiment_name)
         return index_dir
     
     def get_al_log_folder(self, mode: str = 'old') -> str:
@@ -99,7 +102,7 @@ class LoggingConfiguration:
         os.makedirs(index_dir, exist_ok=True)
         return index_dir
     
-    def get_log_folder(self, count: int = -1, task_id: int = 0, suffix: bool = True, mode: str = 'old') -> str:
+    def get_log_folder(self, count: int = -1, task_id: int = 0, suffix: bool = True, mode: str = 'new') -> str:
         index_dir = self.__base_log_folder(mode=mode)
         if suffix:
             current_count = 0

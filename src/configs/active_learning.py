@@ -159,7 +159,7 @@ def active_learning_std(config: dict[str, Any], key: str):
 
 @ConfigParser.processor('active_learning')
 def active_learning_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
-    extra = data.pop("@extra")
+    extra = data.pop("@extra", None)
     params = [
         "batch_size", "selection_method",
         "sel_with_train", "base_kernel", "kernel_transforms"

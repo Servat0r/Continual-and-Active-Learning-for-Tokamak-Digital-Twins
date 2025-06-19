@@ -89,21 +89,6 @@ class ConfigParser:
         self.raw_config = None
         self.__standardized_config = False
 
-    def load_config(self):
-        if self.config is not None:
-            return
-        if self.config_path is None:
-            raise ValueError("Configuration path is not set.")
-        elif not os.path.exists(self.config_path):
-            raise FileNotFoundError(f"Configuration file '{self.config_path}' not found.")
-        with open(self.config_path, 'r') as file:
-            try:
-                self.config = json.load(file)
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON format: {e}")
-        self._standardize_config()
-        return True
-
     def _standardize_config(self):
         if self.config is None:
             raise ValueError("Configuration is not loaded.")
@@ -129,9 +114,27 @@ class ConfigParser:
                         raise ValueError(f"Validation failed for key '{key}': {default_cfg}")
                     else:
                         self.raw_config[key] = default_cfg
+        print('fojenfo')
         self.__standardized_config = True
         self.config = self.raw_config.copy()
         return self.raw_config
+    
+    def load_config(self):
+        if self.config is None:
+            if self.config_path is None:
+                raise ValueError("Configuration path is not set.")
+            elif not os.path.exists(self.config_path):
+                raise FileNotFoundError(f"Configuration file '{self.config_path}' not found.")
+            with open(self.config_path, 'r') as file:
+                try:
+                    self.config = json.load(file)
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Invalid JSON format: {e}")
+        self._standardize_config()
+        return True
+    
+    def is_standardized(self):
+        return self.__standardized_config
     
     def process_config(self):
         """
@@ -144,14 +147,15 @@ class ConfigParser:
             raise ValueError("Configuration not standardized.")
         all_keys = self.required_keys + self.optional_keys
         for key in all_keys:
-            key_handler: Callable | None = self.__parsing_dict__.get(key, lambda x: x) # By default an "identity function"
+            key_handler: Callable | None = self.__parsing_dict__.get(key, lambda x, task_id, **kwargs: x) # By default an "identity function"
             if key_handler is None:
                 raise RuntimeError(f"Config handler for {key} not found.")
-            validation_result = key_handler(self.config[key], task_id=self.task_id, **self.config)
-            if validation_result is None:
-                raise ValueError(f"Validation failed for key '{key}': {validation_result}")
-            else:
-                self.config[key] = validation_result
+            if self.config[key]:
+                validation_result = key_handler(self.config[key], task_id=self.task_id, **self.config)
+                if validation_result is None:
+                    raise ValueError(f"Validation failed for key '{key}': {validation_result}")
+                else:
+                    self.config[key] = validation_result
         for key in self.extractable:
             data = self.config.pop(key)
             self.config.update(data)
@@ -169,6 +173,12 @@ class ConfigParser:
         else:
             self.config[key] = value
 
+    def get(self, item, default=None):
+        return self.config.get(item, default)
+
+    def __contains__(self, key):
+        return key in self.config
+    
     def get_config(self):
         return {k: v for k, v in self.config.items()}
 

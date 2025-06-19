@@ -2,6 +2,13 @@ from typing import Any
 from .parser import *
 
 
+_general_al_conv = {
+    'full_first_train_set': 'full_first_set',
+    'first_train_set_size': 'first_set_size',
+    'downsampling_factor': 'downsampling_factor'
+}
+
+
 @ConfigParser.standardizer('general')
 def general_handler(config: dict[str, Any], key: str):
     default_config = {
@@ -22,6 +29,12 @@ def general_handler(config: dict[str, Any], key: str):
     assert isinstance(default_config['full_first_train_set'], bool)
     assert (default_config['first_train_set_size'] is None) or (isinstance(default_config['first_train_set_size'], int))
     assert isinstance(default_config['downsampling_factor'], int) and default_config['downsampling_factor'] > 0
+    # Extract AL fields from general (backwards compatibility)
+    for field, conv_field in _general_al_conv.items():
+        if field in default_config:
+            val = default_config.pop(field)
+            if 'active_learning' in config:
+                config['active_learning'][conv_field] = val
     assert isinstance(default_config['train_mb_size'], int) and default_config['train_mb_size'] > 0
     assert isinstance(default_config['eval_mb_size'], int) and default_config['eval_mb_size'] > 0
     assert isinstance(default_config['train_epochs'], int) and default_config['train_epochs'] > 0

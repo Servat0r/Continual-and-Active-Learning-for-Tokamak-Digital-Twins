@@ -34,22 +34,28 @@ def target_transform_std(config: dict[str, Any], key: str):
 
 @ConfigParser.processor('transform')
 def transform_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
-    transform = __transform_inside_loop(data)
-    return {
-        'transform': transform,
-        'preprocess_ytrue': transform.inverse(),
-        'preprocess_ypred': transform.inverse(),
-    }
+    if data:
+        transform = __transform_inside_loop(data)
+        return {
+            'transform': transform,
+            'preprocess_ytrue': transform.inverse(),
+            'preprocess_ypred': transform.inverse(),
+        }
+    else:
+        return data
 
 
 @ConfigParser.processor('target_transform')
 def target_transform_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
-    transform = __transform_inside_loop(data)
-    return {
-        'target_transform': transform,
-        'preprocess_ytrue': transform.inverse(),
-        'preprocess_ypred': transform.inverse(),
-    }
+    if data:
+        transform = __transform_inside_loop(data)
+        return {
+            'target_transform': transform,
+            'preprocess_ytrue': transform.inverse(),
+            'preprocess_ypred': transform.inverse(),
+        }
+    else:
+        return data
 
 
 __all__ = ['transform_std', 'target_transform_std', 'transform_handler', 'target_transform_handler']

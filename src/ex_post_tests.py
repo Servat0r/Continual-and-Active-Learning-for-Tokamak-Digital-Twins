@@ -6,6 +6,7 @@ import os.path
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 from torch.nn.functional import cosine_similarity
 
 from src.utils import *
@@ -45,7 +46,7 @@ def load_complete_dataset(config: ScenarioConfig):
     df = pd.read_csv(f"{data_folder}/complete_dataset.csv")
     if config.simulator_type == 'tglf':
         for column in TGLF_HIGHPOW_OUTPUTS:
-            df = df[df[column] <= 500.0]
+            df = df[df[column] <= 200.0] # previously 500.0
         df = df[df['efe'] >= 0.0]
         df = df[df['efi'] >= 0.0]
     print(f"Complete dataset has {len(df)} items")
@@ -83,6 +84,18 @@ def load_baseline_csv_data(
     if test:
         test_data = pd.read_csv(f'{data_folder}/{test_filename}')
     return train_data, eval_data, test_data
+
+
+def get_pca(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    campaign_indexes = df['campaign']
+    df = df[columns]
+    pca = PCA(n_components=len(columns))
+    X_pca = pca.fit_transform(df.values)
+    df_pca = pd.DataFrame(
+        X_pca, index=df.index, columns=[f"PC #{i}" for i in range(1, len(columns) + 1)]
+    )
+    df_pca['campaign'] = campaign_indexes
+    return df_pca
 
 
 def dataset_weights_file(config: ScenarioConfig, weights_source: str, raw_or_final: str):
@@ -726,5 +739,5 @@ __all__ = [
     'get_stat_metric_value_per_experience', 'mean_std_df_wrapper', 'mean_std_strategy_plots_wrapper',
     'mean_std_al_plots_wrapper', 'get_datasets_sizes_report', 'mean_std_params_plots_wrapper',
     'mean_and_separated_plots', 'mean_vs_weighted_mean_plots', 'get_training_times',
-    'computeR_from_config', 'get_num_epochs', 'get_db_filename'
+    'computeR_from_config', 'get_num_epochs', 'get_db_filename', 'get_pca'
 ]

@@ -250,10 +250,38 @@ def plot_metric_over_multiple_strategies(
     plt.close()
 
 
+def plot_dataframes_2d(dataframes: list[pd.DataFrame], labels=None, figsize=(10, 8), 
+                      xlabel='PC #1', ylabel='PC #2', title='2D Plot of Multiple DataFrames',
+                      marker='o', markersize=6, alpha=0.7):
+    """
+    Plot multiple DataFrames with columns A and B in a 2D scatter plot.
+    Each DataFrame gets a different color.
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+    if labels is None:
+        labels = [f'Experimental Campaign {i+1}' for i in range(len(dataframes))]
+    # Plot each DataFrame with a different color
+    for i, df in enumerate(dataframes):
+        ax.scatter(df[xlabel], df[ylabel], 
+                  label=labels[i], 
+                  marker=marker, 
+                  s=markersize**2,  # s parameter expects area, not radius
+                  alpha=alpha)
+    # Customize the plot
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    # Adjust layout to prevent label cutoff
+    plt.tight_layout()
+    plt.show()
+
+
 __all__ = [
     'plot_metric_over_evaluation_experiences',
     'plot_metrics_over_training_experiences',
     'plot_metric_over_evaluation_experiences_multiple_runs',
-    'plot_metric_over_multiple_strategies',
+    'plot_metric_over_multiple_strategies', 'plot_dataframes_2d',
     'PlottingConfig', 'DEFAULT_COLORS', 'DEFAULT_LINESTYLES'
 ]

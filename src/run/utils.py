@@ -49,7 +49,7 @@ def make_scheduler(scheduler_config, optimizer):
 
 
 def get_metrics(loss_type):
-    if loss_type == 'GaussianNLL':
+    if loss_type.lower() == 'gaussiannll':
         metrics = \
             timing_metrics(epoch=True, experience=True, stream=True) + \
             gaussian_mse_metrics(epoch=True, experience=True, stream=True) + \
@@ -57,7 +57,7 @@ def get_metrics(loss_type):
             r2_score_metrics(epoch=True, experience=True, stream=True) + \
             gaussian_variance_metrics(epoch=True, experience=True, stream=True) + \
             renamed_forgetting_metrics(experience=True, stream=True)
-    elif loss_type in ['BCE', 'bce', 'BCEWithLogits', 'bce_with_logits']:
+    elif loss_type.lower() in ['bce', 'bcewithlogits', 'bce_with_logits']:
         metrics = \
             timing_metrics(epoch=True, experience=True, stream=True) + \
             binary_accuracy_metrics(epoch=True, experience=True, stream=True) + \
