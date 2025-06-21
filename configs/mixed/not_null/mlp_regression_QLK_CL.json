@@ -106,25 +106,8 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 1000",
-      "ignore": true,
-      "parameters": {
-        "mem_size": 1000
-      }
-    },
-    {
-      "name": "Replay",
       "extra_log_folder": "Buffer 2000",
       "ignore": true,
-      "parameters": {
-        "mem_size": 2000
-      }
-    },
-    {
-      "name": "Replay",
-      "extra_log_folder": "Buffer 2000 from_scratch",
-      "ignore": true,
-      "from_scratch": true,
       "parameters": {
         "mem_size": 2000
       }
@@ -146,27 +129,6 @@
       }
     },
     {
-      "name": "MIR",
-      "extra_log_folder": "Buffer 2000 Subsample 1000 BatchMem 1",
-      "ignore": true,
-      "parameters": {
-        "mem_size": 2000,
-        "subsample": 1000,
-        "batch_size_mem": 1
-      }
-    },    
-    {
-      "name": "GSS_Greedy",
-      "extra_log_folder": "Buffer 2000 Strength 1",
-      "ignore": true,
-      "parameters": {
-        "mem_size": 2000,
-        "mem_strength": 100,
-        "input_size": [15],
-        "output_size": [4]
-      }
-    },
-    {
       "name": "EWC",
       "extra_log_folder": "Lambda 10",
       "ignore": true,
@@ -182,16 +144,6 @@
       "parameters": {
         "mode": "separate",
         "ewc_lambda": 1.0
-      }
-    },
-    {
-      "name": "EWCReplay",
-      "extra_log_folder": "Lambda 10 Buffer 1000",
-      "ignore": true,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 10.0,
-        "mem_size": 1000
       }
     },
     {
@@ -215,27 +167,6 @@
       }
     },
     {
-      "name": "EWCReplay",
-      "extra_log_folder": "Lambda 10 Buffer 10000",
-      "ignore": true,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 10.0,
-        "mem_size": 10000
-      }
-    },
-    {
-      "name": "EWCGEM",
-      "extra_log_folder": "Lambda 10 Patterns 400",
-      "ignore": true,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 10.0,
-        "patterns_per_exp": 400,
-        "memory_strength": 0.0
-      }
-    },
-    {
       "name": "MAS",
       "extra_log_folder": "Lambda 10 Alpha 0.0",
       "ignore": true,
@@ -249,28 +180,6 @@
       "extra_log_folder": "Lambda 1 Alpha 0.0",
       "ignore": true,
       "parameters": {
-        "lambda_reg": 1.0,
-        "alpha": 0.0
-      }
-    },
-    {
-      "name": "IncrementalMAS",
-      "extra_log_folder": "Lambda 0.0 1.0 5.0 Alpha 0.0",
-      "ignore": true,
-      "parameters": {
-        "lambda_reg": 0.0,
-        "alpha": 0.0,
-        "lambda_step": 1.0,
-        "lambda_max": 5.0
-      }
-    },
-    {
-      "name": "EWCMAS",
-      "extra_log_folder": "EWC 1 MAS 1 Alpha 0.0",
-      "ignore": true,
-      "parameters": {
-        "ewc_lambda": 1.0,
-        "mode": "separate",
         "lambda_reg": 1.0,
         "alpha": 0.0
       }
@@ -295,35 +204,10 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "Patterns 1000",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 1000
-      }
-    },
-    {
-      "name": "GEM",
       "extra_log_folder": "Patterns 1024",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 1024
-      }
-    },
-    {
-      "name": "GEM",
-      "extra_log_folder": "Patterns 2000",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 2000
-      }
-    },
-    {
-      "name": "GEMReplay",
-      "extra_log_folder": "Patterns 100 Buffer 1000",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 100,
-        "mem_size": 1000
       }
     },
     {
@@ -333,43 +217,6 @@
       "parameters": {
         "patterns_per_exp": 1000,
         "mem_size": 10000
-      }
-    },
-    {
-      "name": "GEMReplay",
-      "extra_log_folder": "Patterns 1000 Buffer 2000",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 1000,
-        "mem_size": 2000
-      }
-    },
-    {
-      "name": "VariableGEM",
-      "extra_log_folder": "Patterns 2000 2000 400",
-      "ignore": true,
-      "parameters": {
-        "special_patterns_per_exp": {
-          "0": 2000,
-          "1": 2000
-        },
-        "default_patterns_per_exp": 400
-      }
-    },
-    {
-      "name": "LFL",
-      "extra_log_folder": "Lambda 0.25",
-      "ignore": true,
-      "parameters": {
-        "lambda_e": 0.25
-      }
-    },
-    {
-      "name": "LFL",
-      "extra_log_folder": "Lambda 0.5",
-      "ignore": true,
-      "parameters": {
-        "lambda_e": 0.5
       }
     },
     {
@@ -389,35 +236,11 @@
       }
     },
     {
-      "name": "LFL",
-      "extra_log_folder": "Lambda 10",
-      "ignore": true,
-      "parameters": {
-        "lambda_e": 10.0
-      }
-    },
-    {
       "name": "SI",
       "extra_log_folder": "Lambda 1",
       "ignore": true,
       "parameters": {
         "si_lambda": 1.0
-      }
-    },
-    {
-      "name": "SI",
-      "extra_log_folder": "Lambda 0.1",
-      "ignore": true,
-      "parameters": {
-        "si_lambda": 0.1
-      }
-    },
-    {
-      "name": "JointTraining",
-      "extra_log_folder": "Base",
-      "ignore": true,
-      "parameters": {
-        "eval_every": 0
       }
     },
     {

@@ -200,10 +200,10 @@
     },
     {
       "name": "GEM",
-      "extra_log_folder": "Patterns 1200",
+      "extra_log_folder": "Patterns 1024",
       "ignore": true,
       "parameters": {
-        "patterns_per_exp": 1200
+        "patterns_per_exp": 1024
       }
     },
     {
@@ -213,14 +213,6 @@
       "parameters": {
         "patterns_per_exp": 500,
         "mem_size": 3000
-      }
-    },
-    {
-      "name": "LFL",
-      "extra_log_folder": "Lambda 0.05",
-      "ignore": true,
-      "parameters": {
-        "lambda_e": 0.05
       }
     },
     {
@@ -240,35 +232,11 @@
       }
     },
     {
-      "name": "LFL",
-      "extra_log_folder": "Lambda 2",
-      "ignore": true,
-      "parameters": {
-        "lambda_e": 2.0
-      }
-    },
-    {
-      "name": "LFL",
-      "extra_log_folder": "Lambda 10",
-      "ignore": true,
-      "parameters": {
-        "lambda_e": 10.0
-      }
-    },
-    {
       "name": "SI",
       "extra_log_folder": "Lambda 1",
       "ignore": true,
       "parameters": {
         "si_lambda": 1.0
-      }
-    },
-    {
-      "name": "SI",
-      "extra_log_folder": "Lambda 0.1",
-      "ignore": true,
-      "parameters": {
-        "si_lambda": 0.1
       }
     },
     {

@@ -71,8 +71,6 @@ def generate_unique_experiment_name(base_name: str) -> str:
     
     # Limit length to ensure total name stays reasonable (take first 31 characters or pad them)
     safe_base = safe_base[:31]
-    #if len(safe_base) < 31:
-        #safe_base = safe_base + (31 - len(safe_base)) * "0"
     
     # Generate short UUID suffix for uniqueness
     unique_suffix = ''.join(str(uuid.uuid4()).split('-'))  # 32 characters given by uuid.uuid4()
@@ -80,7 +78,9 @@ def generate_unique_experiment_name(base_name: str) -> str:
     # Combine with timestamp for additional uniqueness and sorting
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S') # 15 characters
     
-    return f"{safe_base}_{timestamp}_{unique_suffix}" # <= 31 + 32 + 15 + 2 = <= 80 total characters (min is 32 + 15 + 2 = 49, or 59 with "Experiment")
+    # len(safe_base) + 15 + 32 + 2 (traits) = len(safe_base) + 49 characters if len(safe_base) > 0 (52 if safe_base == 'Exp')
+    # 15 + 32 + 1 (trait) = 48 if len(safe_base) == 0
+    return f"{safe_base}-{timestamp}-{unique_suffix}" if len(safe_base) > 0 else f"{timestamp}-{unique_suffix}"
 
 
 def validate_experiment_name(name: str) -> bool:

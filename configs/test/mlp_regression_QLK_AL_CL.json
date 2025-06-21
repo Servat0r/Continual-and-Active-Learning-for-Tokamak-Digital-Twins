@@ -17,7 +17,7 @@
       "batch_size": 256,
       "max_batch_size": 1024,
       "reload_initial_weights": false,
-      "standard_method": "lcmd_sketch_grad"
+      "standard_method": "lcmd"
     }
   },
   "dataset": {
@@ -79,56 +79,22 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "[test] Base (Full Size)",
+      "extra_log_folder": "[test] Base",
       "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "[test] Buffer 2000 (Full Size)",
+      "extra_log_folder": "[test] Buffer 2000",
       "ignore": false,
       "parameters": {
         "mem_size": 2000
       }
     },
     {
-      "name": "Replay",
-      "extra_log_folder": "Buffer 10000 (Full Size)",
-      "ignore": true,
-      "parameters": {
-        "mem_size": 10000
-      }
-    },
-    {
-      "name": "PercentageReplay",
-      "extra_log_folder": "Percentage 5% Base 2000 (Full Size)",
-      "ignore": true,
-      "parameters": {
-        "mem_percentage": 0.05,
-        "min_buffer_size": 2000
-      }
-    },
-    {
-      "name": "PercentageReplay",
-      "extra_log_folder": "Percentage 10% Base 10000 (Full Size)",
-      "ignore": true,
-      "parameters": {
-        "mem_percentage": 0.10,
-        "min_buffer_size": 10000
-      }
-    },
-    {
       "name": "GEM",
-      "extra_log_folder": "Patterns 400 (Full Size)",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 400
-      }
-    },
-    {
-      "name": "GEM",
-      "extra_log_folder": "Patterns 1024 (Full Size)",
+      "extra_log_folder": "Patterns 1024",
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 1024
@@ -136,7 +102,7 @@
     },
     {
       "name": "EWCReplay",
-      "extra_log_folder": "Lambda 1 Buffer 2000 (Full Size)",
+      "extra_log_folder": "Lambda 1 Buffer 2000",
       "ignore": true,
       "parameters": {
         "mode": "separate",
@@ -145,18 +111,8 @@
       }
     },
     {
-      "name": "EWCReplay",
-      "extra_log_folder": "Lambda 1 Buffer 10000 (Full Size)",
-      "ignore": true,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 1.0,
-        "mem_size": 10000
-      }
-    },
-    {
       "name": "Cumulative",
-      "extra_log_folder": "Base (Full Size)",
+      "extra_log_folder": "Base",
       "ignore": true,
       "parameters": {
       }

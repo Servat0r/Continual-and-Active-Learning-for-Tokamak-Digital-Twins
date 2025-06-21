@@ -1,5 +1,6 @@
 from typing import *
 
+import traceback
 import json, sys, os
 import numpy as np
 import pandas as pd
@@ -20,24 +21,6 @@ if int(os.getenv('IGNORE_WARNINGS', '0')):
     warnings.filterwarnings("ignore")
 
 
-def filtered_task_training_loop(
-        config_data: str | dict[str, Any], task_id: int, experiment_id: int,
-        experiment_name: str, redirect_stdout=True, extra_log_folder='',
-        write_intermediate_models=False, plot_single_runs=False,
-        tasks_list: list[int] = None, db_file: str = None,
-):
-    condition = (tasks_list is None) or (task_id in tasks_list)
-    if condition:
-        return task_training_loop(
-            config_data, task_id, experiment_id, experiment_name,
-            redirect_stdout, extra_log_folder,
-            write_intermediate_models, plot_single_runs, db_file
-        )
-    else:
-        debug_print(f"[red]Ignoring task {task_id} ...[/red]", file=STDOUT)
-        return None
-
-
 ConfigParser.__standardizer_dict__ = MappingProxyType(ConfigParser.__standardizer_dict__)
 ConfigParser.__parsing_dict__ = MappingProxyType(ConfigParser.__parsing_dict__)
 
@@ -53,6 +36,9 @@ if __name__ == '__main__':
     extra_log_folder = cmd_args.extra_log_folder or 'Base'
     write_intermediate_models = cmd_args.write_intermediate_models
     plot_single_runs = cmd_args.plot_single_runs
+    _cleanup_aborted = cmd_args.cleanup_aborted
+    _cleanup_tests = cmd_args.cleanup_tests
+    _cleanup_all = cmd_args.cleanup_all
     if (cmd_args.num_tasks <= 0) or (cmd_args.num_tasks is None):
         num_jobs = os.cpu_count() // 2
     else:
@@ -61,9 +47,13 @@ if __name__ == '__main__':
     config_data = json.load(open(config_file_path))
     if not isinstance(config_data['strategy'], list):
         config_data['strategy'] = [config_data['strategy']]
-    tasks_list = cmd_args.tasks
-    if tasks_list is not None:
-        debug_print(f"[red]Tasks {tasks_list} will be run ...[/red]", file=STDOUT)
+    aborted_experiment_ids = [] # List of all aborted experiments ids
+    aborted_experiment_names = [] # List of all aborted experiments names
+    test_ids = [] # List of all test ids
+    test_names = [] # List of all test names
+    all_ids = [] # List of all ids
+    all_names = [] # List of all names
+    is_test = bool(cmd_args.is_test or False)
     for strategy in config_data['strategy']:
         ignore_strategy = strategy.get('ignore', False)
         if ignore_strategy:
@@ -79,31 +69,30 @@ if __name__ == '__main__':
         print(f"[main] Configuration standardized: {config_parser.is_standardized()}")
         #print(json.dumps(config_parser.raw_config, indent=2))
         num_tasks = cmd_args.num_tasks
-        is_test = cmd_args.is_test or False
-        print(type(db))
         experiment_id, experiment_name = config2db(config_parser.raw_config, db, num_tasks, is_test)
-        print(experiment_id, experiment_name)
+        all_ids.append(experiment_id)
+        all_names.append(experiment_name)
+        if is_test:
+            test_ids.append(experiment_id)
+            test_names.append(experiment_name)
         # Now experiment has "init" status
-        # TODO: Need to create stuff in the database BEFORE filtered_task_training_loop!
-        # Experiment object in the database would have "init" status
-        # After Experiment object is created, any top-level error before experiment conclusion will put it in "aborted" state
         try:
             if num_jobs > 1:
                 task_ids = range(num_jobs)
                 results = \
                     Parallel(n_jobs=num_jobs)(
-                        delayed(filtered_task_training_loop)(
+                        delayed(task_training_loop)(
                             single_config_data, task_id, experiment_id, experiment_name,
                             to_redirect_stdout, extra_log_folder, write_intermediate_models,
-                            plot_single_runs, tasks_list, db.db_file
+                            plot_single_runs, db.db_file
                         ) for task_id in task_ids
                     )
             else:
                 results = [
-                    filtered_task_training_loop(
+                    task_training_loop(
                         single_config_data, 0, experiment_id, experiment_name,
                         to_redirect_stdout, extra_log_folder, write_intermediate_models,
-                        plot_single_runs, tasks_list, db.db_file
+                        plot_single_runs, db.db_file
                     )
                 ]
             # Plot means and standard deviations
@@ -114,7 +103,7 @@ if __name__ == '__main__':
                             result['log_folder'], f'{set_type}_results_experience.csv'
                         ) for result in results if result is not None
                     ]
-                    if (len(file_paths) != len(results)) and (len(tasks_list) < num_jobs):
+                    if (len(file_paths) != len(results)):
                         raise RuntimeError(f"Something went wrong during training: {len(file_paths)} vs. {len(results)}")
                     save_folder = os.path.dirname(file_paths[0])
                     dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths]
@@ -144,20 +133,32 @@ if __name__ == '__main__':
                         )
         except (KeyboardInterrupt, Exception) as ex:
             stdout_debug_print(f"Caught exception: {ex}", color='red')
-            while True:
+            traceback.print_exc() # Print traceback
+            aborted = 0
+            while aborted == 0:
                 aborted, _ = db.set_any_to_aborted([experiment_id])
                 if aborted > 0:
                     stdout_debug_print(f"Experiment {experiment_name} was aborted", color='green')
-                    sys.exit(1)
+                    aborted_experiment_ids.append(experiment_id)
+                    aborted_experiment_names.append(experiment_name)
                 else:
                     sleep(0.002)
+            break # break from strategy for-loop
         finally:
             exp_dict = db.read_record(Experiment, experiment_id, as_dict=True)
-            if exp_dict['status'] == 'running':
-                while True:
-                    finished, _ = db.set_running_to_finished([experiment_id])
-                    if finished > 0:
-                        stdout_debug_print(f"Experiment {experiment_name} was successfully completed", color='green')
-                        sys.exit(0)
-                    else:
-                        sleep(0.002)
+            while exp_dict['status'] == 'running':
+                finished, _ = db.set_running_to_finished([experiment_id])
+                if finished > 0:
+                    stdout_debug_print(f"Experiment {experiment_name} was successfully completed", color='green')
+                else:
+                    sleep(0.002)
+                exp_dict = db.read_record(Experiment, experiment_id, as_dict=True)
+    print(f"Aborted Experiments: {aborted_experiment_names}")
+    print(f"Test Experiments: {test_names}")
+    print(f"All Experiments: {all_names}")
+    if _cleanup_aborted:
+        cleanup_aborted_experiments(db, aborted_experiment_ids)
+    elif _cleanup_tests:
+        cleanup_tests(db, test_ids)
+    elif _cleanup_all:
+        cleanup_all(db, all_ids)

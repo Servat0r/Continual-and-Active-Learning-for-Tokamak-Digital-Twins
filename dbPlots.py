@@ -154,12 +154,13 @@ def plot_al_cl_single_strategy(
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--mode', type=str, default='CL')
+    parser.add_argument('--mode', type=str, default='CL') # 'CL' per solo Continual, 'AL(CL)' o anche 'CLAEA' per Active + Continual
     parser.add_argument('--simulator_type', type=str, default='qualikiz')
     parser.add_argument('--pow_type', type=str, default='mixed')
     parser.add_argument('--cluster_type', type=str, default='beta_based')
     parser.add_argument('--metric', type=str, default='R2',
                       help='Metric to plot (R2, R, times, cumulative_times, time_ratios, or num_epochs)')
+    # Le due opzioni sotto vanno passate per Active + Continual
     parser.add_argument('--strategy', type=str, default='Naive')
     parser.add_argument('--extra_log_folder', type=str, default='Base')
     args = parser.parse_args()

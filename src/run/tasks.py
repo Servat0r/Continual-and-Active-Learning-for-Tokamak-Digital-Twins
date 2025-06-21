@@ -33,7 +33,7 @@ SYNC = True #False #
 
 def synchronization(on: bool) -> None:
     """
-    @param on: If True, enables torch.cuda.synchronize().
+    :param on: If True, enables torch.cuda.synchronize().
     """
     if on: torch.cuda.synchronize()
 
@@ -349,7 +349,7 @@ def task_training_loop(
         train_datasets = []
         eval_datasets = []
         test_datasets = []
-        csv_file = f'data/{simulator_type}/cleaned/{pow_type}_cluster/{cluster_type}/complete_dataset.csv'
+        csv_file = make_complete_dataset(scenario_config) # Added for automatically building complete dataset
         if simulator_type == 'qualikiz':
             apply_subsampling = True
         elif simulator_type == 'tglf':
@@ -384,10 +384,9 @@ def task_training_loop(
         metrics = loss_metrics(epoch=True, experience=True, stream=True) + metrics
 
         # Build logger
-        mean_std_plugin = MeanStdPlugin([str(metric) for metric in metrics], num_experiences=num_campaigns)
         csv_logger = CustomCSVLogger(log_folder=log_folder, metrics=metrics, val_stream=eval_stream, verbose=False)
         has_interactive_logger = int(os.getenv('INTERACTIVE', '0'))
-        loggers = ([InteractiveLogger()] if has_interactive_logger else []) + [csv_logger, mean_std_plugin]
+        loggers = ([InteractiveLogger()] if has_interactive_logger else []) + [csv_logger]
 
         # Define the evaluation plugin with desired metrics
         eval_plugin = EvaluationPlugin(*metrics, loggers=loggers)
@@ -658,7 +657,6 @@ def task_training_loop(
             ylabel_list = get_ylabel_names_list(task)
             if plot_single_runs:
                 evaluation_experiences_plots(log_folder, metric_list, title_list, ylabel_list)
-            mean_std_plugin.dump_results(os.path.join(log_folder, "mean_std_metric_dump.csv"))
             return {
                 'result': True, 'log_folder': log_folder, 'task': task,
                 'is_joint_training': (cl_strategy_class == JointTraining)

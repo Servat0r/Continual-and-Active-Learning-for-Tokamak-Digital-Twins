@@ -75,7 +75,7 @@ def _bmdal_params_handler(parameters: dict):
                 'kernel_transforms': [('train', [sigma])],
                 'sel_with_train': False
             })
-        elif method == 'lcmd_sketch_grad':
+        elif method in {'lcmd_sketch_grad', 'lcmd'}:
             parameters.update({
                 'selection_method': 'lcmd',
                 'initial_selection_method': 'lcmd',
@@ -85,7 +85,7 @@ def _bmdal_params_handler(parameters: dict):
                 ],
                 'sel_with_train': True
             })
-        elif method == 'random_sketch_grad':
+        elif method in {'random_sketch_grad', 'random'}:
             parameters.update({
                 'selection_method': 'random',
                 'initial_selection_method': 'random',

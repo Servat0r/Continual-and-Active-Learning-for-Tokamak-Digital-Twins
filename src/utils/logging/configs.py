@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass
 from ..models.utils import get_model_log_descriptor
 from ..scenarios import *
+from ...database import SecureMLExperimentDB, Strategy, General, ActiveLearning, Experiment, get_db
 
 
 simulator_prefixes: dict[str, str] = {
@@ -42,6 +43,51 @@ class LoggingConfiguration:
     active_learning: bool = False
     al_config: ActiveLearningConfig = None
     experiment_name: Optional[str] = None # If given, returns exactly that experiment
+
+    @staticmethod
+    def from_experiment(exp_dict: dict, db: SecureMLExperimentDB):
+        data = {}
+        scenario: ScenarioConfig = ScenarioConfig.from_experiment(exp_dict, db)
+        data['scenario'] = scenario
+        data['experiment_name'] = exp_dict['name']
+        # Strategy
+        id_strategy: Optional[int] = exp_dict.get('id_strategy', None)
+        if id_strategy is None:
+            raise ValueError(f"Cannot build LoggingConfiguration from experiment dictionary since it does not contain \"id_strategy\"")
+        else:
+            if 'strategy_name' in exp_dict:
+                data['strategy'] = exp_dict['strategy_name']
+            else:
+                # Retrieve data from database
+                strategy_data = db.read_record(Strategy, id_strategy, as_dict=True)
+                data['strategy'] = strategy_data['name']
+        # General (batch size)
+        id_general: Optional[int] = exp_dict.get('id_general', None)
+        if id_general is None:
+            raise ValueError(f"Cannot build LoggingConfiguration from experiment dictionary since it does not contain \"id_general\"")
+        else:
+            if 'general_train_mb_size' in exp_dict:
+                data['batch_size'] = exp_dict['general_train_mb_size']
+            else:
+                general_data = db.read_record(General, id_general, as_dict=True)
+                data['batch_size'] = general_data['train_mb_size']
+        # Active Learning data
+        if exp_dict.get('id_active_learning', None) is not None:
+            id_al = exp_dict['id_active_learning']
+            data['active_learning'] = True
+            start_str = 'active_learning_'
+            start_len = len(start_str)
+            al_data = {k[start_len:]: v for k, v in exp_dict.items() if k.startswith(start_str)}
+            if al_data:
+                data['al_config'] = al_data
+            else:
+                # Retrieve from database
+                al_data = db.read_record(ActiveLearning, id_al, as_dict=True)
+                data['al_config'] = al_data
+        else:
+            data['active_learning'] = False
+        data.pop('id', None)
+        return LoggingConfiguration(**data)
 
     def __base_log_folder(self, mode: str = 'old') -> str:
         """

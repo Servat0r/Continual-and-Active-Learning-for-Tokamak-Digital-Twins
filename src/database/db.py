@@ -340,7 +340,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error creating {model_class.__name__}: {e}")
             raise
     
-    def read_record(self, model_class: Type[TOrm], record_id: int, as_dict: bool = False) -> Optional[Dict | TOrm]:
+    def read_record(self, model_class: Type[TOrm], record_id: int, as_dict: bool = True) -> Optional[Dict | TOrm]:
         """Read a single record by ID."""
         try:
             with self.get_session() as session:
@@ -485,7 +485,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                         deleted_records.append(deleted)
                     else:
                         non_existing_records.append(record_id)
-                return deleted_records, non_existing_records
+                return len(deleted_records), deleted_records
         except (ValidationError, SecurityError):
             raise
         except IntegrityError as e:
@@ -606,7 +606,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         """
         # Validate the provided name
         record.status = 'invalid' # Impose by definition
-        name = record.name or 'Experiment'
+        name = record.name or 'Exp'
         if not validate_experiment_name(name):
             raise ValidationError(f"Invalid experiment name: {name}")
         
@@ -785,22 +785,57 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Error getting experiment statistics: {e}")
             raise
     
-    def cleanup_aborted_experiments(self) -> Tuple[int, List[Tuple[int, str]]]:
+    def cleanup_aborted_experiments(self, targets: Optional[List[int]] = None) -> Tuple[int, List[Dict[str, Any]]]:
         """
-        Removes data for all experiments with status == "aborted".
+        Removes data for all experiments with status == "aborted" that are contained in targets (if given).
 
         Returns:
             List of tuples (id, name) to be used for cleaning up directories.
         """
         try:
             with self.get_session() as session:
-                aborted_experiments = session.query(Experiment).filter(Experiment.status == "aborted")
-
+                if targets:
+                    aborted_experiments = session.query(Experiment).filter(
+                        Experiment.status == "aborted",
+                        Experiment.id.in_(targets)
+                    )
+                else:
+                    aborted_experiments = session.query(Experiment).filter(
+                        Experiment.status == "aborted"
+                    )
                 # Count and delete
                 count = aborted_experiments.count()
                 if count > 0:
                     aborted_experiments.delete(synchronize_session=False)
-                    results = [(experiment.id, experiment.name) for experiment in aborted_experiments]
+                    results = [experiment.to_dict() for experiment in aborted_experiments]
+                    return count, results
+                else:
+                    return count, []
+        except SQLAlchemyError as e:
+            logger.error(f"Error during cleanup: {e}")
+            raise
+    
+    def cleanup_tests(self, targets: Optional[List[int]] = None) -> Tuple[int, List[Dict[str, Any]]]:
+        """
+        Removes data for all experiments with is_test == True.
+
+        Returns:
+            List of tuples (id, name) to be used for cleaning up directories.
+        """
+        try:
+            with self.get_session() as session:
+                if targets:
+                    aborted_experiments = session.query(Experiment).filter(
+                        Experiment.is_test == True,
+                        Experiment.id.in_(targets)
+                    )
+                else:
+                    aborted_experiments = session.query(Experiment).filter(Experiment.is_test == True)
+                # Count and delete
+                count = aborted_experiments.count()
+                if count > 0:
+                    aborted_experiments.delete(synchronize_session=False)
+                    results = [experiment.to_dict() for experiment in aborted_experiments]
                     return count, results
                 else:
                     return count, []

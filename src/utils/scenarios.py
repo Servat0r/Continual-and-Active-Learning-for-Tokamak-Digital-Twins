@@ -1,6 +1,7 @@
 # Generic Scenarios Config
 from typing import Literal, Optional, Any
 from dataclasses import dataclass, asdict
+from ..database import SecureMLExperimentDB, Scenario
 
 
 @dataclass
@@ -15,6 +16,27 @@ class ScenarioConfig:
     task: Literal["classification", "regression"]
     outputs: str = "efe_efi_pfe_pfi"
 
+    @staticmethod
+    def from_experiment(exp_dict: dict, db: SecureMLExperimentDB):
+        """Builds a ScenarioConfig from database experiment data."""
+        id_scenario: Optional[int] = exp_dict.get('id_scenario', None)
+        if id_scenario is None:
+            raise ValueError(f"Cannot build ScenarioConfig from experiment dictionary since it does not contain \"id_scenario\"")
+        else:
+            # Check for detailed dict
+            start_str = 'scenario_'
+            start_len = len(start_str)
+            scenario_data: dict = {k[start_len:]: v for k, v in exp_dict.items() if k.startswith(start_str)}
+            if scenario_data:
+                scenario_data.pop('id')
+                return ScenarioConfig(**scenario_data)
+            else:
+                # Retrieve scenario from database
+                scenario_data = db.read_record(Scenario, id_scenario, as_dict=True)
+                scenario_keys = {'simulator_type', 'pow_type', 'cluster_type', 'dataset_type', 'task', 'outputs'}
+                scenario_data = {k: v for k, v in scenario_data.items() if k in scenario_keys}
+                return ScenarioConfig(**scenario_data)
+    
     def get_common_params(self, start: int = 0, end: int = float('inf')):
         end = min(end, 6)
         outputs_list = self.outputs.split('_') if isinstance(self.outputs, str) else self.outputs

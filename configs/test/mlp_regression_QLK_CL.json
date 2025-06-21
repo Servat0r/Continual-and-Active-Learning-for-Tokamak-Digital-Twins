@@ -6,7 +6,7 @@
     "num_campaigns": 10,
     "train_mb_size": 4096,
     "eval_mb_size": 1024,
-    "train_epochs": 20
+    "train_epochs": 2
   },
   "dataset": {
     "pow_type": "highpow",
@@ -72,62 +72,8 @@
       }
     },
     {
-      "name": "FromScratchTraining",
-      "extra_log_folder": "Base",
-      "ignore": true,
-      "parameters": {
-      }
-    },
-    {
-      "name": "PercentageReplay",
-      "extra_log_folder": "Percentage 1%",
-      "ignore": true,
-      "parameters": {
-        "mem_percentage": 0.01,
-        "min_buffer_size": 200,
-        "pr_plugin_kwargs": {
-          "dump": true,
-          "dump_fp": "percentage_replay_1.log"
-        }
-      }
-    },
-    {
-      "name": "PercentageReplay",
-      "extra_log_folder": "Percentage 5%",
-      "ignore": true,
-      "parameters": {
-        "mem_percentage": 0.05,
-        "min_buffer_size": 2000,
-        "pr_plugin_kwargs": {
-          "dump": true,
-          "dump_fp": "percentage_replay_5.log"
-        }
-      }
-    },
-    {
-      "name": "PercentageReplay",
-      "extra_log_folder": "Percentage 10%",
-      "ignore": true,
-      "parameters": {
-        "mem_percentage": 0.1,
-        "min_buffer_size": 10000,
-        "pr_plugin_kwargs": {
-          "dump": true,
-          "dump_fp": "percentage_replay_10.log"
-        }
-      }
-    },
-    {
       "name": "Replay",
-      "extra_log_folder": "Buffer 200",
-      "ignore": true,
-      "parameters": {
-        "mem_size": 200
-      }
-    },
-    {
-      "name": "Replay",
-      "extra_log_folder": "Buffer 2000",
+      "extra_log_folder": "[test] Buffer 2000",
       "ignore": true,
       "parameters": {
         "mem_size": 2000
@@ -135,65 +81,10 @@
     },
     {
       "name": "Replay",
-      "extra_log_folder": "Buffer 2000 from_scratch",
-      "ignore": true,
-      "from_scratch": true,
-      "parameters": {
-        "mem_size": 2000
-      }
-    },
-    {
-      "name": "Replay",
-      "extra_log_folder": "[test] Buffer 10000 (no sync)",
+      "extra_log_folder": "[test] Buffer 10000",
       "ignore": false,
       "parameters": {
         "mem_size": 10000
-      }
-    },
-    {
-      "name": "EWC",
-      "extra_log_folder": "Lambda 50",
-      "ignore": true,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 50.0
-      }
-    },
-    {
-      "name": "EWC",
-      "extra_log_folder": "Lambda 10",
-      "ignore": true,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 10.0
-      }
-    },
-    {
-      "name": "EWC",
-      "extra_log_folder": "Lambda 1",
-      "ignore": true,
-      "parameters": {
-        "mode": "online",
-        "ewc_lambda": 1.0,
-        "decay_factor": 0.95
-      }
-    },
-    {
-      "name": "EWC",
-      "extra_log_folder": "Lambda 1",
-      "ignore": true,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 1.0
-      }
-    },
-    {
-      "name": "EWC",
-      "extra_log_folder": "Lambda 100",
-      "ignore": true,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 100.0
       }
     },
     {
@@ -207,132 +98,11 @@
       }
     },
     {
-      "name": "MAS",
-      "extra_log_folder": "Lambda 10 Alpha 0.0",
-      "ignore": true,
-      "parameters": {
-        "lambda_reg": 10.0,
-        "alpha": 0.0
-      }
-    },
-    {
-      "name": "MAS",
-      "extra_log_folder": "Lambda 1 Alpha 0.0",
-      "ignore": true,
-      "parameters": {
-        "lambda_reg": 1.0,
-        "alpha": 0.0
-      }
-    },
-    {
-      "name": "MAS",
-      "extra_log_folder": "Lambda 5 Alpha 0.0",
-      "ignore": true,
-      "parameters": {
-        "lambda_reg": 5.0,
-        "alpha": 0.0
-      }
-    },
-    {
-      "name": "MAS",
-      "extra_log_folder": "Lambda 2 Alpha 0.0",
-      "ignore": true,
-      "parameters": {
-        "lambda_reg": 2.0,
-        "alpha": 0.0
-      }
-    },
-    {
-      "name": "MASReplay",
-      "extra_log_folder": "Lambda 10 Alpha 0,5 Buffer 1000",
-      "ignore": true,
-      "parameters": {
-        "lambda_reg": 10.0,
-        "alpha": 0.5,
-        "mem_size": 1000
-      }
-    },
-    {
-      "name": "AGEM",
-      "extra_log_folder": "Patterns 10000 SampleSize 256",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 10000,
-        "sample_size": 256
-      }
-    },
-    {
       "name": "GEM",
-      "extra_log_folder": "Patterns 1000",
+      "extra_log_folder": "Patterns 1024",
       "ignore": true,
       "parameters": {
-        "patterns_per_exp": 1000
-      }
-    },
-    {
-      "name": "GEM",
-      "extra_log_folder": "Patterns 2000",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 2000
-      }
-    },
-    {
-      "name": "GEMReplay",
-      "extra_log_folder": "Patterns 100 Buffer 1000",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 100,
-        "mem_size": 1000
-      }
-    },
-    {
-      "name": "GEMReplay",
-      "extra_log_folder": "Patterns 1000 Buffer 10000",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 1000,
-        "mem_size": 10000
-      }
-    },
-    {
-      "name": "LFL",
-      "extra_log_folder": "Lambda 1",
-      "ignore": true,
-      "parameters": {
-        "lambda_e": 1.0
-      }
-    },
-    {
-      "name": "LFL",
-      "extra_log_folder": "Lambda 10",
-      "ignore": true,
-      "parameters": {
-        "lambda_e": 10.0
-      }
-    },
-    {
-      "name": "SI",
-      "extra_log_folder": "Lambda 1",
-      "ignore": true,
-      "parameters": {
-        "si_lambda": 1.0
-      }
-    },
-    {
-      "name": "SI",
-      "extra_log_folder": "Lambda 0.1",
-      "ignore": true,
-      "parameters": {
-        "si_lambda": 0.1
-      }
-    },
-    {
-      "name": "JointTraining",
-      "extra_log_folder": "Base",
-      "ignore": true,
-      "parameters": {
-        "eval_every": 0
+        "patterns_per_exp": 1024
       }
     },
     {

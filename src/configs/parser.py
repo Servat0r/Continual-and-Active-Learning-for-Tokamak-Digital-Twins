@@ -114,7 +114,6 @@ class ConfigParser:
                         raise ValueError(f"Validation failed for key '{key}': {default_cfg}")
                     else:
                         self.raw_config[key] = default_cfg
-        print('fojenfo')
         self.__standardized_config = True
         self.config = self.raw_config.copy()
         return self.raw_config

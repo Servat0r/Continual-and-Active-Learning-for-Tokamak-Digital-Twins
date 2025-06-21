@@ -134,20 +134,6 @@ def _is_not_null(row, output_columns):
     return any([row[column] != 0.0 for column in output_columns])
 
 
-def make_complete_dataset(
-        pow_type, cluster_type, output_columns: list[str],
-        base_src_folder='qualikiz/campaigns_lumped',
-        base_dest_folder='qualikiz/cleaned',
-):
-    src_filename = f'data/{base_src_folder}/{pow_type}_cluster/{cluster_type}/all_campaigns.csv'
-    dest_folder = f'data/{base_dest_folder}/{pow_type}_cluster/{cluster_type}'
-    dest_filename = f'{dest_folder}/complete_dataset.csv'
-    df = pd.read_csv(src_filename)
-    df['has_turbulence'] = df.apply(lambda row: _is_not_null(row, output_columns), axis=1)
-    os.makedirs(dest_folder, exist_ok=True)
-    df.to_csv(dest_filename, index=False)
-
-
 def get_avalanche_csv_regression_datasets(
         train_data, eval_data, test_data, input_columns: list[str], output_columns: list[str], # todo modify later
         transform=None, target_transform=None, filter_by: dict[str, list] = None, float_precision: str = 'float32',
@@ -286,6 +272,23 @@ TGLF_MIXED_INPUTS = [
     "rlts_2", "taus_2", "as_2", "rlns_3", "zeff", "betae", "xnue"
 ]
 TGLF_MIXED_OUTPUTS = ['efe', 'efi', 'pfe', 'pfi']
+
+
+def make_complete_dataset(
+    scenario: ScenarioConfig, src_dir: str = 'campaigns_lumped', dest_dir: str = 'cleaned',
+    output_columns: list[str] = QUALIKIZ_MIXED_OUTPUTS
+) -> str:
+    items = list(scenario.get_common_params(start=0, end=3))
+    items[1] = items[1] + '_cluster'
+    src_filename = os.path.join('data', items[0], src_dir, *items[1:], 'all_campaigns.csv')
+    dest_folder = os.path.join('data', items[0], dest_dir, *items[1:])
+    dest_filename = os.path.join(dest_folder, 'complete_dataset.csv')
+    if not os.path.exists(dest_filename):
+        df = pd.read_csv(src_filename)
+        df['has_turbulence'] = df.apply(lambda row: _is_not_null(row, output_columns), axis=1)
+        os.makedirs(dest_folder, exist_ok=True)
+        df.to_csv(dest_filename, index=False)
+    return dest_filename
 
 
 __all__ = [

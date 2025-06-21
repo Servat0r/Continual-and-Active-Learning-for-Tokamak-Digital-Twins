@@ -13,16 +13,10 @@
   "active_learning": {
     "framework": "bmdal",
     "parameters": {
-      "batch_size": 128,
-      "max_batch_size": 2048,
+      "batch_size": 256,
+      "max_batch_size": 1024,
       "reload_initial_weights": false,
-      "selection_method": "random",
-      "initial_selection_method": "random",
-      "sel_with_train": true,
-      "base_kernel": "grad",
-      "kernel_transforms": [
-        ["rp", [512]]
-      ]
+      "standard_method": "badge"
     }
   },
   "dataset": {
@@ -96,64 +90,66 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Base",
+      "ignore": true,
       "parameters": {
       }
     },
     {
       "name": "Replay",
-      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Buffer 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
-      "ignore": true,
+      "extra_log_folder": "Buffer 3000",
+      "ignore": false,
       "parameters": {
-        "mem_size": 1000
+        "mem_size": 3000
       }
     },
     {
-      "name": "EWC",
-      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "name": "Replay",
+      "extra_log_folder": "Buffer 12000",
       "ignore": true,
       "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 10.0
-      }
-    },
-    {
-      "name": "MAS",
-      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 Alpha 0.5 (4096 batch size) (1024 hidden size) (2 hidden layers)",
-      "ignore": true,
-      "parameters": {
-        "lambda_reg": 10.0,
-        "alpha": 0.5
+        "mem_size": 12000
       }
     },
     {
       "name": "GEM",
-      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Patterns 1000 (4096 batch size) (1024 hidden size) (2 hidden layers)",
-      "ignore": false,
+      "extra_log_folder": "Patterns 500",
+      "ignore": true,
       "parameters": {
-        "patterns_per_exp": 1000
+        "patterns_per_exp": 500
       }
     },
     {
-      "name": "LFL",
-      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 10 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "name": "GEM",
+      "extra_log_folder": "Patterns 1024",
       "ignore": true,
       "parameters": {
-        "lambda_e": 10.0
+        "patterns_per_exp": 1024
       }
     },
     {
-      "name": "SI",
-      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Lambda 1 (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 1 Buffer 3000",
       "ignore": true,
       "parameters": {
-        "si_lambda": 1.0
+        "mode": "separate",
+        "ewc_lambda": 1.0,
+        "mem_size": 3000
+      }
+    },
+    {
+      "name": "EWCReplay",
+      "extra_log_folder": "Lambda 1 Buffer 12000",
+      "ignore": true,
+      "parameters": {
+        "mode": "separate",
+        "ewc_lambda": 1.0,
+        "mem_size": 12000
       }
     },
     {
       "name": "Cumulative",
-      "extra_log_folder": "TGLF/AL(CL)/random [rp, [512]] + random/Batches 128 2048 non-full first set no reload weights downsampling 0.5/Base (4096 batch size) (1024 hidden size) (2 hidden layers)",
+      "extra_log_folder": "Base",
       "ignore": true,
       "parameters": {
       }

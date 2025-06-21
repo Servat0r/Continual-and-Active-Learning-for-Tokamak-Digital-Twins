@@ -15,10 +15,6 @@ def build_argparser():
         help="Number of tasks to execute (e.g., --num_tasks=16). If <= 0, it defaults to os.cpu_count() // 2.",
     )
     cmd_arg_parser.add_argument(
-        '--tasks', nargs='+', type=int, default=None,
-        help='Specific tasks for filtering which ones to execute.'
-    )
-    cmd_arg_parser.add_argument(
         '--extra-log-folder', type=str,
         help="Extra folder to be added to log_folder path, if necessary."
     )
@@ -35,7 +31,19 @@ def build_argparser():
         help='Allows to plot graphs for each single run.',
     )
     cmd_arg_parser.add_argument(
-        '--is_test', type=int, default=0,
+        '--is-test', type=int, default=0,
         help='If 1, sets this experiment as a test one.'
+    )
+    cmd_arg_parser.add_argument(
+        '--cleanup-aborted', type=int, default=0,
+        help='If 1, cleanup aborted experiments at the end.'
+    )
+    cmd_arg_parser.add_argument(
+        '--cleanup-tests', type=int, default=0,
+        help='If 1, cleanup all test experiments at the end.'
+    )
+    cmd_arg_parser.add_argument(
+        '--cleanup-all', type=int, default=0,
+        help='If 1, cleanup all experiments at the end (useful e.g. when performing tests).'
     )
     return cmd_arg_parser
