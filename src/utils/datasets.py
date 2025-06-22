@@ -1,5 +1,6 @@
 from typing import Any, Callable
 import os
+import numpy as np
 import pandas as pd
 import torch
 from avalanche.benchmarks import AvalancheDataset
@@ -291,6 +292,73 @@ def make_complete_dataset(
     return dest_filename
 
 
+def load_baseline_csv_data(
+        config: ScenarioConfig, raw_or_final: str = 'final',
+        train: bool = True, validation: bool = True, test: bool = True
+) -> tuple[pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None]:
+    """
+    Returns the triple (train_data, eval_data, test_data) as pandas DataFrames according to the
+    specific baseline dataset selected.
+    :param raw_or_final: One of {"raw", "final"}. If "raw", loads unprocessed data just right after
+    train-eval-test split. If "final", loads already processed data after subsampling and zero-drops,
+    but BEFORE normalization (this is done for allowing training with non-normalized data).
+    :param train: If True, loads train data.
+    :param validation: If True, loads validation data.
+    :param test: If True, loads test data.
+    :return: The triple (train_data, eval_data, test_data) as pandas DataFrames, with each value being
+    None if the corresponding train/validation/test input parameter is False.
+    """
+    data_folder = get_cleaned_data_folder(config)
+    train_filename = get_raw_or_final_filename(config, raw_or_final, 'train')
+    eval_filename = get_raw_or_final_filename(config, raw_or_final, 'eval')
+    test_filename = get_raw_or_final_filename(config, raw_or_final, 'test')
+    train_data, eval_data, test_data = None, None, None
+    if train:
+        train_data = pd.read_csv(f'{data_folder}/{train_filename}')
+    if validation:
+        eval_data = pd.read_csv(f'{data_folder}/{eval_filename}')
+    if test:
+        test_data = pd.read_csv(f'{data_folder}/{test_filename}')
+    return train_data, eval_data, test_data
+
+
+def dataset_weights_file(config: ScenarioConfig, weights_source: str, raw_or_final: str):
+    return f"{weights_source}_weights_{config.simulator_type}_{config.pow_type}_" + \
+        f"{config.cluster_type}_{config.dataset_type}_{raw_or_final}_{config.task}.txt"
+
+
+def extract_dataset_weights(
+    config: ScenarioConfig, raw_or_final: str = 'final',
+    folder_path='.', weights_source: str = 'train'
+) -> np.ndarray:
+    """
+    Loads a dataset and saves the length of each campaign to be used for weighted evaluations.
+    """
+    train_data, eval_data, test_data = load_baseline_csv_data(config, raw_or_final)
+    file_path = os.path.join(folder_path, dataset_weights_file(config, weights_source, raw_or_final))
+    if weights_source == 'train':
+        absolute_weights = train_data.groupby('campaign').size().to_numpy()
+    elif weights_source == 'eval':
+        absolute_weights = eval_data.groupby('campaign').size().to_numpy()
+    elif weights_source == 'test':
+        absolute_weights = test_data.groupby('campaign').size().to_numpy()
+    print(absolute_weights, absolute_weights.dtype)
+    np.savetxt(file_path, absolute_weights, fmt='%d')
+    return absolute_weights
+
+
+def load_dataset_weights(
+    config: ScenarioConfig, raw_or_final: str = 'final',
+    folder_path='.', weights_source: str = 'train'
+) -> np.ndarray[np.intp]:
+    """
+    Loads saved dataset weights from a txt file.
+    """
+    file_path = os.path.join(folder_path, dataset_weights_file(config, weights_source, raw_or_final))
+    absolute_weights = np.loadtxt(file_path, dtype=np.intp)
+    return absolute_weights
+
+
 __all__ = [
     'get_cleaned_data_folder', 'get_raw_or_final_filename',
     'CSVRegressionDataset', 'get_avalanche_csv_regression_datasets',
@@ -300,5 +368,6 @@ __all__ = [
     'TGLF_HIGHPOW_INPUTS', 'TGLF_HIGHPOW_OUTPUTS',
     'TGLF_LOWPOW_INPUTS', 'TGLF_LOWPOW_OUTPUTS',
     'TGLF_MIXED_INPUTS', 'TGLF_MIXED_OUTPUTS',
-    'make_complete_dataset',
+    'make_complete_dataset', 'load_baseline_csv_data',
+    'dataset_weights_file', 'extract_dataset_weights', 'load_dataset_weights'
 ]

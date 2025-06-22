@@ -1,6 +1,10 @@
 from typing import Optional
+import re
 import os
+import numpy as np
+import pandas as pd
 from dataclasses import dataclass
+
 from ..models.utils import get_model_log_descriptor
 from ..scenarios import *
 from ...database import SecureMLExperimentDB, Strategy, General, ActiveLearning, Experiment, get_db
@@ -112,20 +116,47 @@ class LoggingConfiguration:
                 outputs_string, self.strategy, base_extra_name
             )
         else:
-            class_folder = 'CL'
-            if self.active_learning:
-                al_base_extra_name = self.get_al_log_folder(mode=mode)
-                class_folder = 'CLAEA'
+            class_folder = 'CL' if not self.active_learning else 'CLAEA'
+            assert len(self.experiment_name) > 0, f"Error: <LoggingConfiguration object>.experiment_name is not set"
             index_dir = os.path.join(
                 'logs', self.scenario.simulator_type, self.scenario.pow_type, self.scenario.cluster_type,
-                self.scenario.dataset_type, self.scenario.task, outputs_string, class_folder
+                self.scenario.dataset_type, self.scenario.task, outputs_string, class_folder,
+                self.strategy, self.experiment_name
             )
-            if self.active_learning:
-                index_dir = os.path.join(index_dir, al_base_extra_name)
-            index_dir = os.path.join(index_dir, self.strategy)
-        if self.experiment_name:
-            index_dir = os.path.join(index_dir, self.experiment_name)
         return index_dir
+    
+    @staticmethod
+    def parse_al_log_folder(folder: str) -> dict:
+        splits = folder.split('Batches ', 1)[1:].split(' ', 2)
+        batch_size, max_batch_size = int(splits[0]), int(splits[1])
+        splits = splits[2].split('full first set', 1)
+        match splits[0]:
+            case '':
+                full_first_set = True
+            case 'non-':
+                full_first_set = False
+            case _:
+                raise ValueError(f"Unknown prefix for 'full first set': {splits[0]}")
+        splits = splits[1].split('reload weights', 1)
+        match splits[0]:
+            case '':
+                reload_initial_weights = True
+            case 'no ':
+                reload_initial_weights = False
+            case _:
+                raise ValueError(f"Unknown prefix for 'reload weights': {splits[0]}")
+        splits = splits[1].split('downsampling ')
+        if int(splits[1]) == float(splits[1]):
+            factor = int(splits[1])
+        else:
+            factor = float(splits[1])
+        return {
+            'batch_size': batch_size,
+            'max_batch_size': max_batch_size,
+            'full_first_set': full_first_set,
+            'reload_initial_weights': reload_initial_weights,
+            'downsampling_factor': factor
+        }
     
     def get_al_log_folder(self, mode: str = 'old') -> str:
         full_first_set_str = ('' if self.al_config.full_first_set else 'non-') + 'full first set'
@@ -171,50 +202,55 @@ class LoggingConfiguration:
         return tuple(data[start:end])
 
 
-def get_CL_logging_config_from_filepath(file_path: str):
-    # file_path = logs/<pow_type>/<cluster_type>/<task>/<dataset_type>/<outputs>/<strategy>/<tglf if present><base_extra_name>
-    values: list[str] = file_path.split('/')
-    assert len(values) >= 8, f"len(file_path split by '/') == {len(values)}"
-    pow_type: str = values[1]
-    cluster_type: str = values[2]
-    task: str = values[3]
-    dataset_type: str = values[4]
-    outputs_string: str = values[5]
-    strategy: str = values[6]
-    if len(values) == 8:
-        simulator_type: str = 'qualikiz'
-        base_extra_name: str = values[7]
-    else:
-        simulator_type: str = values[7]
-        base_extra_name: str = values[8]
-    # Extract extra_log_folder, hidden_size and hidden_layers from base_extra_name
-    # Split by last two parentheses to handle extra_log_folder containing parentheses
-    parts = base_extra_name.rsplit('(', 3)
-    extra_log_folder = parts[0].strip()
-    batch_size = int(parts[1].split(' batch size')[0])
-    hidden_size = int(parts[2].split(' hidden size')[0])
-    if len(parts) > 3:
-        hidden_layers = int(parts[3].split(' hidden layers')[0])
-    else:
-        hidden_layers = 2
-
-    scenario_config = ScenarioConfig(
-        simulator_type=simulator_type,
-        pow_type=pow_type,
-        cluster_type=cluster_type,
-        dataset_type=dataset_type,
-        task=task, outputs=outputs_string.split('_')
+def get_logging_config_from_filepath(file_path: str):
+    # file_path = logs/<sim_type>/<pow_type>/<cluster_type>/<dataset_type>/<task>/<outputs>/<class>/<strategy>/<name>
+    folders: list[str] = re.split(r'[\\/]', file_path)
+    #print(f"FOLDERS: {folders}")
+    (simulator_type, pow_type, cluster_type, dataset_type, task, outputs, class_folder) = tuple(folders[1:8])
+    extra_folders: list[str] = folders[8:]
+    scenario = ScenarioConfig(simulator_type, pow_type, cluster_type, dataset_type, task, outputs)
+    strategy, experiment_name = extra_folders[0], extra_folders[1]
+    is_active_learning = True if class_folder == 'CLAEA' else False
+    result = LoggingConfiguration(
+        scenario=scenario,
+        strategy=strategy,
+        active_learning=is_active_learning,
+        experiment_name=experiment_name
     )
+    return result
 
-    logging_config = LoggingConfiguration(
-        active_learning=False, scenario=scenario_config, strategy=strategy,
-        extra_log_folder=extra_log_folder, batch_size=batch_size,
-        hidden_size=hidden_size, hidden_layers=hidden_layers
-    )
 
-    return logging_config
+def get_training_times(
+    config: LoggingConfiguration, num_tasks: int = 4
+) -> tuple[np.ndarray[np.float64], float]:
+    all_times = []
+    all_sums = []
+    for task_id in range(num_tasks):
+        log_folder = config.get_log_folder(count=-1, task_id=task_id)
+        df = pd.read_csv(os.path.join(log_folder, "training_results_epoch.csv"))
+        times_array = df.groupby('training_exp')['Time_Epoch'].apply(lambda g: g.sum()).to_numpy()
+        all_times.append(times_array)
+        all_sums.append(times_array.sum().item())
+    all_means: np.ndarray = np.array(all_times).mean(axis=0)
+    final_mean: float = np.array(all_sums).mean().item()
+    return all_means, final_mean
+
+
+def get_num_epochs(config: LoggingConfiguration, num_tasks: int = 4):
+    all_times = []
+    all_sums = []
+    for task_id in range(num_tasks):
+        log_folder = config.get_log_folder(count=-1, task_id=task_id)
+        df = pd.read_csv(os.path.join(log_folder, "training_results_epoch.csv"))
+        times_array = df.groupby('training_exp')['epoch'].apply(lambda g: len(g)).to_numpy()
+        all_times.append(times_array)
+        all_sums.append(times_array.sum().item())
+    all_means: np.ndarray = np.array(all_times).mean(axis=0)
+    final_mean: float = np.array(all_sums).mean().item()
+    return all_means, final_mean
 
 
 __all__ = [
-    "LoggingConfiguration", "simulator_prefixes", "get_CL_logging_config_from_filepath"
+    "LoggingConfiguration", "simulator_prefixes", "get_logging_config_from_filepath",
+    "get_training_times", "get_num_epochs"
 ]

@@ -56,36 +56,6 @@ def load_complete_dataset(config: ScenarioConfig):
     return df
 
 
-def load_baseline_csv_data(
-        config: ScenarioConfig, raw_or_final: str = 'final',
-        train: bool = True, validation: bool = True, test: bool = True
-) -> tuple[pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None]:
-    """
-    Returns the triple (train_data, eval_data, test_data) as pandas DataFrames according to the
-    specific baseline dataset selected.
-    :param raw_or_final: One of {"raw", "final"}. If "raw", loads unprocessed data just right after
-    train-eval-test split. If "final", loads already processed data after subsampling and zero-drops,
-    but BEFORE normalization (this is done for allowing training with non-normalized data).
-    :param train: If True, loads train data.
-    :param validation: If True, loads validation data.
-    :param test: If True, loads test data.
-    :return: The triple (train_data, eval_data, test_data) as pandas DataFrames, with each value being
-    None if the corresponding train/validation/test input parameter is False.
-    """
-    data_folder = get_cleaned_data_folder(config)
-    train_filename = get_raw_or_final_filename(config, raw_or_final, 'train')
-    eval_filename = get_raw_or_final_filename(config, raw_or_final, 'eval')
-    test_filename = get_raw_or_final_filename(config, raw_or_final, 'test')
-    train_data, eval_data, test_data = None, None, None
-    if train:
-        train_data = pd.read_csv(f'{data_folder}/{train_filename}')
-    if validation:
-        eval_data = pd.read_csv(f'{data_folder}/{eval_filename}')
-    if test:
-        test_data = pd.read_csv(f'{data_folder}/{test_filename}')
-    return train_data, eval_data, test_data
-
-
 def get_pca(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     campaign_indexes = df['campaign']
     df = df[columns]
@@ -96,43 +66,6 @@ def get_pca(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     )
     df_pca['campaign'] = campaign_indexes
     return df_pca
-
-
-def dataset_weights_file(config: ScenarioConfig, weights_source: str, raw_or_final: str):
-    return f"{weights_source}_weights_{config.simulator_type}_{config.pow_type}_" + \
-        f"{config.cluster_type}_{config.dataset_type}_{raw_or_final}_{config.task}.txt"
-
-
-def extract_dataset_weights(
-    config: ScenarioConfig, raw_or_final: str = 'final',
-    folder_path='.', weights_source: str = 'train'
-) -> np.ndarray:
-    """
-    Loads a dataset and saves the length of each campaign to be used for weighted evaluations.
-    """
-    train_data, eval_data, test_data = load_baseline_csv_data(config, raw_or_final)
-    file_path = os.path.join(folder_path, dataset_weights_file(config, weights_source, raw_or_final))
-    if weights_source == 'train':
-        absolute_weights = train_data.groupby('campaign').size().to_numpy()
-    elif weights_source == 'eval':
-        absolute_weights = eval_data.groupby('campaign').size().to_numpy()
-    elif weights_source == 'test':
-        absolute_weights = test_data.groupby('campaign').size().to_numpy()
-    print(absolute_weights, absolute_weights.dtype)
-    np.savetxt(file_path, absolute_weights, fmt='%d')
-    return absolute_weights
-
-
-def load_dataset_weights(
-    config: ScenarioConfig, raw_or_final: str = 'final',
-    folder_path='.', weights_source: str = 'train'
-) -> np.ndarray[np.intp]:
-    """
-    Loads saved dataset weights from a txt file.
-    """
-    file_path = os.path.join(folder_path, dataset_weights_file(config, weights_source, raw_or_final))
-    absolute_weights = np.loadtxt(file_path, dtype=np.intp)
-    return absolute_weights
 
 
 def build_full_datasets(
@@ -253,41 +186,6 @@ def outputs_direction_report(model, inputs, targets, ef_columns=None, mult_facto
         f"Negative percentages are: {list(negatives / len(ef_targets) * 100 / ef_length)}%",
         sep='\n', end='\n'
     )
-
-
-def get_mean_std_metric_values(
-    dataset, log_folder, mean_filename='eval_mean_values.csv', std_filename='eval_std_values.csv',
-    metric='Forgetting_Exp', num_exp=10, include_future_experiences=False, absolute_weights: np.ndarray = None
-):
-    """
-    Returns mean and std metric values for past and current experimental campaigns.
-    """
-    mean_file_path = os.path.join(log_folder, mean_filename)
-    std_file_path = os.path.join(log_folder, std_filename)
-    mean_df = pd.read_csv(mean_file_path)
-    std_df = pd.read_csv(std_file_path)
-    absolute_weights = absolute_weights if absolute_weights is not None else np.array([
-        len(dataset[dataset.campaign == i]) for i in range(num_exp)
-    ])
-    mean_data = []
-    std_data = []
-    for i in range(num_exp):
-        index = num_exp if include_future_experiences else i+1
-        weights = absolute_weights[:index] / absolute_weights[:index].sum()
-        exp_mean_series = mean_df[(mean_df['training_exp'] == i) & (mean_df['eval_exp'] < index)][metric].to_numpy()
-        exp_std_series = std_df[num_exp*i:num_exp*i+index][metric].to_numpy()
-        combined_mean = (exp_mean_series * weights[:index]).sum()
-        exp_mean_series = (exp_mean_series - combined_mean)
-        exp_std_series = exp_std_series**2 + exp_mean_series**2
-        exp_std_series = weights[:index] * exp_std_series
-        combined_std = exp_std_series.sum()
-        mean_data.append(combined_mean)
-        std_data.append(combined_std)
-    return pd.DataFrame({
-        'Experience': list(range(num_exp)),
-        f'Mean {metric}': mean_data,
-        f'Std {metric}': std_data
-    })
 
 
 def get_stat_metric_value_last_experience(
@@ -685,36 +583,6 @@ def mean_vs_weighted_mean_plots(
     if show: plt.show()
 
 
-def get_training_times(
-    config: LoggingConfiguration, num_tasks: int = 4
-) -> tuple[np.ndarray[np.float64], float]:
-    all_times = []
-    all_sums = []
-    for task_id in range(num_tasks):
-        log_folder = config.get_log_folder(count=-1, task_id=task_id)
-        df = pd.read_csv(os.path.join(log_folder, "training_results_epoch.csv"))
-        times_array = df.groupby('training_exp')['Time_Epoch'].apply(lambda g: g.sum()).to_numpy()
-        all_times.append(times_array)
-        all_sums.append(times_array.sum().item())
-    all_means: np.ndarray = np.array(all_times).mean(axis=0)
-    final_mean: float = np.array(all_sums).mean().item()
-    return all_means, final_mean
-
-
-def get_num_epochs(config: LoggingConfiguration, num_tasks: int = 4):
-    all_times = []
-    all_sums = []
-    for task_id in range(num_tasks):
-        log_folder = config.get_log_folder(count=-1, task_id=task_id)
-        df = pd.read_csv(os.path.join(log_folder, "training_results_epoch.csv"))
-        times_array = df.groupby('training_exp')['epoch'].apply(lambda g: len(g)).to_numpy()
-        all_times.append(times_array)
-        all_sums.append(times_array.sum().item())
-    all_means: np.ndarray = np.array(all_times).mean(axis=0)
-    final_mean: float = np.array(all_sums).mean().item()
-    return all_means, final_mean
-
-
 def computeR_from_config(
     config: LoggingConfiguration, naive_values: pd.DataFrame, cumulative_values: pd.DataFrame,
     mean_filename: str = 'test_mean_values.csv', std_filename: str = 'test_std_values.csv'
@@ -733,7 +601,6 @@ def computeR_from_config(
 
 
 __all__ = [
-    'load_baseline_csv_data', 'extract_dataset_weights', 'load_dataset_weights',
     'load_complete_dataset', 'build_full_datasets', 'build_experience_datasets',
     'outputs_direction_report', 'get_mean_std_metric_values', 'get_stat_metric_value_last_experience',
     'get_stat_metric_value_per_experience', 'mean_std_df_wrapper', 'mean_std_strategy_plots_wrapper',

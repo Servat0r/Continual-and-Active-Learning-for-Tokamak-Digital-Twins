@@ -36,7 +36,7 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
             restore_best_weights=True, val_stream_name='test_stream',
             when_above=float('-inf'), when_below=float('inf'), min_epochs=0,
             use_validation_plugin=True, immediate_stop_delta=None,
-            debug_log_file=None,
+            debug_log_file=None, decrease_rates_ratio_threshold: float = 2.0 # Used to detect overfitting when train loss decreases faster than eval loss
     ):
         super().__init__()
         self.patience = patience
@@ -52,6 +52,7 @@ class ValidationEarlyStoppingPlugin(BaseLogger):
         self.min_epochs = min_epochs
         self.use_validation_plugin = use_validation_plugin
         self.immediate_stop_delta = immediate_stop_delta
+        self.decrease_rates_ratio_threshold = decrease_rates_ratio_threshold
         if debug_log_file is not None:
             self.debug_log_file = open(debug_log_file, 'w')
         else:

@@ -2,7 +2,7 @@
 import json, os
 import numpy as np
 from itertools import product
-from src.utils.datasets import QUALIKIZ_HIGHPOW_OUTPUTS
+from src.utils.datasets import *
 from src.utils.scenarios import *
 from src.utils.logging import LoggingConfiguration
 from src.ex_post_tests import *

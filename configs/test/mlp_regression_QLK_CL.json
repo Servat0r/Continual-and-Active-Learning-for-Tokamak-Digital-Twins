@@ -3,7 +3,7 @@
     "mode": "CL",
     "task": "regression",
     "dtype": "float32",
-    "num_campaigns": 10,
+    "num_campaigns": 5,
     "train_mb_size": 4096,
     "eval_mb_size": 1024,
     "train_epochs": 2
@@ -66,7 +66,14 @@
   "strategy": [
     {
       "name": "Naive",
-      "extra_log_folder": "[test] Base (cuda sync)",
+      "extra_log_folder": "[test] Base",
+      "ignore": true,
+      "parameters": {
+      }
+    },
+    {
+      "name": "Cumulative",
+      "extra_log_folder": "[test] Base",
       "ignore": true,
       "parameters": {
       }
@@ -74,7 +81,7 @@
     {
       "name": "Replay",
       "extra_log_folder": "[test] Buffer 2000",
-      "ignore": true,
+      "ignore": false,
       "parameters": {
         "mem_size": 2000
       }
@@ -82,7 +89,7 @@
     {
       "name": "Replay",
       "extra_log_folder": "[test] Buffer 10000",
-      "ignore": false,
+      "ignore": true,
       "parameters": {
         "mem_size": 10000
       }
@@ -103,13 +110,6 @@
       "ignore": true,
       "parameters": {
         "patterns_per_exp": 1024
-      }
-    },
-    {
-      "name": "Cumulative",
-      "extra_log_folder": "Base",
-      "ignore": true,
-      "parameters": {
       }
     }
   ],

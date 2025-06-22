@@ -67,7 +67,7 @@ if __name__ == '__main__':
         config_parser = ConfigParser(single_config_data, task_id=0) # <== TODO Fix this task_id requirement!
         config_parser.load_config()
         print(f"[main] Configuration standardized: {config_parser.is_standardized()}")
-        #print(json.dumps(config_parser.raw_config, indent=2))
+        num_exp = config_parser.get_raw_config()['general']['num_campaigns']
         num_tasks = cmd_args.num_tasks
         experiment_id, experiment_name = config2db(config_parser.raw_config, db, num_tasks, is_test)
         all_ids.append(experiment_id)
@@ -96,41 +96,96 @@ if __name__ == '__main__':
                     )
                 ]
             # Plot means and standard deviations
-            if num_jobs > 1:
-                for set_type in ['eval', 'test']:
-                    file_paths = [
-                        os.path.join(
-                            result['log_folder'], f'{set_type}_results_experience.csv'
-                        ) for result in results if result is not None
-                    ]
-                    if (len(file_paths) != len(results)):
-                        raise RuntimeError(f"Something went wrong during training: {len(file_paths)} vs. {len(results)}")
-                    save_folder = os.path.dirname(file_paths[0])
-                    dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths]
-                    columns = dfs[0].columns
-                    mean_df = pd.DataFrame(columns=columns)
-                    std_df = pd.DataFrame(columns=columns)
-                    for column in columns:
-                        values = [df[column].to_numpy(dtype=np.float32) for df in dfs]
-                        arr = np.round(np.vstack(values), decimals=8)
-                        mean_df[column] = arr.mean(axis=0)
-                        std_df[column] = arr.std(axis=0)
-                    mean_df.to_csv(os.path.join(save_folder, f'{set_type}_mean_values.csv'), index=False)
-                    std_df.to_csv(os.path.join(save_folder, f'{set_type}_std_values.csv'), index=False)
-                    # Plot mean and std values
-                    task = results[0]['task']
-                    metric_list = get_metric_names_list(task)
-                    title_list = get_title_names_list(task)
-                    ylabel_list = get_ylabel_names_list(task)
-                    if results[0]['is_joint_training']:
-                        mean_std_evaluation_experiences_plots(
-                            file_paths, metric_list, title_list, ylabel_list,
-                            start_exp=0, end_exp=0, num_exp=1, set_type=set_type
-                        )
+            exp_log_dict = {'raw_metrics': {}, 'aggregated_metrics': {}}
+            logging_config = get_logging_config_from_filepath(results[0]['log_folder']) # ?
+            # Now add aggregated metrics to log dict
+            strategy_times, strategy_total_time = get_training_times(logging_config, num_tasks=4)
+            strategy_epochs, _ = get_num_epochs(logging_config, num_tasks=4)
+            strategy_cumulative_times = np.cumsum(strategy_times)
+            exp_log_dict['aggregated_metrics'].update({
+                "times": strategy_times.round(4).tolist(),
+                "total_time": strategy_total_time,
+                "cumulative_times": strategy_cumulative_times.round(4).tolist(),
+                "num_epochs": strategy_epochs.round(2).tolist()
+            })
+            db.add_or_update_logs(experiment_id, exp_log_dict)
+            for set_type in ['eval', 'test']:
+                file_paths = [
+                    os.path.join(
+                        result['log_folder'], f'{set_type}_results_experience.csv'
+                    ) for result in results if result is not None
+                ]
+                if (len(file_paths) != len(results)):
+                    raise RuntimeError(f"Something went wrong during training: {len(file_paths)} vs. {len(results)}")
+                
+                save_folder = results[0]['log_folder']
+                dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths]
+                # Efficient vectorized computation for mean and std across dataframes
+                arr = np.stack([df.to_numpy(dtype=np.float32) for df in dfs])
+                mean_arr = np.round(arr.mean(axis=0), decimals=4)
+                std_arr = np.round(arr.std(axis=0), decimals=4)
+                mean_df = pd.DataFrame(mean_arr, columns=dfs[0].columns)
+                std_df = pd.DataFrame(std_arr, columns=dfs[0].columns)
+                mean_df.to_csv(os.path.join(save_folder, f'{set_type}_mean_values.csv'), index=False)
+                std_df.to_csv(os.path.join(save_folder, f'{set_type}_std_values.csv'), index=False)
+                raw_columns = []
+                cleaned_columns = []
+                for col in mean_df.columns:
+                    if col.endswith('_Exp'):
+                        raw_columns.append(col)
+                        cleaned_columns.append(f"{set_type.capitalize()}_{col[:-4]}")
+                for raw_col, cleaned_col in zip(raw_columns, cleaned_columns):
+                    exp_log_dict['raw_metrics'][cleaned_col] = {}
+                    exp_log_dict['raw_metrics'][cleaned_col]['mean'] = mean_df[raw_col].to_list()
+                    exp_log_dict['raw_metrics'][cleaned_col]['std'] = std_df[raw_col].to_list()
+                # Now compute aggregated metrics
+                try:
+                    absolute_weights = load_dataset_weights(logging_config.scenario, raw_or_final='final', weights_source=set_type)
+                except FileNotFoundError:
+                    absolute_weights = extract_dataset_weights(logging_config.scenario, raw_or_final='final', weights_source=set_type)
+                r2_strategy_values = get_mean_std_metric_values(
+                    None, None, metric='R2Score_Exp', absolute_weights=absolute_weights,
+                    mean_df=mean_df, std_df=std_df, num_exp=num_exp
+                )
+                rd_strategy_values = get_mean_std_metric_values(
+                    None, None, metric='RelativeDistance_Exp', absolute_weights=absolute_weights,
+                    mean_df=mean_df, std_df=std_df, num_exp=num_exp
+                )
+                exp_log_dict['aggregated_metrics'].update({
+                    f"{set_type.capitalize()}_R2": {
+                        'mean': r2_strategy_values['Mean R2Score_Exp'].to_list(),
+                        'std': r2_strategy_values['Std R2Score_Exp'].to_list(),
+                    },
+                    f"{set_type.capitalize()}_RelativeDistance": {
+                        'mean': rd_strategy_values['Mean RelativeDistance_Exp'].to_list(),
+                        'std': rd_strategy_values['Std RelativeDistance_Exp'].to_list(),
+                    },
+                })
+                db.add_or_update_logs(experiment_id, exp_log_dict)
+                # Now it should check whether to insert derived metrics (R, time_ratios etc)
+                size = len(r2_strategy_values['Mean R2Score_Exp'])
+                if strategy['name'] == 'Naive':
+                    exp_log_dict['aggregated_metrics'].update({
+                        f"{set_type.capitalize()}_R": np.ones(size, dtype=np.float64).tolist(),
+                        f"{set_type.capitalize()}_time_ratios": np.ones(size, dtype=np.float64).tolist()
+                    })
+                else:
+                    if strategy['name'] == 'Cumulative':
+                        exp_log_dict['aggregated_metrics'].update({
+                            f"{set_type.capitalize()}_R": np.ones(size, dtype=np.float64).tolist()
+                        })
                     else:
-                        mean_std_evaluation_experiences_plots(
-                            file_paths, metric_list, title_list, ylabel_list, set_type=set_type
-                        )
+                        # R for other strategies
+                        r_data = compute_derived_metrics(db, experiment_id, experiment_name, set_type, which='R')
+                        exp_log_dict['aggregated_metrics'].update(r_data)
+            if strategy['name'] != 'Naive':
+                # time_ratios for Cumulative and other strategies
+                t_data = compute_derived_metrics(db, experiment_id, experiment_name, None, which='time_ratios')
+                exp_log_dict['aggregated_metrics'].update(t_data)
+            # Finally, commit exp log dict to database
+            exp_dict = db.add_or_update_logs(experiment_id, exp_log_dict)
+            if exp_dict is None: # Failure in logs update
+                stdout_debug_print(f"Failed to update logs for {experiment_name}", color='red')
         except (KeyboardInterrupt, Exception) as ex:
             stdout_debug_print(f"Caught exception: {ex}", color='red')
             traceback.print_exc() # Print traceback
@@ -157,8 +212,8 @@ if __name__ == '__main__':
     print(f"Test Experiments: {test_names}")
     print(f"All Experiments: {all_names}")
     if _cleanup_aborted:
-        cleanup_aborted_experiments(db, aborted_experiment_ids)
+        cleanup_aborted_experiments(db, targets=aborted_experiment_ids)
     elif _cleanup_tests:
-        cleanup_tests(db, test_ids)
+        cleanup_tests(db, targets=test_ids)
     elif _cleanup_all:
-        cleanup_all(db, all_ids)
+        cleanup_all(db, targets=all_ids)

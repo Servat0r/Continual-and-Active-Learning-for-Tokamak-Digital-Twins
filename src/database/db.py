@@ -318,7 +318,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         return bool(re.match(r'^[a-zA-Z0-9_-]+$', key)) and len(key) <= 100
     
     # GENERIC CRUD OPERATIONS
-    def create_record(self, record) -> int:
+    def create_record(self, record: TOrm) -> int:
         """Create a new record with validation."""
         model_class = type(record)
         if model_class == Experiment:
@@ -424,7 +424,13 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                         if attr in {'tags', 'metadata'}:
                             print("Cannot set \"tags\" and \"metadata\" field with \"update_record\", ignoring them ...")
                         else:
-                            setattr(existing, attr, value)
+                            if isinstance(value, dict):
+                                dict_copy = getattr(existing, attr).copy()
+                                dict_copy.update(value)
+                                setattr(existing, attr, dict_copy)
+                                flag_modified(existing, attr)
+                            else:
+                                setattr(existing, attr, value)
                     return existing.to_dict()
                 return None
         except (ValidationError, SecurityError):
@@ -461,8 +467,9 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         """Delete a record."""
         try:
             with self.get_session() as session:
-                current_record = session.query(model_class).filter(model_class.id == record_id)
-                if (current_record is not None) and (current_record.delete()):
+                query = session.query(model_class).filter(model_class.id == record_id)
+                current_record = query.first()
+                if (current_record is not None) and (query.delete()):
                     logger.info(f"Deleted {model_class.__name__} ID {record_id}")
                     return current_record.to_dict()
                 else:
@@ -733,12 +740,17 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 # Find the existing record by primary key (assume 'id' is the PK)
                 existing = session.query(Experiment).get(record_id) # ?
                 if existing:
-                    updated_logs: dict = existing.logs.copy()
+                    updated_logs: dict = existing.logs.copy() if existing.logs is not None else {}
                     for log_name, log_value in logs.items():
-                        updated_logs[log_name] = log_value
+                        if isinstance(log_value, dict):
+                            if updated_logs.get(log_name, None):
+                                updated_logs[log_name].update(log_value)
+                            else:
+                                updated_logs[log_name] = log_value
+                        else:
+                            updated_logs[log_name] = log_value
                     existing.logs = updated_logs
                     flag_modified(existing, "logs")
-                    #existing_tags.update(tags)
                     return existing.to_dict()
                 return None
         except (ValidationError, SecurityError):
@@ -794,19 +806,20 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         """
         try:
             with self.get_session() as session:
-                if targets:
-                    aborted_experiments = session.query(Experiment).filter(
+                if targets is not None:
+                    query = session.query(Experiment).filter(
                         Experiment.status == "aborted",
                         Experiment.id.in_(targets)
                     )
                 else:
-                    aborted_experiments = session.query(Experiment).filter(
+                    query = session.query(Experiment).filter(
                         Experiment.status == "aborted"
                     )
+                aborted_experiments = query.all()
+                count = len(aborted_experiments)
                 # Count and delete
-                count = aborted_experiments.count()
                 if count > 0:
-                    aborted_experiments.delete(synchronize_session=False)
+                    query.delete(synchronize_session=False)
                     results = [experiment.to_dict() for experiment in aborted_experiments]
                     return count, results
                 else:
@@ -824,17 +837,18 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         """
         try:
             with self.get_session() as session:
-                if targets:
-                    aborted_experiments = session.query(Experiment).filter(
+                if targets is not None:
+                    query = session.query(Experiment).filter(
                         Experiment.is_test == True,
                         Experiment.id.in_(targets)
                     )
                 else:
-                    aborted_experiments = session.query(Experiment).filter(Experiment.is_test == True)
+                    query = session.query(Experiment).filter(Experiment.is_test == True)
                 # Count and delete
-                count = aborted_experiments.count()
+                count = query.count()
+                aborted_experiments = query.all()
                 if count > 0:
-                    aborted_experiments.delete(synchronize_session=False)
+                    query.delete(synchronize_session=False)
                     results = [experiment.to_dict() for experiment in aborted_experiments]
                     return count, results
                 else:
@@ -1029,7 +1043,10 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             raise
     
     def dump_db_to_json(self, out_file: str) -> Optional[Dict]:
-        model_classes = [General, Scenario, Architecture, Loss, Optimizer, Scheduler, Strategy, Experiment]
+        model_classes = [
+            General, Scenario, Architecture, Loss, Optimizer, Scheduler,
+            Strategy, EarlyStopping, ActiveLearning, Experiment
+        ]
         try:
             with self.get_session() as session:
                 data = {model_class.__tablename__: [] for model_class in model_classes}
@@ -1042,6 +1059,29 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 return data
         except SQLAlchemyError as e:
             logger.error(f"Error getting database info: {e}")
+            raise
+    
+    def cleanup_database(self) -> int:
+        """ Removes all records from database. """
+        model_classes = [
+            General, Scenario, Architecture, Loss, Optimizer, Scheduler,
+            Strategy, EarlyStopping, ActiveLearning, Experiment
+        ]
+        nrecords = 0
+        try:
+            with self.get_session() as session:
+                for model_class in model_classes:
+                    query = session.query(model_class)
+                    candidates = query.all()
+                    query.delete()
+                    nrecords += len(candidates)
+                logger.info(f"Deleted {nrecords} records from the database")
+                return nrecords
+        except IntegrityError as e:
+            logger.error(f"Cannot delete {model_class.__name__} records: {e}")
+            raise ValidationError(f"Cannot delete record: {e}")
+        except SQLAlchemyError as e:
+            logger.error(f"Database error deleting {model_class.__name__}: {e}")
             raise
 
 

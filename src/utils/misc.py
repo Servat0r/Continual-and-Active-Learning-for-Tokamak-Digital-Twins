@@ -9,6 +9,7 @@ from time import perf_counter
 from dotenv import load_dotenv
 from rich import print as dbprint
 from pathlib import Path
+from typing import Optional
 
 
 load_dotenv(
@@ -185,6 +186,44 @@ def get_all_tasks_paths(base_path: str) -> dict[str, str]:
     }
 
 
+def get_mean_std_metric_values(
+    dataset, log_folder, mean_filename='eval_mean_values.csv', std_filename='eval_std_values.csv',
+    metric='Forgetting_Exp', num_exp=10, include_future_experiences=False, absolute_weights: np.ndarray = None,
+    mean_df: Optional[pd.DataFrame] = None, std_df: Optional[pd.DataFrame] = None
+):
+    """
+    Returns mean and std metric values for past and current experimental campaigns.
+    """
+    if mean_df is None:
+        mean_file_path = os.path.join(log_folder, mean_filename)
+        mean_df = pd.read_csv(mean_file_path)
+    if std_df is None:
+        std_file_path = os.path.join(log_folder, std_filename)
+        std_df = pd.read_csv(std_file_path)
+    absolute_weights = absolute_weights if absolute_weights is not None else np.array([
+        len(dataset[dataset.campaign == i]) for i in range(num_exp)
+    ])
+    mean_data = []
+    std_data = []
+    for i in range(num_exp):
+        index = num_exp if include_future_experiences else i+1
+        weights = absolute_weights[:index] / absolute_weights[:index].sum()
+        exp_mean_series = mean_df[(mean_df['training_exp'] == i) & (mean_df['eval_exp'] < index)][metric].to_numpy()
+        exp_std_series = std_df[num_exp*i:num_exp*i+index][metric].to_numpy()
+        combined_mean = (exp_mean_series * weights[:index]).sum().round(4)
+        exp_mean_series = (exp_mean_series - combined_mean)
+        exp_std_series = exp_std_series**2 + exp_mean_series**2
+        exp_std_series = weights[:index] * exp_std_series
+        combined_std = exp_std_series.sum().round(4)
+        mean_data.append(combined_mean)
+        std_data.append(combined_std)
+    return pd.DataFrame({
+        'Experience': list(range(num_exp)),
+        f'Mean {metric}': mean_data,
+        f'Std {metric}': std_data
+    })
+
+
 STDOUT = sys.__stdout__
 STDERR = sys.__stderr__
 
@@ -194,5 +233,5 @@ __all__ = [
     "get_dtype_from_str", "extract_metric_info", "extract_metric_type",
     "get_means_std_over_evaluation_experiences_multiple_runs",
     "extract_metric_values_over_evaluation_experiences",
-    "get_all_tasks_paths", "STDOUT", "STDERR"
+    "get_all_tasks_paths", "get_mean_std_metric_values", "STDOUT", "STDERR"
 ]

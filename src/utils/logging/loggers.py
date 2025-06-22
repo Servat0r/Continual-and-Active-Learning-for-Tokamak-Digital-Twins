@@ -55,6 +55,7 @@ class CustomCSVLogger(BaseLogger):
 
         # is open?
         self.is_open = True
+        self._alerts_enabled = True # By default, it will print alerts when called when "closed" or "suspended"
         self.stream_type = self.VAL
         self.set_val_stream_type()
 
@@ -154,10 +155,11 @@ class CustomCSVLogger(BaseLogger):
             return str(m_val)
     
     def __error_print(self, status, file=sys.stderr, flush=True):
-        print(
-            f"{self.__class__.__name__} has been {status}",
-            file=file, flush=flush
-        )
+        if self._alerts_enabled:
+            print(
+                f"{self.__class__.__name__} has been {status}",
+                file=file, flush=flush
+            )
     
     def suspend(self):
         self.working = False
@@ -317,8 +319,10 @@ class CustomCSVLogger(BaseLogger):
         if self.working:
             self.in_train_phase = False
 
-    def close(self):
+    def close(self, disable_alerts: bool = False):
         self.is_open = False
+        if disable_alerts:
+            self._alerts_enabled = False
         for file in self.training_files.values():
             file.close()
         for file in self.eval_files.values():

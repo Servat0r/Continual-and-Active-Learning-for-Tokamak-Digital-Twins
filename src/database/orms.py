@@ -119,8 +119,6 @@ class Scenario(Base, SchemaORM):
     
     def __init__(self, **kwargs):
         kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
-        if 'input_columns' in kwargs:
-            print("**********" + kwargs['input_columns'])
         super().__init__(**kwargs)
     
     def __repr__(self):

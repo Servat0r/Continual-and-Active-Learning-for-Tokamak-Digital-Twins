@@ -23,7 +23,6 @@ def __get_records_id(db: SecureMLExperimentDB, orm_class, conditions, field, res
     cond_copy = {k: v for k, v in conditions.items() if '@' not in k}
     json_conditions = {field: cond_copy.pop(field) for field in json_fields if field in conditions}
     records = db.read_records_where(orm_class, conditions=cond_copy, as_dict=True)
-    print(f"Got {len(records)} records for class = {orm_class}")
     record_to_create = False
     if records is not None:
         filtered_records = []
@@ -35,7 +34,6 @@ def __get_records_id(db: SecureMLExperimentDB, orm_class, conditions, field, res
             if condition:
                 filtered_records.append(record)
         if filtered_records:
-            print(f"Filtered {len(filtered_records)} for class = {orm_class}")
             record = filtered_records[0]
             results[field] = record['id']
         else:
@@ -112,7 +110,7 @@ def config2db(
     # Experiment
     experiment = Experiment(
         **results, # All foreign keys
-        name='Experiment', # Will be completed to a unique-generated name
+        name='Exp', # Will be completed to a unique-generated name
         num_tasks=num_tasks,
         status='invalid',
         is_test=is_test

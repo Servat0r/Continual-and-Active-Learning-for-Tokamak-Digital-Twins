@@ -267,26 +267,18 @@ def make_benchmark(
             if target_transform else norm_target_transform
         # todo be careful on the fact that normalization is not included for inverse()-based preprocess_* methods
 
+    stdout_debug_print(f"Loading campaigns data ...", color='yellow')
     for campaign in range(NUM_CAMPAIGNS):
-        debug_print(f"[yellow]Loading data for campaign {campaign} ...[/yellow]", file=STDOUT)
-        debug_print(f"[yellow]Input Columns = {input_columns}\nOutput Columns = {output_columns}[/yellow]")
         train_dataset, eval_dataset, test_dataset = get_avalanche_csv_regression_datasets(
             train_data, eval_data, test_data, input_columns=input_columns, output_columns=output_columns,
             filter_by={'campaign': [campaign]}, float_precision=float_precision,
             device='cpu', transform=transform, target_transform=target_transform,
             filter_by_leq=filter_by_leq, filter_by_geq=filter_by_geq, task_label=campaign
         )
-        X, y = train_dataset[0]
-        print(
-            f"[red]Input Shape = {X.shape}[/red]",
-            f"[red]Output Shape = {y.shape}[/red]",
-            f"[red]Length of Train Dataset = {len(train_dataset)}[/red]",
-            f"[red]Length of Validation Dataset = {len(eval_dataset)}[/red]",
-            f"[red]Length of Test Dataset = {len(test_dataset)}[/red]"
-        )
         train_datasets.append(train_dataset)
         eval_datasets.append(eval_dataset)
         test_datasets.append(test_dataset)
+    stdout_debug_print(f"Campaign data loaded", color='yellow')
     benchmark = benchmark_from_datasets(train=train_datasets, eval=eval_datasets, test=test_datasets)
     return benchmark
 

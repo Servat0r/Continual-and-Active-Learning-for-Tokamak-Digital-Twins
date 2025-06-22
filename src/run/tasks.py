@@ -2,9 +2,8 @@ import gc
 import json
 import sys
 import os
-from time import perf_counter, process_time, sleep
+from time import perf_counter, sleep
 from typing import Any, Optional
-from datetime import datetime
 import torch
 
 from tqdm import tqdm
@@ -81,15 +80,12 @@ def downsample_experience(
         for stratum in unique_strata:
             stratum_indices = torch.where(combined_magnitudes == stratum)[0]
             current_sample_size = int(round(len(stratum_indices) / len(combined_magnitudes) * downsampling_factor, 0))
-            #stdout_debug_print(f"Preliminarily sampling {current_sample_size} items", color='green')
             sampled_sizes.append(current_sample_size)
         total = sum(sampled_sizes)
-        #stdout_debug_print(f"Preliminary total = {total}", color='green')
         i = 0
         while total + i < downsampling_factor:
             sampled_sizes[i % len(sampled_sizes)] += 1
             i += 1
-        #stdout_debug_print(f"Final sample sizes = {sampled_sizes}", color='green')
     
     # Sample from each stratum
     for idx, stratum in enumerate(unique_strata):
@@ -100,7 +96,6 @@ def downsample_experience(
             num_to_sample = sampled_sizes[idx]
         else:
             raise RuntimeError(f"Unknown factor_type = \"{factor_type}\"")
-        #stdout_debug_print(f"Sampled = {num_to_sample}", color='cyan')
         
         # Randomly sample indices from this stratum
         if len(stratum_indices) > 0:
@@ -171,14 +166,12 @@ def task_training_loop(
     # Config Processing
     config_parser.process_config()
 
-    import pprint
-    if task_id == 0: pprint.pprint(config_parser.config)
-    print(f"Setting {experiment_name} status to \"pending\"")
+    stdout_debug_print(f"Setting {experiment_name} status to \"pending\"", color='green')
     # Infinitely cycles, with 2 ms of sleep time, up until status is correctly set to "pending"
     while True:
         nset, _ = db.set_init_to_pending([experiment_id]) # nset <= 1, and if nset == 1, the experiment was set to "pending"
         if nset > 0:
-            print(f"Experiment {experiment_name} set to \"pending\"")
+            stdout_debug_print(f"Experiment {experiment_name} set to \"pending\"", color='green')
             break
         else:
             sleep(0.002)
@@ -316,17 +309,9 @@ def task_training_loop(
     with open(stdout_file_path, 'w') as stdout_file:
         if redirect_stdout:
             sys.stdout = stdout_file # Redirect outputs to file
-        print("Configuration Loaded:")
-        print(f"  Device: {device}")
-        for field_name, field_value in config_parser.get_config().items():
-            print(f"  {field_name}: {field_value}")
 
         # Print Model Size
         trainables, total = get_model_size(model)
-        print(
-            f"Trainable Parameters = {trainables}"
-            f"\nTotal Parameters = {total}"
-        )
 
         # Saving model before usage
         start_model_saving_data = config_parser['start_model_saving']
@@ -626,19 +611,18 @@ def task_training_loop(
         while True:
             nset, _ = db.set_pending_to_running([experiment_id]) # nset <= 1, and if nset == 1, the experiment was set to "pending"
             if nset > 0:
-                print(f"Experiment {experiment_name} set to \"running\"")
+                stdout_debug_print(f"Experiment {experiment_name} set to \"running\"", color='green')
                 break
             else:
                 sleep(0.002)
 
-        debug_print("[red]Starting ...[/red]", file=STDOUT)
         try:
             results = run(train_stream, eval_stream, cl_strategy, model, log_folder, write_intermediate_models)
             with open(os.path.join(log_folder, 'results.json'), 'w') as fp:
                 json.dump(results, fp, indent=4)
 
             # Finally close the logger and evaluate on test stream
-            csv_logger.close()
+            csv_logger.close(disable_alerts=True) # With alerts disabled, you will not get redundant messages when evaluating on test stream
             final_test_results = cl_strategy.eval(test_stream)
             synchronization(SYNC)
             # Filter by results on test_stream
@@ -668,7 +652,7 @@ def task_training_loop(
             while True:
                 nset, _ = db.set_any_to_aborted([experiment_id]) # nset <= 1, and if nset == 1, the experiment was set to "pending"
                 if nset > 0:
-                    print(f"Experiment {experiment_name} set to \"aborted\"")
+                    stdout_debug_print(f"Experiment {experiment_name} set to \"aborted\"", color='green')
                     break
                 else:
                     sleep(0.002)
