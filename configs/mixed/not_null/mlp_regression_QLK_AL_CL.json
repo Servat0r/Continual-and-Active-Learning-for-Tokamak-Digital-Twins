@@ -1,9 +1,6 @@
 {
   "general": {
     "mode": "AL(CL)",
-    "full_first_train_set": true,
-    "first_train_set_size": 5120,
-    "downsampling_factor": 2,
     "task": "regression",
     "dtype": "float32",
     "num_campaigns": 10,
@@ -16,6 +13,9 @@
     "parameters": {
       "batch_size": 256,
       "max_batch_size": 1024,
+      "full_first_set": false,
+      "first_set_size": 5120,
+      "downsampling_factor": 0.5,
       "reload_initial_weights": false,
       "standard_method": "badge"
     }

@@ -14,9 +14,6 @@ def general_handler(config: dict[str, Any], key: str):
     default_config = {
         'mode': 'CL', # Available modes are: "CL" (pure Continual Learning),
         # "AL(CL)" (CL with experiences data selected with AL methods)
-        'full_first_train_set': True,
-        'downsampling_factor': 1,
-        'first_train_set_size': None, # By default, it is ENTIRE!
         'train_mb_size': 4096,
         'eval_mb_size': 4096,
         'train_epochs': 200,
@@ -26,9 +23,6 @@ def general_handler(config: dict[str, Any], key: str):
     }
     default_config.update(config[key])
     assert isinstance(default_config['mode'], str) and default_config['mode'] in ['CL', 'AL(CL)']
-    assert isinstance(default_config['full_first_train_set'], bool)
-    assert (default_config['first_train_set_size'] is None) or (isinstance(default_config['first_train_set_size'], int))
-    assert isinstance(default_config['downsampling_factor'], int) and default_config['downsampling_factor'] > 0
     # Extract AL fields from general (backwards compatibility)
     for field, conv_field in _general_al_conv.items():
         if field in default_config:

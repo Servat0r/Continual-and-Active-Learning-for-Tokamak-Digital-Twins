@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Type, Tuple
+from typing import Dict, List, Optional, Any, Type, Tuple, Iterable
 import logging
 import os, json
 
@@ -35,6 +35,12 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
     - Connection pooling
     - Type safety
     """
+    
+    __tables_map__ = {
+        str(model_class.__name__): model_class for model_class in {
+            General, Scenario, Architecture, Loss, Optimizer, Scheduler, EarlyStopping, Strategy, ActiveLearning, Experiment
+        }
+    }
     
     def __init__(
             self, db_url: str = "sqlite:///" + DEFAULT_DB_FILE, echo: bool = False,
@@ -340,13 +346,18 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error creating {model_class.__name__}: {e}")
             raise
     
-    def read_record(self, model_class: Type[TOrm], record_id: int, as_dict: bool = True) -> Optional[Dict | TOrm]:
+    def read_record(
+        self, model_class: Type[TOrm], record_id: int, as_dict: bool = True, fields: Optional[Iterable[str]] = None
+    ) -> Optional[Dict | TOrm]:
         """Read a single record by ID."""
         try:
             with self.get_session() as session:
                 record = session.query(model_class).get(record_id) #filter(model_class.id == record_id).first()
                 if record:
-                    return record.to_dict() if as_dict else record
+                    result = record.to_dict()
+                    if fields:
+                        result = {k: v for k, v in result.items() if k in fields}
+                    return result
                 else:
                     return None
         except SQLAlchemyError as e:
@@ -354,8 +365,8 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             raise
     
     def read_record_where(
-            self, model_class: Type[TOrm], conditions: Dict, as_dict: bool = True
-    ) -> List[Dict]:
+            self, model_class: Type[TOrm], conditions: Dict, as_dict: bool = True, fields: Optional[Iterable[str]] = None
+    ) -> Dict:
         try:
             with self.get_session() as session:
                 query = session.query(model_class).options(undefer('*'))
@@ -365,7 +376,10 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 #if hasattr(record, "parameters"):
                 #    print(record.parameters, type(record.parameters), sep='\n')
                 if record is not None:
-                    return record.to_dict() if as_dict else record
+                    result = record.to_dict()
+                    if fields:
+                        result = {k: v for k, v in result.items() if k in fields}
+                    return result
                 else:
                     return None
         except (SecurityError, ValidationError):
@@ -374,7 +388,9 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Error querying {model_class.__name__}: {e}")
             raise
     
-    def read_records(self, model_class: Type[TOrm], limit: int = 1000, offset: int = 0, as_dict: bool = True) -> List[Dict | TOrm]:
+    def read_records(
+        self, model_class: Type[TOrm], limit: int = 1000, offset: int = 0, as_dict: bool = True, fields: Optional[Iterable[str]] = None
+    ) -> List[Dict | TOrm]:
         """
         Read all records with pagination.
         Security: Enforces reasonable limits to prevent resource exhaustion.
@@ -385,14 +401,17 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         try:
             with self.get_session() as session:
                 records = session.query(model_class).offset(offset).limit(limit).all()
-                return [record.to_dict() for record in records] if as_dict else records
+                result = [record.to_dict() for record in records]
+                if fields:
+                    result = [{k: v for k, v in record.items() if k in fields} for record in result]
+                return result
         except SQLAlchemyError as e:
             logger.error(f"Error reading {model_class.__name__} records: {e}")
             raise
     
     def read_records_where(
             self, model_class: Type[TOrm], conditions: Dict, 
-            limit: int = 1000, offset: int = 0, as_dict: bool = True
+            limit: int = 1000, offset: int = 0, as_dict: bool = True, fields: Optional[Iterable[str]] = None
     ) -> List[Dict]:
         """Read records matching conditions with security validation."""
         if limit > 10000:  # Security: Prevent large queries
@@ -402,17 +421,17 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 query = session.query(model_class).options(undefer('*'))
                 query = self._build_query_conditions(query, model_class, conditions)
                 records = query.offset(offset).limit(limit).all()
-                #record = records[0]
-                #if hasattr(record, "parameters"):
-                #    print(record.parameters, type(record.parameters), sep='\n')
-                return [record.to_dict() for record in records] if as_dict else records
+                result = [record.to_dict() for record in records]
+                if fields:
+                    result = [{k: v for k, v in record.items() if k in fields} for record in result]
+                return result
         except (SecurityError, ValidationError):
             raise
         except SQLAlchemyError as e:
             logger.error(f"Error querying {model_class.__name__}: {e}")
             raise
     
-    def update_record(self, model_class: Type[TOrm], record_id: TOrm, data: Dict) -> Optional[dict]:
+    def update_record(self, model_class: Type[TOrm], record_id: TOrm, data: Dict, fields: Optional[Iterable[str]] = None) -> Optional[dict]:
         """Update a record with validation."""
         try:
             with self.get_session() as session:
@@ -431,7 +450,10 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                                 flag_modified(existing, attr)
                             else:
                                 setattr(existing, attr, value)
-                    return existing.to_dict()
+                    if fields:
+                        return {k: v for k, v in existing.to_dict().items() if k in fields}
+                    else:
+                        return existing.to_dict()
                 return None
         except (ValidationError, SecurityError):
             raise
@@ -442,13 +464,15 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error updating {model_class.__name__}.{record_id}: {e}")
             raise
     
-    def update_records(self, model_class: Type[TOrm], record_ids: List[int], data: List[Dict]) -> Tuple[List[dict], List[int]]:
+    def update_records(
+        self, model_class: Type[TOrm], record_ids: List[int], data: List[Dict], fields: Optional[Iterable[str]] = None
+    ) -> Tuple[List[dict], List[int]]:
         """Update a list of records."""
         try:
             with self.get_session() as session:
                 updated_records, non_existing_records = [], []
                 for record_id, item in zip(record_ids, data):
-                    updated = self.update_record(model_class, record_id, item)
+                    updated = self.update_record(model_class, record_id, item, fields)
                     if updated is not None:
                         updated_records.append(updated)
                     else:
@@ -463,7 +487,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error updating {record_ids}: {e}")
             raise
     
-    def delete_record(self, model_class: Type[TOrm], record_id: int) -> Optional[dict]:
+    def delete_record(self, model_class: Type[TOrm], record_id: int, fields: Optional[Iterable[str]] = None) -> Optional[dict]:
         """Delete a record."""
         try:
             with self.get_session() as session:
@@ -471,7 +495,11 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 current_record = query.first()
                 if (current_record is not None) and (query.delete()):
                     logger.info(f"Deleted {model_class.__name__} ID {record_id}")
-                    return current_record.to_dict()
+                    result = current_record.to_dict()
+                    if fields:
+                        return {k: v for k, v in result.items() if k in fields}
+                    else:
+                        return result
                 else:
                     return None
         except IntegrityError as e:
@@ -481,13 +509,13 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error deleting {model_class.__name__}: {e}")
             raise
     
-    def delete_records(self, model_class: Type[TOrm], record_ids: List[int]) -> Tuple[List[dict], List[int]]:
+    def delete_records(self, model_class: Type[TOrm], record_ids: List[int], fields: Optional[Iterable[str]] = None) -> Tuple[List[dict], List[int]]:
         """Delete a list of records."""
         try:
             with self.get_session() as session:
                 deleted_records, non_existing_records = [], []
                 for record_id in record_ids:
-                    deleted = self.delete_record(model_class, record_id)
+                    deleted = self.delete_record(model_class, record_id, fields)
                     if deleted is not None:
                         deleted_records.append(deleted)
                     else:
@@ -503,7 +531,9 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             raise
     
     # Tags and Metadata Updating and Removing (cannot be updated or removed with update_record)
-    def add_or_update_tags(self, model_class: Type[TOrm], record_id: int, tags: dict[str, str]) -> Optional[dict]:
+    def add_or_update_tags(
+        self, model_class: Type[TOrm], record_id: int, tags: dict[str, str], fields: Optional[Iterable[str]] = None
+    ) -> Optional[dict]:
         try:
             with self.get_session() as session:
                 # Find the existing record by primary key (assume 'id' is the PK)
@@ -515,7 +545,11 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                     existing.tags = updated_tags
                     flag_modified(existing, "tags")
                     #existing_tags.update(tags)
-                    return existing.to_dict()
+                    result = existing.to_dict()
+                    if fields:
+                        return {k: v for k, v in result.items() if k in fields}
+                    else:
+                        return result
                 return None
         except (ValidationError, SecurityError):
             raise
@@ -526,7 +560,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error updating {model_class.__name__}.{record_id}: {e}")
             raise
     
-    def remove_tags(self, model_class: Type[TOrm], record_id: int, tag_names: list[str]):
+    def remove_tags(self, model_class: Type[TOrm], record_id: int, tag_names: list[str], fields: Optional[Iterable[str]] = None):
         try:
             with self.get_session() as session:
                 # Find the existing record by primary key (assume 'id' is the PK)
@@ -537,7 +571,11 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                         updated_tags.pop(tag)
                     existing.tags = updated_tags
                     flag_modified(existing, 'tags')
-                    return existing.to_dict()
+                    result = existing.to_dict()
+                    if fields:
+                        return {k: v for k, v in result.items() if k in fields}
+                    else:
+                        return result
                 return None
         except (ValidationError, SecurityError):
             raise
@@ -548,7 +586,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error updating {model_class.__name__}.{record_id}: {e}")
             raise
 
-    def add_or_update_metadata(self, model_class: Type[TOrm], record_id: int, metadata: dict[str, Any]):
+    def add_or_update_metadata(self, model_class: Type[TOrm], record_id: int, metadata: dict[str, Any], fields: Optional[Iterable[str]] = None):
         try:
             with self.get_session() as session:
                 # Find the existing record by primary key (assume 'id' is the PK)
@@ -558,7 +596,11 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                     updated_metadata.update(metadata)
                     existing.metadata = updated_metadata
                     flag_modified(existing, 'metadata')
-                    return existing.to_dict()
+                    result = existing.to_dict()
+                    if fields:
+                        return {k: v for k, v in result.items() if k in fields}
+                    else:
+                        return result
                 return None
         except (ValidationError, SecurityError):
             raise
@@ -569,7 +611,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error updating {model_class.__name__}.{record_id}: {e}")
             raise
     
-    def remove_metadata(self, model_class: Type[TOrm], record_id: int, metadata_names: list[str]):
+    def remove_metadata(self, model_class: Type[TOrm], record_id: int, metadata_names: list[str], fields: Optional[Iterable[str]] = None):
         try:
             with self.get_session() as session:
                 # Find the existing record by primary key (assume 'id' is the PK)
@@ -580,7 +622,11 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                         updated_metadata.pop(metadata)
                     existing.metadata = updated_metadata
                     flag_modified(existing, 'metadata')
-                    return existing.to_dict()
+                    result = existing.to_dict()
+                    if fields:
+                        return {k: v for k, v in result.items() if k in fields}
+                    else:
+                        return result
                 return None
         except (ValidationError, SecurityError):
             raise
@@ -653,7 +699,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
     
     # ADVANCED QUERY METHODS
     def read_experiments_with_details(self, conditions: Optional[Dict] = None,
-                                    limit: int = 1000, offset: int = 0) -> List[Dict]:
+                                    limit: int = 1000, offset: int = 0, fields: Optional[Iterable[str]] = None) -> List[Dict]:
         """
         Read experiments with all related configuration details.
         Uses eager loading for optimal performance.
@@ -678,7 +724,11 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                     query = self._build_query_conditions(query, Experiment, conditions)
                 
                 experiments = query.offset(offset).limit(limit).all()
-                return [exp.to_detailed_dict() for exp in experiments]
+                result = [exp.to_detailed_dict() for exp in experiments]
+                if fields:
+                    return [{k: v for k, v in exp.items() if k in fields} for exp in result]
+                else:
+                    return result
                 
         except (SecurityError, ValidationError):
             raise
@@ -690,7 +740,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                                   scenario_conditions: Optional[Dict] = None,
                                   architecture_conditions: Optional[Dict] = None,
                                   experiment_conditions: Optional[Dict] = None,
-                                  limit: int = 1000, offset: int = 0) -> List[Dict]:
+                                  limit: int = 1000, offset: int = 0, fields: Optional[Iterable[str]] = None) -> List[Dict]:
         """
         Advanced search across related tables with security validation.
         """
@@ -726,7 +776,11 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                     query = self._build_query_conditions(query, Experiment, experiment_conditions)
                 
                 experiments = query.offset(offset).limit(limit).all()
-                return [exp.to_detailed_dict() for exp in experiments]
+                result = [exp.to_detailed_dict() for exp in experiments]
+                if fields:
+                    return [{k: v for k, v in exp.items() if k in fields} for exp in result]
+                else:
+                    return result
                 
         except (SecurityError, ValidationError):
             raise
@@ -734,7 +788,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Error in advanced experiment search: {e}")
             raise
     
-    def add_or_update_logs(self, record_id: int, logs: dict[str, str]) -> Optional[dict]:
+    def add_or_update_logs(self, record_id: int, logs: dict[str, str], fields: Optional[Iterable[str]] = None) -> Optional[dict]:
         try:
             with self.get_session() as session:
                 # Find the existing record by primary key (assume 'id' is the PK)
@@ -751,7 +805,11 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                             updated_logs[log_name] = log_value
                     existing.logs = updated_logs
                     flag_modified(existing, "logs")
-                    return existing.to_dict()
+                    result = existing.to_dict()
+                    if fields:
+                        return {k: v for k, v in result.items() if k in fields}
+                    else:
+                        return result
                 return None
         except (ValidationError, SecurityError):
             raise
@@ -1083,6 +1141,16 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         except SQLAlchemyError as e:
             logger.error(f"Database error deleting {model_class.__name__}: {e}")
             raise
+    
+    def __getitem__(self, item: str | TOrm):
+        if isinstance(item, str):
+            model_class = self.__tables_map__.get(item, None)
+        else:
+            model_class = item
+        if model_class is not None:
+            return self.read_records(model_class, as_dict=True)
+        else:
+            raise ValueError(f"Invalid item for retrieving model_class: {item}")
 
 
 __all__ = ['SecureMLExperimentDB', 'DEFAULT_DB_FILE', 'DEFAULT_DB_TEST_FILE']

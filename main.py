@@ -99,7 +99,7 @@ if __name__ == '__main__':
             exp_log_dict = {'raw_metrics': {}, 'aggregated_metrics': {}}
             logging_config = get_logging_config_from_filepath(results[0]['log_folder']) # ?
             # Now add aggregated metrics to log dict
-            strategy_times, strategy_total_time = get_training_times(logging_config, num_tasks=4)
+            strategy_times, strategy_total_time = get_training_times(logging_config, num_tasks=cmd_args.num_tasks)
             strategy_epochs, _ = get_num_epochs(logging_config, num_tasks=4)
             strategy_cumulative_times = np.cumsum(strategy_times)
             exp_log_dict['aggregated_metrics'].update({
@@ -211,9 +211,9 @@ if __name__ == '__main__':
     print(f"Aborted Experiments: {aborted_experiment_names}")
     print(f"Test Experiments: {test_names}")
     print(f"All Experiments: {all_names}")
-    if _cleanup_aborted:
+    if _cleanup_aborted and (len(aborted_experiment_names) > 0):
         cleanup_aborted_experiments(db, targets=aborted_experiment_ids)
-    elif _cleanup_tests:
+    elif _cleanup_tests and (len(test_names) > 0):
         cleanup_tests(db, targets=test_ids)
-    elif _cleanup_all:
+    elif _cleanup_all and (len(all_names) > 0):
         cleanup_all(db, targets=all_ids)

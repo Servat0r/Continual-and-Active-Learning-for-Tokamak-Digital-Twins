@@ -456,13 +456,15 @@ class ActiveLearning(Base, SchemaORM):
         SchemaOpt('standard_method'): standard_string(
             128, 'lower', ["random_sketch_grad", "bald", "batchbald", "badge", "coreset", "bait", "lcmd_sketch_grad"]
         ),
-        SchemaOpt('custom_method'): templated_dict(
-            {'selection_method': str, 'initial_selection_method': str, 'base_kernel': str},
-            {'kernel_transforms': (list, None), 'sel_with_train': (bool, False), 'sigma': (float, 0.01)}
-        ),
+        SchemaOpt('selection_method'): standard_string(128, 'lower'),
+        SchemaOpt('initial_selection_method'): standard_string(128, 'lower'),
+        SchemaOpt('base_kernel'): standard_string(128, 'lower'),
+        SchemaOpt('kernel_transforms'): Use(lambda x: str(x).lower().strip()),
+        SchemaOpt('sel_with_train'): bool,
+        SchemaOpt('sigma'): float,
         SchemaOpt('full_first_set'): bool,
         SchemaOpt('first_set_size'): int,
-        SchemaOpt('downsampling_factor'): float,
+        SchemaOpt('downsampling_factor'): Use(lambda x: float(x)),
         SchemaOpt('tags'): tags_dict(),
         SchemaOpt('other_metadata'): metadata_dict()
     })
@@ -472,10 +474,13 @@ class ActiveLearning(Base, SchemaORM):
     batch_size = Column(Integer, nullable=False, default=256)
     max_batch_size = Column(Integer, nullable=False, default=1024)
     reload_initial_weights = Column(Boolean, nullable=False, default=False)
-    standard_method = Column(
-        String(128), nullable=False, default="random_sketch_grad",
-    )
-    custom_method = Column(JSON, nullable=True)
+    standard_method = Column(String(128), nullable=True) # TODO: This or "non-standard"?
+    selection_method = Column(String(128), nullable=True)
+    initial_selection_method = Column(String(128), nullable=True)
+    base_kernel = Column(String(128), nullable=True)
+    kernel_transforms = Column(String(256), nullable=True)
+    sel_with_train = Column(Boolean, nullable=True, default=True)
+    sigma = Column(Float, nullable=True, default=0.01)
     full_first_set = Column(Boolean, nullable=False, default=False)
     first_set_size = Column(Integer, nullable=False, default=5120)
     downsampling_factor = Column(Float, nullable=False, default=0.5)
@@ -501,17 +506,18 @@ class ActiveLearning(Base, SchemaORM):
             "max_batch_size": self.max_batch_size,
             "reload_initial_weights": self.reload_initial_weights,
             "standard_method": self.standard_method,
-            "custom_method": self.custom_method,
+            "selection_method": self.selection_method,
+            "initial_selection_method": self.initial_selection_method,
+            "base_kernel": self.base_kernel,
+            "kernel_transforms": self.kernel_transforms,
+            "sel_with_train": self.sel_with_train,
+            "sigma": self.sigma,
             "full_first_set": self.full_first_set,
             "first_set_size": self.first_set_size,
             "downsampling_factor": self.downsampling_factor,
             "tags": self.tags,
             "other_metadata": self.other_metadata,
         }
-
-    @classmethod
-    def json_fields(cls):
-        return ['custom_method'] + SchemaORM.json_fields()
 
 
 class Experiment(Base, SchemaORM):

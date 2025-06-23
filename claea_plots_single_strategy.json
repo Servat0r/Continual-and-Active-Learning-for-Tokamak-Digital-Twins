@@ -1,0 +1,55 @@
+{
+    "general": {
+        "num_campaigns": 5,
+        "train_mb_size": 4096,
+        "eval_mb_size": 1024,
+        "train_epochs": 5
+    },
+    "scenario": {
+        "simulator_type": "qualikiz",
+        "pow_type": "highpow",
+        "cluster_type": "tau_based",
+        "dataset_type": "not_null",
+        "task": "regression"
+    },
+    "architecture": {
+        "model_type": "MLP",
+        "parameters": {
+            "input_size": 15,
+            "output_size": 4,
+            "hidden_size": 256,
+            "hidden_layers": 2,
+            "drop_rate": 0.5
+        }
+    },
+    "active_learnings": {
+        "framework": "bmdal",
+        "batch_size": 256,
+        "max_batch_size": 1024,
+        "reload_initial_weights": false,
+        "full_first_set": true,
+        "first_set_size": 8192,
+        "downsampling_factor": 0.5,
+        "methods": [
+            "random_sketch_grad",
+            "batchbald",
+            "badge",
+            "lcmd_sketch_grad"
+        ]
+    },
+    "loss": {"id": 1},
+    "optimizer": {"id": 1},
+    "scheduler": {"id": 1},
+    "early_stopping": {"id": 1},
+    "strategy": {
+        "name": "Cumulative",
+        "from_scratch": false,
+        "parameters": {}
+    },
+    "labels": [
+        "Random",
+        "BatchBALD",
+        "BADGE",
+        "LCMD"
+    ]
+}

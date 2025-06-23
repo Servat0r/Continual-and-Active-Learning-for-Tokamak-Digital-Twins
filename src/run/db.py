@@ -22,6 +22,8 @@ def __get_records_id(db: SecureMLExperimentDB, orm_class, conditions, field, res
     json_fields = orm_class.json_fields()
     cond_copy = {k: v for k, v in conditions.items() if '@' not in k}
     json_conditions = {field: cond_copy.pop(field) for field in json_fields if field in conditions}
+    if (orm_class == ActiveLearning) and ('kernel_transforms' in cond_copy):
+        cond_copy['kernel_transforms'] = str(cond_copy['kernel_transforms'])
     records = db.read_records_where(orm_class, conditions=cond_copy, as_dict=True)
     record_to_create = False
     if records is not None:
@@ -106,7 +108,7 @@ def config2db(
     # Active Learning
     active_learning = config.get('active_learning', None)
     if active_learning is not None:
-        ...
+        __get_records_id(db, ActiveLearning, active_learning, 'id_active_learning', results)
     # Experiment
     experiment = Experiment(
         **results, # All foreign keys

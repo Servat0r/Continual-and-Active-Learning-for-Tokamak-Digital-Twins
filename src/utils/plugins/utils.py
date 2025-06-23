@@ -56,15 +56,17 @@ class TqdmTrainingEpochsPlugin(SupervisedPlugin):
         self.num_exp = num_exp
         self.num_epochs = num_epochs
         self.tqdm = None
+        self._current_exp = 0
 
     def before_training_exp(self, strategy: Template, *args, **kwargs) -> Any:
-        self.tqdm = tqdm(total=self.num_epochs, desc=f'Training exp {self.num_exp}')
+        self.tqdm = tqdm(total=self.num_epochs, desc=f'Training exp {self._current_exp}')
 
     def after_training_epoch(self, strategy: Template, *args, **kwargs) -> Any:
         self.tqdm.update(1)
 
     def after_training_exp(self, strategy: Template, *args, **kwargs) -> Any:
         self.tqdm.close()
+        self._current_exp += 1
 
 
 __all__ = [

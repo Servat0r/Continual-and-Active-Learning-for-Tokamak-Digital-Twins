@@ -30,7 +30,7 @@ def _bmdal_params_handler(parameters: dict):
     # TODO: Verify if this assumption holds!
     method = None
     if 'standard_method' in parameters.keys():
-        method = parameters.pop('standard_method', None)
+        method = parameters.get('standard_method', None)
         if method == 'coreset':
             parameters.update({
                 'selection_method': 'maxdist',
@@ -127,8 +127,11 @@ def active_learning_std(config: dict[str, Any], key: str):
     default_config = {
         "framework": "bmdal",
         "parameters": {
-            "batch_size": 128,
-            "max_batch_size": 2048, # 16 iterations by default
+            "batch_size": 256,
+            "max_batch_size": 1024, # 16 iterations by default
+            "full_first_set": True,
+            "first_set_size": 5120,
+            "downsampling_factor": 0.5,
             "reload_initial_weights": False,
             "selection_method": "lcmd",
             "sel_with_train": False,
@@ -150,9 +153,9 @@ def active_learning_std(config: dict[str, Any], key: str):
     default_config.pop('parameters')
     default_config["@extra"] = {
         'standard_method': al_method,
-        'batch_size': default_config['parameters']['batch_size'],
-        'max_batch_size': default_config['parameters']['max_batch_size'],
-        'reload_initial_weights': default_config['parameters']['reload_initial_weights'],
+        'batch_size': default_config['batch_size'],
+        'max_batch_size': default_config['max_batch_size'],
+        'reload_initial_weights': default_config['reload_initial_weights'],
     }
     return default_config
 

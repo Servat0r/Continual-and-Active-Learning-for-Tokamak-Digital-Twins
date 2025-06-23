@@ -39,9 +39,8 @@ def synchronization(on: bool) -> None:
 
 def downsample_experience(
         train_exp: DatasetExperience,
-        downsampling_factor: int,
-        seed: int = 42,
-        factor_type: str = 'proportional' # proportional => length // factor; absolute => factor
+        downsampling_factor: int | float,
+        seed: int = 42
 ) -> DatasetExperience:
     """
     Downsample a training experience by randomly selecting 1/downsampling_factor of the data,
@@ -57,8 +56,7 @@ def downsample_experience(
     # Set seed
     torch.manual_seed(seed)
     
-    if downsampling_factor <= 1:
-        return train_exp
+    factor_type = 'absolute' if downsampling_factor >= 1 else 'proportional'
 
     # Get inputs and targets from the dataset
     dataset = train_exp.dataset._datasets[0]
@@ -91,11 +89,9 @@ def downsample_experience(
     for idx, stratum in enumerate(unique_strata):
         stratum_indices = torch.where(combined_magnitudes == stratum)[0]
         if factor_type == 'proportional':
-            num_to_sample = max(len(stratum_indices) // downsampling_factor, 0) # NOTE: Previously was 1
-        elif factor_type == 'absolute':
-            num_to_sample = sampled_sizes[idx]
+            num_to_sample = int(max(len(stratum_indices) * downsampling_factor, 0)) # NOTE: Previously was 1
         else:
-            raise RuntimeError(f"Unknown factor_type = \"{factor_type}\"")
+            num_to_sample = sampled_sizes[idx]
         
         # Randomly sample indices from this stratum
         if len(stratum_indices) > 0:
@@ -103,7 +99,7 @@ def downsample_experience(
             selected_indices.extend(sampled.tolist())
     
     # Convert to tensor and sort
-    selected_indices = torch.tensor(selected_indices)
+    selected_indices = torch.tensor(selected_indices, dtype=torch.int32)
     selected_indices = selected_indices.sort()[0]
     
     # Create new dataset with selected indices
@@ -184,8 +180,10 @@ def task_training_loop(
     dtype = config_parser['dtype']
     task = config_parser['task']
     if config_parser.get('active_learning'):
-        full_first_train_set = config_parser['active_learning']['full_first_set']
-        first_train_set_size = config_parser['active_learning']['first_set_size']
+        #stdout_debug_print(f"ACTIVE LEARNING (PROC): {config_parser['active_learning']}", color='yellow')
+        #stdout_debug_print(f"ACTIVE LEARNING (RAW): {config_parser.get_raw_config()['active_learning']}", color='yellow')
+        full_first_train_set = config_parser.get_raw_config()['active_learning']['full_first_set']
+        first_train_set_size = config_parser.get_raw_config()['active_learning']['first_set_size']
     else:
         full_first_train_set = None
         first_train_set_size = None
@@ -199,7 +197,7 @@ def task_training_loop(
     normalize_inputs = config_parser['normalize_inputs']
     normalize_outputs = config_parser['normalize_outputs']
     load_saved_final_data = config_parser['load_saved_final_data']
-    downsampling_factor = config_parser['active_learning']['downsampling_factor'] if config_parser.get('active_learning') else None
+    downsampling_factor = config_parser.get_raw_config()['active_learning']['downsampling_factor'] if config_parser.get('active_learning') else None
     # Architecture
     model = config_parser['architecture']
     # Loss
@@ -259,16 +257,16 @@ def task_training_loop(
 
     downsampling_dump_fp = None
     if mode == 'AL(CL)':
-        cl_strategy_active_learning_data = config_parser['active_learning']
+        cl_strategy_active_learning_data = config_parser.get_raw_config()['active_learning'] # TODO!
         if cl_strategy_active_learning_data is not None:
-            batch_selector = cl_strategy_active_learning_data['batch_selector']
+            batch_selector = config_parser['active_learning']['batch_selector'] #cl_strategy_active_learning_data['batch_selector']
             batch_selector.set_models([model])
             batch_selector.set_device(device)
             batch_selector.close()
             batch_size = cl_strategy_active_learning_data['batch_size']
             max_batch_size = cl_strategy_active_learning_data['max_batch_size']
             reload_initial_weights = cl_strategy_active_learning_data['reload_initial_weights']
-            al_method = cl_strategy_active_learning_data['al_method']
+            al_method = config_parser['active_learning']['al_method'] #cl_strategy_active_learning_data['al_method']
 
     # Prepare folders for experiments
     #folder_name = f"{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} {model_type} task_{task_id}" # OLD VERSION
@@ -286,7 +284,8 @@ def task_training_loop(
         active_learning=False, experiment_name=experiment_name
     )
     if mode == 'AL(CL)':
-        actual_downsampling = 1 / downsampling_factor if isinstance(downsampling_factor, int) else downsampling_factor
+        #actual_downsampling = 1 / downsampling_factor if isinstance(downsampling_factor, int) else downsampling_factor
+        actual_downsampling = downsampling_factor
         logging_config.active_learning = True
         logging_config.al_config = ActiveLearningConfig(
             framework='bmdal',
@@ -433,14 +432,14 @@ def task_training_loop(
                     stdout_debug_print(f"Starting training experience {idx}: ", color='green')
                     stdout_debug_print(f"Task Labels: {train_exp.dataset.targets_task_labels[0]}", color='green')
                     index_condition = (idx > 0) if full_first_train_set else True
+                    actual_downsampled_size = downsampling_factor if downsampling_factor >= 1 else len(train_exp.dataset) * downsampling_factor
                     if (mode == 'CL') or \
                     (mode == 'AL(CL)' and not index_condition) or \
-                    (mode == 'AL(CL)' and len(train_exp.dataset) / downsampling_factor <= max_batch_size):
+                    (mode == 'AL(CL)' and actual_downsampled_size <= max_batch_size):
                         if first_train_set_size is not None:
-                            # E.g., we want 5120 examples in the first training experience
-                            train_exp = downsample_experience(
-                                train_exp, first_train_set_size, factor_type='absolute'
-                            )
+                            if first_train_set_size > 0:
+                                # E.g., we want 5120 examples in the first training experience
+                                train_exp = downsample_experience(train_exp, first_train_set_size)
                         # Training Cycle
                         cl_strategy.train(train_exp)
                         synchronization(SYNC)
