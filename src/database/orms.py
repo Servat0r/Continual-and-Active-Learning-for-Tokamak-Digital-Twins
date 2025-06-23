@@ -453,9 +453,9 @@ class ActiveLearning(Base, SchemaORM):
         SchemaOpt('batch_size'): positive_int(),
         SchemaOpt('max_batch_size'): positive_int(),
         SchemaOpt('reload_initial_weights'): bool,
-        SchemaOpt('standard_method'): standard_string(
+        SchemaOpt('standard_method'): And(standard_string(
             128, 'lower', ["random_sketch_grad", "bald", "batchbald", "badge", "coreset", "bait", "lcmd_sketch_grad"]
-        ),
+        ), Use(lambda x: x[-12] if x.endswith('_sketch_grad') else x)),
         SchemaOpt('selection_method'): standard_string(128, 'lower'),
         SchemaOpt('initial_selection_method'): standard_string(128, 'lower'),
         SchemaOpt('base_kernel'): standard_string(128, 'lower'),

@@ -432,7 +432,10 @@ def task_training_loop(
                     stdout_debug_print(f"Starting training experience {idx}: ", color='green')
                     stdout_debug_print(f"Task Labels: {train_exp.dataset.targets_task_labels[0]}", color='green')
                     index_condition = (idx > 0) if full_first_train_set else True
-                    actual_downsampled_size = downsampling_factor if downsampling_factor >= 1 else len(train_exp.dataset) * downsampling_factor
+                    if mode == 'AL(CL)':
+                        actual_downsampled_size = downsampling_factor if downsampling_factor >= 1 else len(train_exp.dataset) * downsampling_factor
+                    else:
+                        actual_downsampled_size = None
                     if (mode == 'CL') or \
                     (mode == 'AL(CL)' and not index_condition) or \
                     (mode == 'AL(CL)' and actual_downsampled_size <= max_batch_size):

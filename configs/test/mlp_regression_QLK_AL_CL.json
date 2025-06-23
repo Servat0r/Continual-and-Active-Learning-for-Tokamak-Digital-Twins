@@ -14,10 +14,10 @@
       "batch_size": 256,
       "max_batch_size": 1024,
       "reload_initial_weights": false,
-      "standard_method": "badge",
+      "standard_method": "lcmd",
       "full_first_set": true,
       "first_set_size": 8192,
-      "downsampling_factor": 8192
+      "downsampling_factor": 0.5
     }
   },
   "dataset": {

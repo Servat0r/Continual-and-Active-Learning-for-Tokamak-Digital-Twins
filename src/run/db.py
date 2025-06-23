@@ -107,7 +107,7 @@ def config2db(
     __get_records_id(db, Strategy, strategy, 'id_strategy', results)
     # Active Learning
     active_learning = config.get('active_learning', None)
-    if active_learning is not None:
+    if active_learning: # Should be "not None" and have AT LEAST ONE element
         __get_records_id(db, ActiveLearning, active_learning, 'id_active_learning', results)
     # Experiment
     experiment = Experiment(

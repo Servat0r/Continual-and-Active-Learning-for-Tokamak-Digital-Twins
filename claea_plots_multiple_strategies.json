@@ -42,15 +42,37 @@
     "optimizer": {"id": 1},
     "scheduler": {"id": 1},
     "early_stopping": {"id": 1},
-    "strategy": {
-        "name": "Cumulative",
-        "from_scratch": false,
-        "parameters": {}
-    },
-    "labels": [
+    "strategies": [
+        {
+            "name": "Naive",
+            "from_scratch": false,
+            "ignore": false,
+            "parameters": {}
+        },
+        {
+            "name": "Cumulative",
+            "from_scratch": false,
+            "ignore": true,
+            "parameters": {}
+        },
+        {
+            "name": "Replay",
+            "from_scratch": false,
+            "ignore": false,
+            "parameters": {
+                "mem_size": 2000
+            }
+        }
+    ],
+    "method_labels": [
         "Random",
         "BatchBALD",
         "BADGE",
         "LCMD"
+    ],
+    "strategy_labels": [
+        "Naive",
+        "Cumulative",
+        "Replay (2000)"
     ]
 }

@@ -6,7 +6,7 @@
     "num_campaigns": 5,
     "train_mb_size": 4096,
     "eval_mb_size": 1024,
-    "train_epochs": 2
+    "train_epochs": 5
   },
   "dataset": {
     "pow_type": "highpow",
@@ -26,13 +26,13 @@
   },
   "architecture": {
     "name": "saved",
-    "model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
     "model_name": "model",
     "model_class_name": "MLP",
     "parameters": {
       "input_size": 15,
       "output_size": 4,
-      "hidden_size": 1024,
+      "hidden_size": 256,
       "hidden_layers": 2,
       "drop_rate": 0.5
     }
@@ -107,7 +107,7 @@
     {
       "name": "GEM",
       "extra_log_folder": "Patterns 1024",
-      "ignore": true,
+      "ignore": false,
       "parameters": {
         "patterns_per_exp": 1024
       }
@@ -124,7 +124,7 @@
   },
   "start_model_saving": {
     "save_model": false,
-    "saved_model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "saved_model_folder": "highpow_mlp_256_2_efe_efi_pfe_pfi_8runs",
     "saved_model_name": "model",
     "add_timestamp": false
   }

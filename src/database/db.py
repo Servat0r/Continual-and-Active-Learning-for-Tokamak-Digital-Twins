@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Type, Tuple, Iterable
+from typing import Dict, List, Optional, Any, Type, Tuple, Iterable, TypeVar, Union
 import logging
 import os, json
 
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_DB_FILE = "secure_ml_experiments.db"
 DEFAULT_DB_TEST_FILE = "test.db"
 
+TStrOrm = TypeVar('TStrOrm', bound=Union[str, TOrm])
 
 # MAIN DATABASE MANAGER CLASS
 class SecureMLExperimentDB(BaseMLExperimentDB):
@@ -1142,13 +1143,18 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error deleting {model_class.__name__}: {e}")
             raise
     
-    def __getitem__(self, item: str | TOrm):
+    def __getitem__(self, item: TStrOrm | tuple[TStrOrm, Iterable]):
+        fields = None
         if isinstance(item, str):
             model_class = self.__tables_map__.get(item, None)
+        elif isinstance(item, tuple):
+            assert len(item) >= 2
+            key, fields = item[0], item[1]
+            model_class = self.__tables_map__.get(key, None) if isinstance(key, str) else key
         else:
             model_class = item
         if model_class is not None:
-            return self.read_records(model_class, as_dict=True)
+            return self.read_records(model_class, as_dict=True, fields=fields)
         else:
             raise ValueError(f"Invalid item for retrieving model_class: {item}")
 
