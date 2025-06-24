@@ -3,10 +3,10 @@
     "mode": "CL",
     "task": "regression",
     "dtype": "float32",
-    "num_campaigns": 5,
+    "num_campaigns": 10,
     "train_mb_size": 4096,
     "eval_mb_size": 1024,
-    "train_epochs": 5
+    "train_epochs": 200
   },
   "dataset": {
     "pow_type": "highpow",
@@ -67,7 +67,7 @@
     {
       "name": "Naive",
       "extra_log_folder": "[test] Base",
-      "ignore": true,
+      "ignore": false,
       "parameters": {
       }
     },
@@ -81,7 +81,7 @@
     {
       "name": "Replay",
       "extra_log_folder": "[test] Buffer 2000",
-      "ignore": false,
+      "ignore": true,
       "parameters": {
         "mem_size": 2000
       }
@@ -107,17 +107,17 @@
     {
       "name": "GEM",
       "extra_log_folder": "Patterns 1024",
-      "ignore": false,
+      "ignore": true,
       "parameters": {
         "patterns_per_exp": 1024
       }
     }
   ],
   "early_stopping": {
-    "patience": 50,
+    "patience": 20,
     "delta": 0.1,
     "val_stream_name": "eval_stream",
-    "min_epochs": 100
+    "min_epochs": 50
   },
   "validation_stream": {
     "val_stream": "eval_stream"

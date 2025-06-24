@@ -643,6 +643,9 @@ def task_training_loop(
             ylabel_list = get_ylabel_names_list(task)
             if plot_single_runs:
                 evaluation_experiences_plots(log_folder, metric_list, title_list, ylabel_list)
+            plot_training(log_folder, metric='Loss')
+            plot_training(log_folder, metric='R2Score')
+            plot_training(log_folder, metric='RelativeDistance')
             return {
                 'result': True, 'log_folder': log_folder, 'task': task,
                 'is_joint_training': (cl_strategy_class == JointTraining)
