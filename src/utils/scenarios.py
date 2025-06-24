@@ -32,7 +32,7 @@ class ScenarioConfig:
                 return ScenarioConfig(**scenario_data)
             else:
                 # Retrieve scenario from database
-                scenario_data = db.read_record(Scenario, id_scenario, as_dict=True)
+                scenario_data = db.get_one_by_id(Scenario, id_scenario, )
                 scenario_keys = {'simulator_type', 'pow_type', 'cluster_type', 'dataset_type', 'task', 'outputs'}
                 scenario_data = {k: v for k, v in scenario_data.items() if k in scenario_keys}
                 return ScenarioConfig(**scenario_data)

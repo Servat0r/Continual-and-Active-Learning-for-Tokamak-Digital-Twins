@@ -26,7 +26,7 @@ if __name__ == "__main__":
             eval_mb_size=1024,
             train_epochs=200
         )
-        general_id = db.create_record(general)
+        general_id = db.create(general)
         print(f"Created General config with ID: {general_id}")
         
         scenario = Scenario(
@@ -41,7 +41,7 @@ if __name__ == "__main__":
             normalize_outputs=False,
             normalization_type="first-exp"
         )
-        scenario_id = db.create_record(scenario)
+        scenario_id = db.create(scenario)
         print(f"Created Scenario with ID: {scenario_id}")
         
         architecture = Architecture(
@@ -55,7 +55,7 @@ if __name__ == "__main__":
                 "drop_rate": 0.5
             }
         )
-        arch_id = db.create_record(architecture)
+        arch_id = db.create(architecture)
         print(f"Created Architecture with ID: {arch_id}")
 
         print(f"Testing tags updating")
@@ -66,14 +66,14 @@ if __name__ == "__main__":
             name="MSE",
             parameters={"reduction": "mean", "weight": None}
         )
-        loss_id = db.create_record(loss)
+        loss_id = db.create(loss)
         print(f"Created Loss with ID: {loss_id}")
         
         optimizer = Optimizer(
             name="AdamW",
             parameters={"lr": 0.001, "betas": [0.9, 0.999], "eps": 1e-8}
         )
-        optimizer_id = db.create_record(optimizer)
+        optimizer_id = db.create(optimizer)
         print(f"Created Optimizer with ID: {optimizer_id}")
         
         scheduler = Scheduler.from_dict({
@@ -89,7 +89,7 @@ if __name__ == "__main__":
                 "min_lr": 1e-4
             }
         })
-        scheduler_id = db.create_record(scheduler)
+        scheduler_id = db.create(scheduler)
         print(f"Created Scheduler with ID: {scheduler_id}")
         
         strategy = Strategy(
@@ -97,7 +97,7 @@ if __name__ == "__main__":
             from_scratch=False,
             parameters={"freeze_layers": 10, "unfreeze_epoch": 20}
         )
-        strategy_id = db.create_record(strategy)
+        strategy_id = db.create(strategy)
         print(f"Created Strategy with ID: {strategy_id}")
         
         # Test unique experiment name creation
@@ -105,25 +105,25 @@ if __name__ == "__main__":
 
         # Test Reading of records
         with db.get_session() as session:
-            schedulers = db.read_records_where(
+            schedulers = db.get(
                 Scheduler, {
                     "parameters": {
                         "patience": ('>=', 21),
                         "min_lr": ('<=', 1e-4)
                     }
                 },
-                as_dict=True
+                
             )
             print(schedulers)
 
-            architectures = db.read_records_where(
+            architectures = db.get(
                 Architecture, {
                     "model_type": "MLP",
                     "parameters": {
                         "hidden_size": 1024
                     }
                 },
-                as_dict=True
+                
             )
             print(architectures)
 
@@ -166,7 +166,7 @@ if __name__ == "__main__":
         print("\n--- Testing Secure Advanced Queries ---")
         
         # Read experiments with conditions
-        running_experiments = db.read_records_where(Experiment, {"status": "running"})
+        running_experiments = db.get(Experiment, {"status": "running"})
         print(f"Running experiments: {len(running_experiments)}")
         
         # Test advanced search
@@ -213,20 +213,20 @@ if __name__ == "__main__":
         
         try:
             # Test invalid operator (should raise SecurityError)
-            db.read_records_where(Experiment, {"status": ("INVALID_OP", "running")})
+            db.get(Experiment, {"status": ("INVALID_OP", "running")})
         except SecurityError as e:
             print(f"✓ Caught expected SecurityError: {e}")
         
         try:
             # Test invalid field name (should raise SecurityError)
-            db.read_records_where(Experiment, {"invalid_field": "value"})
+            db.get(Experiment, {"invalid_field": "value"})
         except SecurityError as e:
             print(f"✓ Caught expected SecurityError: {e}")
         
         try:
             # Test oversized IN clause (should raise SecurityError)
             large_list = list(range(200))  # Over the 100 item limit
-            db.read_records_where(Experiment, {"id": ("in", large_list)})
+            db.get(Experiment, {"id": ("in", large_list)})
         except SecurityError as e:
             print(f"✓ Caught expected SecurityError: {e}")
         

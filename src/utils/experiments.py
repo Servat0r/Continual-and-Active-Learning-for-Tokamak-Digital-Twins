@@ -15,7 +15,7 @@ def __cleanup(what: Literal['aborted', 'tests', 'all'], db: SecureMLExperimentDB
         count, exp_dicts = db.cleanup_tests(targets=targets)
     elif what == 'all':
         if targets:
-            count, exp_dicts = db.delete_records(Experiment, record_ids=targets)
+            count, exp_dicts = db.delete_by_id(Experiment, record_ids=targets)
         else:
             raise ValueError(f"Cannot delete with option \"all\" without \"targets\" specified")
     stdout_debug_print(exp_dicts, color='green')

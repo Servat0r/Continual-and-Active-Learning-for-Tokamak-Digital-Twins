@@ -224,6 +224,25 @@ def get_mean_std_metric_values(
     })
 
 
+def column_to_label(column: str):
+    if column in ("R2", "R2Score", "R2Score_Exp"):
+        return r"$R^2$"
+    elif column in ("RD", "RelativeDistance", "RelativeDistance_Exp"):
+        return r"$RD$"
+    elif column == "R":
+        return r"$R$"
+    elif column == "times":
+        return r"$t_i$"
+    elif column == "cumulative_times":
+        return r"$t_{tot,\:i}$"
+    elif column == "time_ratios":
+        return r"$T_i = \dfrac{t_{tot,\:i}}{t_{tot,\:Naive,\:i}}$"
+    elif column == "num_epochs":
+        return r"$E_i$"
+    else:
+        return column
+
+
 STDOUT = sys.__stdout__
 STDERR = sys.__stderr__
 
@@ -232,6 +251,6 @@ __all__ = [
     "debug_print", "stdout_debug_print", "time_logger", "float16", "float32", "float64",
     "get_dtype_from_str", "extract_metric_info", "extract_metric_type",
     "get_means_std_over_evaluation_experiences_multiple_runs",
-    "extract_metric_values_over_evaluation_experiences",
-    "get_all_tasks_paths", "get_mean_std_metric_values", "STDOUT", "STDERR"
+    "extract_metric_values_over_evaluation_experiences", "get_all_tasks_paths",
+    "get_mean_std_metric_values", "column_to_label", "STDOUT", "STDERR"
 ]

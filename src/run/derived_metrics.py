@@ -34,7 +34,7 @@ def compute_derived_metrics(
             raise ValueError(f"Unknown value of \"which\": {which}")
     print()
     if not exp_dict:
-        exp_dict = db.read_record(Experiment, exp_id)
+        exp_dict = db.get_one_by_id(Experiment, exp_id)
     new_log_dict = {}
     # Check names are correct
     assert exp_dict['name'] == exp_name, \
@@ -42,7 +42,7 @@ def compute_derived_metrics(
 
     # Retrive ids of Naive and Cumulative strategies
     naive_query_dict, cumulative_query_dict = {'name': 'Naive'}, {'name': 'Cumulative'}
-    naive_data = db.read_record_where(Strategy, naive_query_dict)
+    naive_data = db.get_first(Strategy, naive_query_dict)
     print(naive_data)
     naive_id = naive_data['id']
     # Build conditions for retrieving Naive and Cumulative experiments
@@ -51,7 +51,7 @@ def compute_derived_metrics(
     naive_query_dict['status'] = 'finished'
     naive_query_dict['is_test'] = False
     #stdout_debug_print(f"Naive query dict: {naive_query_dict}", color='red')
-    naive_exp_dict = db.read_records_where(Experiment, naive_query_dict)[-1] # By default, last experiment in list
+    naive_exp_dict = db.get(Experiment, naive_query_dict)[-1] # By default, last experiment in list
     naive_log_dict = naive_exp_dict['logs']['aggregated_metrics']
 
     #stdout_debug_print(f"Strategy exp dict: {exp_dict}", color='red')
@@ -59,7 +59,7 @@ def compute_derived_metrics(
 
     if computeR:
         # Retrieve cumulative data
-        cumulative_data = db.read_record_where(Strategy, cumulative_query_dict)
+        cumulative_data = db.get_first(Strategy, cumulative_query_dict)
         cumulative_id = cumulative_data['id']
         ## Cumulative
         cumulative_query_dict = {k: v for k, v in exp_dict.items() if k in __exp_ids}
@@ -68,7 +68,7 @@ def compute_derived_metrics(
         cumulative_query_dict['is_test'] = False
         # Now retrieve Naive and Cumulative exp dicts
         #stdout_debug_print(f"Cumulative query dict: {cumulative_query_dict}", color='red')
-        cumulative_exp_dict = db.read_records_where(Experiment, cumulative_query_dict)[-1] # By default, last experiment in list
+        cumulative_exp_dict = db.get(Experiment, cumulative_query_dict)[-1] # By default, last experiment in list
         cumulative_log_dict = cumulative_exp_dict['logs']['aggregated_metrics']
         # Now compute "R" from "R2"
         naive_r2_values = np.array(naive_log_dict[f"{set_type.capitalize()}_R2"]['mean'])

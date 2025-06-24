@@ -63,7 +63,7 @@ class LoggingConfiguration:
                 data['strategy'] = exp_dict['strategy_name']
             else:
                 # Retrieve data from database
-                strategy_data = db.read_record(Strategy, id_strategy, as_dict=True)
+                strategy_data = db.get_one_by_id(Strategy, id_strategy, )
                 data['strategy'] = strategy_data['name']
         # General (batch size)
         id_general: Optional[int] = exp_dict.get('id_general', None)
@@ -73,7 +73,7 @@ class LoggingConfiguration:
             if 'general_train_mb_size' in exp_dict:
                 data['batch_size'] = exp_dict['general_train_mb_size']
             else:
-                general_data = db.read_record(General, id_general, as_dict=True)
+                general_data = db.get_one_by_id(General, id_general, )
                 data['batch_size'] = general_data['train_mb_size']
         # Active Learning data
         if exp_dict.get('id_active_learning', None) is not None:
@@ -86,7 +86,7 @@ class LoggingConfiguration:
                 data['al_config'] = al_data
             else:
                 # Retrieve from database
-                al_data = db.read_record(ActiveLearning, id_al, as_dict=True)
+                al_data = db.get_one_by_id(ActiveLearning, id_al, )
                 data['al_config'] = al_data
         else:
             data['active_learning'] = False

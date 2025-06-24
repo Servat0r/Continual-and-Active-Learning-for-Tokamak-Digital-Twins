@@ -1,6 +1,6 @@
 {
     "general": {
-        "mode": "AL(CL)",
+        "mode": "CL",
         "num_campaigns": 5,
         "train_mb_size": 4096,
         "eval_mb_size": 1024,
@@ -23,34 +23,17 @@
             "drop_rate": 0.5
         }
     },
-    "active_learnings": {
-        "framework": "bmdal",
-        "batch_size": 256,
-        "max_batch_size": 1024,
-        "reload_initial_weights": false,
-        "full_first_set": true,
-        "first_set_size": 8192,
-        "downsampling_factor": 0.5,
-        "methods": [
-            "random",
-            "batchbald",
-            "badge",
-            "lcmd"
-        ]
-    },
     "loss": {"id": 1},
     "optimizer": {"id": 1},
     "scheduler": {"id": 1},
-    "early_stopping": {"id": 1},
-    "strategy": {
-        "name": "Replay",
-        "from_scratch": false,
-        "parameters": {"mem_size": 2000}
+    "early_stopping": {
+        "patience": 50,
+        "min_epochs": 100,
+        "delta": 0.1
     },
-    "labels": [
-        "Random",
-        "BatchBALD",
-        "BADGE",
-        "LCMD"
-    ]
+    "strategy": {
+        "name": "Naive",
+        "from_scratch": false,
+        "parameters": {}
+    }
 }

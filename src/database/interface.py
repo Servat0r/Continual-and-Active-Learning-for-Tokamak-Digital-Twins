@@ -1,7 +1,7 @@
 # Interface of SecureMLExperimentDB
 from sqlalchemy.orm import Session
 from contextlib import contextmanager
-from typing import Dict, List, Optional, Any, Type, Tuple
+from typing import Dict, List, Optional, Any, Type, Tuple, Iterable
 from abc import ABC, abstractmethod
 
 from .utils import *
@@ -32,31 +32,23 @@ class BaseMLExperimentDB(ABC):
         pass
     
     @abstractmethod
-    def create_record(self, record) -> int:
+    def create(self, record) -> int:
         """Create a new record with validation."""
         pass
     
     @abstractmethod
-    def read_record(self, model_class: Type[TOrm], record_id: int, as_dict: bool = False) -> Optional[Dict | TOrm]:
+    def get_one_by_id(self, model_class: Type[TOrm], record_id: int, as_dict: bool = False) -> Optional[Dict | TOrm]:
         """Read a single record by ID."""
         pass
     
     @abstractmethod
-    def read_records(self, model_class: Type[TOrm], limit: int = 1000, offset: int = 0, as_dict: bool = False) -> List[Dict | TOrm]:
-        """
-        Read all records with pagination.
-        Security: Enforces reasonable limits to prevent resource exhaustion.
-        """
-        pass
-    
-    @abstractmethod
-    def read_record_where(
+    def get_first(
             self, model_class: Type[TOrm], conditions: Dict, as_dict: bool = False
     ) -> List[Dict]:
         pass
     
     @abstractmethod
-    def read_records_where(
+    def get(
             self, model_class: Type[TOrm], conditions: Dict, 
             limit: int = 1000, offset: int = 0, as_dict: bool = False
     ) -> List[Dict]:
@@ -64,23 +56,35 @@ class BaseMLExperimentDB(ABC):
         pass
     
     @abstractmethod
-    def update_record(self, record: TOrm, data: Dict) -> Optional[TOrm]:
+    def update_one_by_id(self, record: TOrm, data: Dict) -> Optional[TOrm]:
         """Update a record with validation."""
         pass
     
     @abstractmethod
-    def update_records(self, records: List[TOrm], data: List[Dict]) -> Tuple[List[TOrm], List[TOrm]]:
+    def update_by_id(self, records: List[TOrm], data: List[Dict]) -> Tuple[List[TOrm], List[TOrm]]:
         """Update a list of records."""
         pass
     
     @abstractmethod
-    def delete_record(self, record: TOrm) -> Optional[TOrm]:
+    def update_where(
+        self, model_class: Type[TOrm], conditions: Dict, data: List[Dict], fields: Optional[Iterable[str]] = None
+    ):
+        """Update a list of records filtering by given conditions."""
+        pass
+
+    @abstractmethod
+    def delete_one_by_id(self, record: TOrm) -> Optional[TOrm]:
         """Delete a record."""
         pass
     
     @abstractmethod
-    def delete_records(self, records: List[TOrm]) -> Tuple[List[TOrm], List[TOrm]]:
+    def delete_by_id(self, records: List[TOrm]) -> Tuple[List[TOrm], List[TOrm]]:
         """Delete a list of records."""
+        pass
+
+    @abstractmethod
+    def delete_where(self, model_class: Type[TOrm], conditions: Dict, fields: Optional[Iterable[str]] = None) -> Tuple[int, List[dict]]:
+        """Delete a list of records according to conditions."""
         pass
     
     @abstractmethod

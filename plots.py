@@ -12,25 +12,6 @@ from src.utils import *
 from src.database import *
 
 
-def column_to_label(column: str):
-    if column in ("R2", "R2Score", "R2Score_Exp"):
-        return r"$R^2$"
-    elif column in ("RD", "RelativeDistance", "RelativeDistance_Exp"):
-        return r"$RD$"
-    elif column == "R":
-        return r"$R$"
-    elif column == "times":
-        return r"$t_i$"
-    elif column == "cumulative_times":
-        return r"$t_{tot,\:i}$"
-    elif column == "time_ratios":
-        return r"$T_i = \dfrac{t_{tot,\:i}}{t_{tot,\:Naive,\:i}}$"
-    elif column == "num_epochs":
-        return r"$E_i$"
-    else:
-        return column
-
-
 def cl_plots(
     db: SecureMLExperimentDB, savepath: Optional[str], filename: str = 'cl_plots.json',
     metric: str = 'R2', set_type: Literal['eval', 'test'] = 'test', *, show: bool = True,
@@ -68,7 +49,7 @@ def cl_plots(
         [General, Scenario, Architecture, Loss, Optimizer, Scheduler, EarlyStopping]
     ):
         query_dict = config[field]
-        record = db.read_record_where(model_class, query_dict, as_dict=True)
+        record = db.get_first(model_class, query_dict, )
         assert record is not None, \
             f"Check your config file for '{field}', as the corresponding query dict '{query_dict}' matches no records in the database"
         record_id = record['id']
@@ -77,9 +58,9 @@ def cl_plots(
             num_campaigns = record['num_campaigns']
     for strategy, label in zip(strategies, labels):
         if not strategy.pop('ignore', False): # By default strategy is NOT ignored
-            strategy_dict = db.read_record_where(Strategy, strategy)
+            strategy_dict = db.get_first(Strategy, strategy)
             exp_query_dict['id_strategy'] = strategy_dict['id']
-            exp_dict = db.read_record_where(Experiment, exp_query_dict)
+            exp_dict = db.get_first(Experiment, exp_query_dict)
             exp_logs = exp_dict['logs']['aggregated_metrics']
             if metric in {'times', 'cumulative_times', 'num_epochs', 'time_ratios'}:
                 plot_data[label] = exp_logs[metric]
@@ -122,7 +103,7 @@ def claea_plots_single_strategy(
         [General, Scenario, Architecture, Loss, Optimizer, Scheduler, EarlyStopping, Strategy]
     ):
         query_dict = config[field]
-        record = db.read_record_where(model_class, query_dict)
+        record = db.get_first(model_class, query_dict)
         record_id = record['id']
         exp_query_dict[f"id_{field}"] = record_id
         if field == 'general':
@@ -134,7 +115,7 @@ def claea_plots_single_strategy(
         ## First, change id_general to a General config that has "mode" == "CL"
         query_general = config['general'].copy()
         query_general['mode'] = 'CL'
-        record = db.read_record_where(General, query_general)
+        record = db.get_first(General, query_general)
         assert record is not None
         baseline_query_dict['id_general'] = record['id']
         ## Then, filter out EarlyStopping since it may differ between CL and AL(CL) experiments
@@ -142,7 +123,7 @@ def claea_plots_single_strategy(
         ## Strategy
         baseline_query_dict['id_active_learning'] = None
         print(baseline_query_dict)
-        baseline_dict = db.read_record_where(Experiment, baseline_query_dict)
+        baseline_dict = db.get_first(Experiment, baseline_query_dict)
         assert baseline_dict is not None
         baseline_logs = baseline_dict['logs']['aggregated_metrics']
         if metric in {'times', 'cumulative_times', 'num_epochs', 'time_ratios'}:
@@ -151,9 +132,9 @@ def claea_plots_single_strategy(
             plot_data[f"{strategy_name} Baseline"] = baseline_logs[f"{set_type.capitalize()}_{metric}"]['mean']
         ## Cumulative (if applicable)
         if strategy_name != 'Cumulative':
-            record = db.read_record_where(Strategy, {'name': 'Cumulative'})
+            record = db.get_first(Strategy, {'name': 'Cumulative'})
             baseline_query_dict['id_strategy'] = record['id']
-            baseline_dict = db.read_record_where(Experiment, baseline_query_dict)
+            baseline_dict = db.get_first(Experiment, baseline_query_dict)
             assert baseline_dict is not None
             baseline_logs = baseline_dict['logs']['aggregated_metrics']
             if metric in {'times', 'cumulative_times', 'num_epochs', 'time_ratios'}:
@@ -165,10 +146,10 @@ def claea_plots_single_strategy(
         al_query_dict = active_learnings.copy()
         al_query_dict['standard_method'] = method
         print(al_query_dict)
-        record = db.read_record_where(ActiveLearning, al_query_dict, as_dict=True)
+        record = db.get_first(ActiveLearning, al_query_dict, )
         record_id = record['id']
         exp_query_dict['id_active_learning'] = record_id
-        exp_dict = db.read_record_where(Experiment, exp_query_dict)
+        exp_dict = db.get_first(Experiment, exp_query_dict)
         exp_logs = exp_dict['logs']['aggregated_metrics']
         if metric in {'times', 'cumulative_times', 'num_epochs', 'time_ratios'}:
             plot_data[label] = exp_logs[metric]
@@ -213,14 +194,14 @@ def claea_plots_multiple_strategies(
         [General, Scenario, Architecture, Loss, Optimizer, Scheduler, EarlyStopping]
     ):
         query_dict = config[field]
-        record = db.read_record_where(model_class, query_dict)
+        record = db.get_first(model_class, query_dict)
         record_id = record['id']
         exp_query_dict[f"id_{field}"] = record_id
         if field == 'general':
             num_campaigns = record['num_campaigns']
     for strategy, strategy_label in zip(strategies, strategy_labels):
         if not strategy.pop('ignore', False): # By default strategy is NOT ignored
-            strategy_dict = db.read_record_where(Strategy, strategy)
+            strategy_dict = db.get_first(Strategy, strategy)
             exp_query_dict['id_strategy'] = strategy_dict['id']
         else:
             continue
@@ -228,10 +209,10 @@ def claea_plots_multiple_strategies(
         for method, method_label in zip(al_methods, method_labels):
             al_query_dict = active_learnings.copy()
             al_query_dict['standard_method'] = method
-            record = db.read_record_where(ActiveLearning, al_query_dict, as_dict=True)
+            record = db.get_first(ActiveLearning, al_query_dict, )
             record_id = record['id']
             exp_query_dict['id_active_learning'] = record_id
-            exp_dict = db.read_record_where(Experiment, exp_query_dict)
+            exp_dict = db.get_first(Experiment, exp_query_dict)
             exp_logs = exp_dict['logs']['aggregated_metrics']
             label = f"{strategy_label} - {method_label}"
             if metric in {'times', 'cumulative_times', 'num_epochs', 'time_ratios'}:
@@ -268,7 +249,7 @@ if __name__ == '__main__':
     parser.add_argument('--legend-size', type=int, default=12)
     parser.add_argument('--xlabel-size', type=int, default=14)
     parser.add_argument('--ylabel-size', type=int, default=14)
-    parser.add_argument('--ticks-size', type=int, default=16)
+    parser.add_argument('--ticks-size', type=int, default=10)
     parser.add_argument('--y-start', type=float, default=0.70)
     parser.add_argument('--y-stop', type=float, default=0.94)
     parser.add_argument('--y-step', type=float, default=0.04)
@@ -280,9 +261,9 @@ if __name__ == '__main__':
         match mode:
             case 'CL':
                 config = 'cl_plots.json'
-            case 'CLAEA' | 'CLAEA-SINGLE-STRATEGY':
+            case 'CLAEA' | 'CLAEA-SINGLE' | 'CLAEA-SINGLE-STRATEGY':
                 config = 'claea_plots_single_strategy.json'
-            case 'CLAEA-MULTIPLE-STRATEGIES':
+            case 'CLAEA-MULTIPLE' | 'CLAEA-MULTIPLE-STRATEGIES':
                 config = 'claea_plots_multiple_strategies.json'
     match mode:
         case 'CL':
@@ -292,7 +273,7 @@ if __name__ == '__main__':
                 ylabel_size=args.ylabel_size, ticks_fontsize=args.ticks_size,
                 y_range=np.arange(args.y_start, args.y_stop, args.y_step)
             )
-        case 'CLAEA' | 'CLAEA-SINGLE-STRATEGY':
+        case 'CLAEA' | 'CLAEA-SINGLE' | 'CLAEA-SINGLE-STRATEGY':
             claea_plots_single_strategy(
                 db, savepath=args.savepath, filename=config, metric=metric, set_type=set_type,
                 show=True, legend_fontsize=args.legend_size, xlabel_size=args.xlabel_size,
@@ -300,7 +281,7 @@ if __name__ == '__main__':
                 y_range=np.arange(args.y_start, args.y_stop, args.y_step),
                 include_baselines=args.include_baselines
             )
-        case 'CLAEA-MULTIPLE-STRATEGIES':
+        case 'CLAEA-MULTIPLE' | 'CLAEA-MULTIPLE-STRATEGIES':
             claea_plots_multiple_strategies(
                 db, savepath=args.savepath, filename=config, metric=metric, set_type=set_type,
                 show=True, legend_fontsize=args.legend_size, xlabel_size=args.xlabel_size,

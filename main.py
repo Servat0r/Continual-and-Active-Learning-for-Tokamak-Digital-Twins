@@ -200,14 +200,14 @@ if __name__ == '__main__':
                     sleep(0.002)
             break # break from strategy for-loop
         finally:
-            exp_dict = db.read_record(Experiment, experiment_id, as_dict=True)
+            exp_dict = db.get_one_by_id(Experiment, experiment_id, )
             while exp_dict['status'] == 'running':
                 finished, _ = db.set_running_to_finished([experiment_id])
                 if finished > 0:
                     stdout_debug_print(f"Experiment {experiment_name} was successfully completed", color='green')
                 else:
                     sleep(0.002)
-                exp_dict = db.read_record(Experiment, experiment_id, as_dict=True)
+                exp_dict = db.get_one_by_id(Experiment, experiment_id, )
     print(f"Aborted Experiments: {aborted_experiment_names}")
     print(f"Test Experiments: {test_names}")
     print(f"All Experiments: {all_names}")

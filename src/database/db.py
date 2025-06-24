@@ -325,7 +325,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         return bool(re.match(r'^[a-zA-Z0-9_-]+$', key)) and len(key) <= 100
     
     # GENERIC CRUD OPERATIONS
-    def create_record(self, record: TOrm) -> int:
+    def create(self, record: TOrm) -> int:
         """Create a new record with validation."""
         model_class = type(record)
         if model_class == Experiment:
@@ -347,8 +347,8 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error creating {model_class.__name__}: {e}")
             raise
     
-    def read_record(
-        self, model_class: Type[TOrm], record_id: int, as_dict: bool = True, fields: Optional[Iterable[str]] = None
+    def get_one_by_id(
+        self, model_class: Type[TOrm], record_id: int, fields: Optional[Iterable[str]] = None
     ) -> Optional[Dict | TOrm]:
         """Read a single record by ID."""
         try:
@@ -365,8 +365,8 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Error reading {model_class.__name__} ID {record_id}: {e}")
             raise
     
-    def read_record_where(
-            self, model_class: Type[TOrm], conditions: Dict, as_dict: bool = True, fields: Optional[Iterable[str]] = None
+    def get_first(
+            self, model_class: Type[TOrm], conditions: Dict, fields: Optional[Iterable[str]] = None
     ) -> Dict:
         try:
             with self.get_session() as session:
@@ -389,30 +389,9 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Error querying {model_class.__name__}: {e}")
             raise
     
-    def read_records(
-        self, model_class: Type[TOrm], limit: int = 1000, offset: int = 0, as_dict: bool = True, fields: Optional[Iterable[str]] = None
-    ) -> List[Dict | TOrm]:
-        """
-        Read all records with pagination.
-        Security: Enforces reasonable limits to prevent resource exhaustion.
-        """
-        if limit > 10000:  # Security: Prevent large queries
-            raise SecurityError("Limit too large (max 10000)")
-        
-        try:
-            with self.get_session() as session:
-                records = session.query(model_class).offset(offset).limit(limit).all()
-                result = [record.to_dict() for record in records]
-                if fields:
-                    result = [{k: v for k, v in record.items() if k in fields} for record in result]
-                return result
-        except SQLAlchemyError as e:
-            logger.error(f"Error reading {model_class.__name__} records: {e}")
-            raise
-    
-    def read_records_where(
-            self, model_class: Type[TOrm], conditions: Dict, 
-            limit: int = 1000, offset: int = 0, as_dict: bool = True, fields: Optional[Iterable[str]] = None
+    def get(
+        self, model_class: Type[TOrm], conditions: Optional[Dict] = None,
+        limit: int = 1000, offset: int = 0, fields: Optional[Iterable[str]] = None
     ) -> List[Dict]:
         """Read records matching conditions with security validation."""
         if limit > 10000:  # Security: Prevent large queries
@@ -420,7 +399,8 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
         try:
             with self.get_session() as session:
                 query = session.query(model_class).options(undefer('*'))
-                query = self._build_query_conditions(query, model_class, conditions)
+                if conditions:
+                    query = self._build_query_conditions(query, model_class, conditions)
                 records = query.offset(offset).limit(limit).all()
                 result = [record.to_dict() for record in records]
                 if fields:
@@ -432,7 +412,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Error querying {model_class.__name__}: {e}")
             raise
     
-    def update_record(self, model_class: Type[TOrm], record_id: TOrm, data: Dict, fields: Optional[Iterable[str]] = None) -> Optional[dict]:
+    def update_one_by_id(self, model_class: Type[TOrm], record_id: TOrm, data: Dict, fields: Optional[Iterable[str]] = None) -> Optional[dict]:
         """Update a record with validation."""
         try:
             with self.get_session() as session:
@@ -465,15 +445,15 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error updating {model_class.__name__}.{record_id}: {e}")
             raise
     
-    def update_records(
+    def update_by_id(
         self, model_class: Type[TOrm], record_ids: List[int], data: List[Dict], fields: Optional[Iterable[str]] = None
     ) -> Tuple[List[dict], List[int]]:
-        """Update a list of records."""
+        """Update a list of records filtering by their ids."""
         try:
             with self.get_session() as session:
                 updated_records, non_existing_records = [], []
                 for record_id, item in zip(record_ids, data):
-                    updated = self.update_record(model_class, record_id, item, fields)
+                    updated = self.update_one_by_id(model_class, record_id, item, fields)
                     if updated is not None:
                         updated_records.append(updated)
                     else:
@@ -488,7 +468,33 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error updating {record_ids}: {e}")
             raise
     
-    def delete_record(self, model_class: Type[TOrm], record_id: int, fields: Optional[Iterable[str]] = None) -> Optional[dict]:
+    def update_where(
+        self, model_class: Type[TOrm], conditions: Dict, data: List[Dict], fields: Optional[Iterable[str]] = None
+    ):
+        """Update a list of records filtering by given conditions."""
+        try:
+            with self.get_session() as session:
+                query = session.query(model_class).options(undefer('*'))
+                if conditions:
+                    query = self._build_query_conditions(query, model_class, conditions)
+                records = query.all()
+                result = [record.to_dict() for record in records]
+                assert len(result) <= len(data), f"Provided {len(data)} update dictionaries, while retrieved {len(result)} records."
+                for record, item in zip(result, data):
+                    record.update(item)
+                if fields:
+                    result = [{k: v for k, v in record.items() if k in fields} for record in result]
+                return result
+        except (ValidationError, SecurityError):
+            raise
+        except IntegrityError as e:
+            logger.error(f"Integrity error updating {model_class.__name__}: {e}")
+            raise ValidationError(f"Data integrity violation: {e}")
+        except SQLAlchemyError as e:
+            logger.error(f"Database error updating {model_class.__name__}: {e}")
+            raise
+    
+    def delete_one_by_id(self, model_class: Type[TOrm], record_id: int, fields: Optional[Iterable[str]] = None) -> Optional[dict]:
         """Delete a record."""
         try:
             with self.get_session() as session:
@@ -510,13 +516,13 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error deleting {model_class.__name__}: {e}")
             raise
     
-    def delete_records(self, model_class: Type[TOrm], record_ids: List[int], fields: Optional[Iterable[str]] = None) -> Tuple[List[dict], List[int]]:
+    def delete_by_id(self, model_class: Type[TOrm], record_ids: List[int], fields: Optional[Iterable[str]] = None) -> Tuple[int, List[dict]]:
         """Delete a list of records."""
         try:
             with self.get_session() as session:
                 deleted_records, non_existing_records = [], []
                 for record_id in record_ids:
-                    deleted = self.delete_record(model_class, record_id, fields)
+                    deleted = self.delete_one_by_id(model_class, record_id, fields)
                     if deleted is not None:
                         deleted_records.append(deleted)
                     else:
@@ -529,6 +535,31 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             raise ValidationError(f"Data integrity violation: {e}")
         except SQLAlchemyError as e:
             logger.error(f"Database error updating {record_ids}: {e}")
+            raise
+    
+    def delete_where(self, model_class: Type[TOrm], conditions: Dict, fields: Optional[Iterable[str]] = None) -> Tuple[int, List[dict]]:
+        """Delete a list of records according to conditions."""
+        try:
+            with self.get_session() as session:
+                query = session.query(model_class).options(undefer('*'))
+                if conditions:
+                    query = self._build_query_conditions(query, model_class, conditions)
+                records = query.all()
+                result = [record.to_dict() for record in records]
+                if fields:
+                    result = [{k: v for k, v in record.items() if k in fields} for record in result]
+                if query.delete():
+                    return len(result), result
+                else:
+                    print(f"Failed to delete {len(result)} records")
+                    return 0, None
+        except (ValidationError, SecurityError):
+            raise
+        except IntegrityError as e:
+            logger.error(f"Integrity error deleting {len(records)} from {model_class.__name__}: {e}")
+            raise ValidationError(f"Data integrity violation: {e}")
+        except SQLAlchemyError as e:
+            logger.error(f"Database error deleting {len(records)} from {model_class.__name__}: {e}")
             raise
     
     # Tags and Metadata Updating and Removing (cannot be updated or removed with update_record)
@@ -1143,18 +1174,30 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error deleting {model_class.__name__}: {e}")
             raise
     
-    def __getitem__(self, item: TStrOrm | tuple[TStrOrm, Iterable]):
-        fields = None
+    def __getitem__(self, item: TStrOrm | tuple[TStrOrm, Iterable] | tuple[TStrOrm, Iterable, Dict]):
+        """
+        If isinstance(item, TStrOrm): retrieves all records for specified ORM class
+        Elif isinstance(item, tuple) and len(item) == 2: item[0] is ORM class and item[1] is an iterable of fields that get retrieved
+        Elif isinstance(item, tuple) and len(item) == 3: item[0] and item[1] as above, item[2] conditions dictionary for filtering records 
+        """
+        fields, conditions = None, None
         if isinstance(item, str):
             model_class = self.__tables_map__.get(item, None)
         elif isinstance(item, tuple):
             assert len(item) >= 2
             key, fields = item[0], item[1]
             model_class = self.__tables_map__.get(key, None) if isinstance(key, str) else key
+            if len(item) >= 3:
+                if not isinstance(item[2], dict):
+                    raise TypeError(f"Third item in accessor must be a dictionary, got '{type(item[2]).__name__}'")
+                conditions = item[2]
         else:
             model_class = item
         if model_class is not None:
-            return self.read_records(model_class, as_dict=True, fields=fields)
+            if conditions:
+                return self.get(model_class, conditions=conditions, fields=fields)
+            else:
+                return self.get(model_class, conditions=None, fields=fields)
         else:
             raise ValueError(f"Invalid item for retrieving model_class: {item}")
 
