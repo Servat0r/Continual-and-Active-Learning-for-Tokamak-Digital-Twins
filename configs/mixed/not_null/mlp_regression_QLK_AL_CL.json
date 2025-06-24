@@ -14,7 +14,7 @@
       "batch_size": 256,
       "max_batch_size": 1024,
       "full_first_set": false,
-      "first_set_size": 5120,
+      "first_set_size": 8192,
       "downsampling_factor": 0.5,
       "reload_initial_weights": false,
       "standard_method": "badge"
@@ -22,7 +22,7 @@
   },
   "dataset": {
     "pow_type": "mixed",
-    "cluster_type": "beta_based",
+    "cluster_type": "wmhd_based",
     "dataset_type": "not_null",
     "simulator_type": "qualikiz",
     "input_columns": [
@@ -39,15 +39,15 @@
   },
   "architecture": {
     "name": "saved",
-    "model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "model_folder": "highpow_mlp_512_2_efe_efi_pfe_pfi_8runs",
     "model_name": "model",
     "model_class_name": "MLP",
     "parameters": {
       "input_size": 15,
       "output_size": 4,
-      "hidden_size": 1024,
+      "hidden_size": 512,
       "hidden_layers": 2,
-      "drop_rate": 0.5
+      "drop_rate": 0.25
     }
   },
   "loss": {
@@ -80,7 +80,14 @@
     {
       "name": "Naive",
       "extra_log_folder": "Base",
-      "ignore": true,
+      "ignore": false,
+      "parameters": {
+      }
+    },
+    {
+      "name": "Cumulative",
+      "extra_log_folder": "Base",
+      "ignore": false,
       "parameters": {
       }
     },
@@ -95,23 +102,15 @@
     {
       "name": "Replay",
       "extra_log_folder": "Buffer 10000",
-      "ignore": true,
+      "ignore": false,
       "parameters": {
         "mem_size": 10000
       }
     },
     {
       "name": "GEM",
-      "extra_log_folder": "Patterns 400",
-      "ignore": true,
-      "parameters": {
-        "patterns_per_exp": 400
-      }
-    },
-    {
-      "name": "GEM",
       "extra_log_folder": "Patterns 1024",
-      "ignore": true,
+      "ignore": false,
       "parameters": {
         "patterns_per_exp": 1024
       }
@@ -119,43 +118,26 @@
     {
       "name": "EWCReplay",
       "extra_log_folder": "Lambda 1 Buffer 2000",
-      "ignore": true,
+      "ignore": false,
       "parameters": {
         "mode": "separate",
         "ewc_lambda": 1.0,
         "mem_size": 2000
       }
-    },
-    {
-      "name": "EWCReplay",
-      "extra_log_folder": "Lambda 1 Buffer 10000",
-      "ignore": true,
-      "parameters": {
-        "mode": "separate",
-        "ewc_lambda": 1.0,
-        "mem_size": 10000
-      }
-    },
-    {
-      "name": "Cumulative",
-      "extra_log_folder": "Base",
-      "ignore": true,
-      "parameters": {
-      }
     }
   ],
   "early_stopping": {
-    "patience": 10,
+    "patience": 20,
     "delta": 0.1,
     "val_stream_name": "eval_stream",
-    "min_epochs": 10
+    "min_epochs": 20
   },
   "validation_stream": {
     "val_stream": "eval_stream"
   },
   "start_model_saving": {
     "save_model": false,
-    "saved_model_folder": "highpow_mlp_1024_2_efe_efi_pfe_pfi_8runs",
+    "saved_model_folder": "highpow_mlp_512_2_efe_efi_pfe_pfi_8runs",
     "saved_model_name": "model",
     "add_timestamp": false
   }

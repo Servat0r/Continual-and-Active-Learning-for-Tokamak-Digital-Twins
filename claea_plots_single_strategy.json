@@ -1,15 +1,15 @@
 {
     "general": {
         "mode": "AL(CL)",
-        "num_campaigns": 5,
+        "num_campaigns": 10,
         "train_mb_size": 4096,
         "eval_mb_size": 1024,
-        "train_epochs": 5
+        "train_epochs": 200
     },
     "scenario": {
         "simulator_type": "qualikiz",
-        "pow_type": "highpow",
-        "cluster_type": "tau_based",
+        "pow_type": "mixed",
+        "cluster_type": "wmhd_based",
         "dataset_type": "not_null",
         "task": "regression"
     },
@@ -18,9 +18,9 @@
         "parameters": {
             "input_size": 15,
             "output_size": 4,
-            "hidden_size": 256,
+            "hidden_size": 512,
             "hidden_layers": 2,
-            "drop_rate": 0.5
+            "drop_rate": 0.25
         }
     },
     "active_learnings": {
@@ -38,10 +38,26 @@
             "lcmd"
         ]
     },
-    "loss": {"id": 1},
-    "optimizer": {"id": 1},
+    "loss": {
+        "name": "MSE",
+        "parameters": {
+          "reduction": "mean"
+        }
+    },
+    "optimizer": {
+        "name": "AdamW",
+        "parameters": {
+          "lr": 2e-3,
+          "weight_decay": 1e-5
+        }
+    },
     "scheduler": {"id": 1},
-    "early_stopping": {"id": 1},
+    "early_stopping": {
+        "patience": 20,
+        "delta": 0.1,
+        "val_stream_name": "eval_stream",
+        "min_epochs": 20
+    },
     "strategy": {
         "name": "Replay",
         "from_scratch": false,

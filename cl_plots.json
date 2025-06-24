@@ -1,15 +1,15 @@
 {
     "general": {
         "mode": "CL",
-        "num_campaigns": 5,
+        "num_campaigns": 10,
         "train_mb_size": 4096,
         "eval_mb_size": 1024,
-        "train_epochs": 5
+        "train_epochs": 200
     },
     "scenario": {
         "simulator_type": "qualikiz",
-        "pow_type": "highpow",
-        "cluster_type": "tau_based",
+        "pow_type": "mixed",
+        "cluster_type": "wmhd_based",
         "dataset_type": "not_null",
         "task": "regression"
     },
@@ -18,44 +18,182 @@
         "parameters": {
             "input_size": 15,
             "output_size": 4,
-            "hidden_size": 256,
+            "hidden_size": 512,
             "hidden_layers": 2,
-            "drop_rate": 0.5
+            "drop_rate": 0.25
         }
     },
-    "loss": {"id": 1},
-    "optimizer": {"id": 1},
+    "loss": {
+        "name": "MSE",
+        "parameters": {
+          "reduction": "mean"
+        }
+    },
+    "optimizer": {
+        "name": "AdamW",
+        "parameters": {
+          "lr": 2e-3,
+          "weight_decay": 1e-5
+        }
+    },
     "scheduler": {"id": 1},
     "early_stopping": {
-        "patience": 50,
-        "min_epochs": 100,
+        "patience": 20,
+        "min_epochs": 50,
         "delta": 0.1
     },
     "strategies": [
         {
             "name": "Naive",
-            "from_scratch": false,
+            "extra_log_folder": "Base",
             "ignore": false,
             "parameters": {}
         },
         {
             "name": "Cumulative",
-            "from_scratch": false,
+            "extra_log_folder": "Base",
             "ignore": false,
             "parameters": {}
         },
         {
+            "name": "FromScratchTraining",
+            "extra_log_folder": "Base",
+            "ignore": false,
+            "parameters": {}
+        },
+        {
+            "name": "PercentageReplay",
+            "ignore": false,
+            "parameters": {
+                "mem_percentage": 0.05,
+                "min_buffer_size": 1000
+            }
+        },
+        {
+            "name": "PercentageReplay",
+            "ignore": false,
+            "parameters": {
+                "mem_percentage": 0.1,
+                "min_buffer_size": 2000
+            }
+        },
+        {
             "name": "Replay",
-            "from_scratch": false,
             "ignore": false,
             "parameters": {
                 "mem_size": 2000
+            }
+        },
+        {
+            "name": "Replay",
+            "ignore": false,
+            "parameters": {
+                "mem_size": 10000
+            }
+        },
+        {
+            "name": "Replay",
+            "ignore": false,
+            "parameters": {
+                "mem_size": 20000
+            }
+        },
+        {
+            "name": "EWC",
+            "ignore": false,
+            "parameters": {
+                "mode": "separate",
+                "ewc_lambda": 1.0
+            }
+        },
+        {
+            "name": "EWCReplay",
+            "ignore": false,
+            "parameters": {
+                "mode": "separate",
+                "ewc_lambda": 1.0,
+                "mem_size": 2000
+            }
+        },
+        {
+            "name": "EWCReplay",
+            "ignore": false,
+            "parameters": {
+                "mode": "separate",
+                "ewc_lambda": 1.0,
+                "mem_size": 10000
+            }
+        },
+        {
+            "name": "MAS",
+            "ignore": false,
+            "parameters": {
+                "lambda_reg": 1.0,
+                "alpha": 0.0
+            }
+        },
+        {
+            "name": "MASReplay",
+            "ignore": false,
+            "parameters": {
+                "lambda_reg": 1.0,
+                "alpha": 0.0,
+                "mem_size": 10000
+            }
+        },
+        {
+            "name": "GEM",
+            "ignore": false,
+            "parameters": {
+                "patterns_per_exp": 400
+            }
+        },
+        {
+            "name": "GEM",
+            "ignore": false,
+            "parameters": {
+                "patterns_per_exp": 1024
+            }
+        },
+        {
+            "name": "GEMReplay",
+            "ignore": false,
+            "parameters": {
+                "patterns_per_exp": 1000,
+                "mem_size": 10000
+            }
+        },
+        {
+            "name": "LFL",
+            "ignore": false,
+            "parameters": {
+                "lambda_e": 1.0
+            }
+        },
+        {
+            "name": "SI",
+            "ignore": false,
+            "parameters": {
+                "si_lambda": 1.0
             }
         }
     ],
     "labels": [
         "Naive",
         "Cumulative",
-        "Replay (2000)"
+        "From Scratch",
+        "Replay (2000)",
+        "Replay (10000)",
+        "Replay (20000)",
+        "EWC (1)",
+        "EWC (1, 2000)",
+        "EWC (1, 10000)",
+        "MAS (1, 0)",
+        "MASReplay (1, 0, 10000)",
+        "GEM (400 per exp)",
+        "GEM (1024 per exp)",
+        "GEMReplay (1000 per exp, 10000 buffer)",
+        "LFL (1)",
+        "SI (1)"
     ]
 }

@@ -8,8 +8,8 @@
     },
     "scenario": {
         "simulator_type": "qualikiz",
-        "pow_type": "highpow",
-        "cluster_type": "tau_based",
+        "pow_type": "mixed",
+        "cluster_type": "wmhd_based",
         "dataset_type": "not_null",
         "task": "regression"
     },
@@ -18,9 +18,9 @@
         "parameters": {
             "input_size": 15,
             "output_size": 4,
-            "hidden_size": 256,
+            "hidden_size": 512,
             "hidden_layers": 2,
-            "drop_rate": 0.5
+            "drop_rate": 0.25
         }
     },
     "active_learnings": {
@@ -45,21 +45,49 @@
     "strategies": [
         {
             "name": "Naive",
-            "from_scratch": false,
+            "extra_log_folder": "Base",
             "ignore": false,
-            "parameters": {}
+            "parameters": {
+            }
         },
         {
             "name": "Cumulative",
-            "from_scratch": false,
-            "ignore": true,
-            "parameters": {}
+            "extra_log_folder": "Base",
+            "ignore": false,
+            "parameters": {
+            }
         },
         {
             "name": "Replay",
-            "from_scratch": false,
+            "extra_log_folder": "Buffer 2000",
             "ignore": false,
             "parameters": {
+                "mem_size": 2000
+            }
+        },
+        {
+            "name": "Replay",
+            "extra_log_folder": "Buffer 10000",
+            "ignore": false,
+            "parameters": {
+                "mem_size": 10000
+            }
+        },
+        {
+            "name": "GEM",
+            "extra_log_folder": "Patterns 1024",
+            "ignore": false,
+            "parameters": {
+                "patterns_per_exp": 1024
+            }
+        },
+        {
+            "name": "EWCReplay",
+            "extra_log_folder": "Lambda 1 Buffer 2000",
+            "ignore": false,
+            "parameters": {
+                "mode": "separate",
+                "ewc_lambda": 1.0,
                 "mem_size": 2000
             }
         }
@@ -73,6 +101,9 @@
     "strategy_labels": [
         "Naive",
         "Cumulative",
-        "Replay (2000)"
+        "Replay (2000)",
+        "Replay (10000)",
+        "GEM (1024)",
+        "EWCReplay (1, 2000)"
     ]
 }
