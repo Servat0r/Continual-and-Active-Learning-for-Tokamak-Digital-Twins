@@ -129,127 +129,6 @@ def plot_metric_over_evaluation_experiences(
     plt.close()
 
 
-def plot_metrics_over_training_experiences(
-        file_path_or_buf: str | pd.DataFrame, metric: str, title: str, xlabel: str, ylabel: str,
-        grid: bool = True, legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
-        save: bool = True, savepath: str = None, num_exp: int = None, base_label: str = 'Training Experience'
-):
-    df = pd.read_csv(file_path_or_buf) if isinstance(file_path_or_buf, str) else file_path_or_buf
-    default_num_exp = len(df['eval_exp'].unique())
-    num_exp = default_num_exp if num_exp is None else num_exp
-    if experiences is None:
-        experiences = range(default_num_exp)
-    num_epochs = len(df['epoch'].unique())
-    ddf = pd.DataFrame({'epoch': np.arange(num_epochs)})
-    for training_exp in experiences:
-        selected_df = df[df['training_exp'] == training_exp][metric]
-        ddf[f"{base_label} {training_exp}"] = selected_df
-        plt.plot(ddf.index, selected_df, label=f"{base_label} {training_exp}")
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.grid(grid)
-    if legend: plt.legend()
-    if save: plt.savefig(savepath)
-    if show: plt.show()
-
-
-def plot_metric_over_evaluation_experiences_multiple_runs(
-        file_paths_or_bufs: list[str | pd.DataFrame], metric: str, title: str, xlabel: str, ylabel: str,
-        grid: bool = True, legend: bool = True, show: bool = True, experiences: Iterable[int] = None,
-        save: bool = True, savepath: str = None, num_exp: int = None, from_beginning: bool = True,
-        base_label: str = 'Eval Experience'
-):
-    dfs: list[pd.DataFrame] = [pd.read_csv(fp) if isinstance(fp, str) else fp for fp in file_paths_or_bufs]
-    default_num_exp = len(dfs[0]['eval_exp'].unique())
-    num_exp = default_num_exp if num_exp is None else num_exp
-    if experiences is None:
-        experiences = range(default_num_exp)
-    ddfs = []
-    for df in dfs:
-        dict_data = {}
-        for eval_exp in experiences:
-            value = df[df['eval_exp'] == eval_exp][metric].to_numpy()
-            dict_data[f"{base_label} {eval_exp}"] = value
-        ddf = pd.DataFrame(dict_data)
-        ddfs.append(ddf)
-    x_values = list(range(num_exp))
-    plt.figure(figsize=(12, 8))
-    means = {}
-    stds = {}
-    for column in ddfs[0].columns:
-        stacked = np.vstack([ ddf[column] for ddf in ddfs ])
-        means[column] = stacked.mean(axis=0)
-        stds[column] = stacked.std(axis=0)
-    for idx, (column, mean_values) in enumerate(means.items()):
-        std_vals = stds[column]
-        index = 0 if from_beginning else idx
-        plt.plot(
-            x_values[index:], mean_values[index:], label=column, marker='o', linestyle='-'
-        )
-        plt.fill_between(
-            x_values[index:], (mean_values - std_vals)[index:],
-            (mean_values + std_vals)[index:], alpha=0.2
-        )
-    plt.title(title, fontsize=20)
-    plt.xlabel(xlabel, fontsize=25)
-    plt.ylabel(ylabel, fontsize=25)
-    plt.grid(grid)
-    plt.xticks(fontsize=30)
-    plt.yticks(fontsize=30)
-    if legend: plt.legend(fontsize=18)
-    if show: plt.show()
-    if save: plt.savefig(savepath)
-    plt.close()
-
-
-def plot_metric_over_multiple_strategies(
-    file_paths_or_bufs: dict[str, tuple[str | pd.DataFrame, str, str]], grid: bool = True,
-    legend: bool = True, show: bool = True, save: bool = True, savepath: str = None,
-    title: str = None, xlabel: str = None, ylabel: str = None, include_std: bool = True
-):
-    plt.figure(figsize=(12, 8))
-    for strategy_name, (df, color, linestyle) in file_paths_or_bufs.items():
-        mean_col = [col for col in df.columns if col.startswith('Mean')][0]
-        std_col = [col for col in df.columns if col.startswith('Std')][0]
-        x_values = df['Experience'].values
-        mean_values = df[mean_col].values
-        std_values = df[std_col].values
-        
-        # Use strategy name as label, removing any 'Mean/Std' prefix
-        label = strategy_name
-        
-        plt.plot(x_values, mean_values, label=label, marker='o', linestyle=linestyle, color=color)
-        if include_std:
-            plt.fill_between(
-                x_values,
-                mean_values - std_values,
-                mean_values + std_values,
-                alpha=0.2,
-                color=color
-            )
-
-    base_title = title if title is not None else "Performance Over Experiences"
-    base_xlabel = xlabel if xlabel is not None else "Experience"
-    base_ylabel = ylabel if ylabel is not None else "Metric Value"
-    
-    plt.title(base_title, fontsize=20)
-    plt.xlabel(base_xlabel, fontsize=25)
-    plt.ylabel(base_ylabel, fontsize=25)
-    plt.xticks(fontsize=30)
-    plt.yticks(fontsize=30)
-    
-    if grid:
-        plt.grid(True, linestyle='--')
-    if legend:
-        plt.legend(fontsize=20)
-    if save and savepath is not None:
-        plt.savefig(savepath, bbox_inches='tight')
-    if show:
-        plt.show()
-    plt.close()
-
-
 def plot_dataframes_2d(dataframes: list[pd.DataFrame], labels=None, figsize=(10, 8), 
                       xlabel='PC #1', ylabel='PC #2', title='2D Plot of Multiple DataFrames',
                       marker='o', markersize=6, alpha=0.7):
@@ -279,9 +158,6 @@ def plot_dataframes_2d(dataframes: list[pd.DataFrame], labels=None, figsize=(10,
 
 
 __all__ = [
-    'plot_metric_over_evaluation_experiences',
-    'plot_metrics_over_training_experiences',
-    'plot_metric_over_evaluation_experiences_multiple_runs',
-    'plot_metric_over_multiple_strategies', 'plot_dataframes_2d',
+    'plot_metric_over_evaluation_experiences', 'plot_dataframes_2d',
     'PlottingConfig', 'DEFAULT_COLORS', 'DEFAULT_LINESTYLES'
 ]
