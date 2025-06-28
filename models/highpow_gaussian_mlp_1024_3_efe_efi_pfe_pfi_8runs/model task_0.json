@@ -1,0 +1,11 @@
+{
+    "model_type": "GaussianMLP",
+    "model_folder": "highpow_gaussian_mlp_1024_3_efe_efi_pfe_pfi_8runs",
+    "parameters": {
+        "input_size": 15,
+        "output_size": 4,
+        "hidden_size": 1024,
+        "hidden_layers": 3,
+        "drop_rate": 0.2
+    }
+}
