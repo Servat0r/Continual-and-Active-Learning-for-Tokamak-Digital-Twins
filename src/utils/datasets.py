@@ -6,7 +6,7 @@ import torch
 from avalanche.benchmarks import AvalancheDataset
 from torch.utils.data import Dataset
 from avalanche.benchmarks.utils import TransformGroups, DataAttribute
-from .scenarios import *
+from .scenarios import ScenarioConfig
 
 
 def get_cleaned_data_folder(config: ScenarioConfig):

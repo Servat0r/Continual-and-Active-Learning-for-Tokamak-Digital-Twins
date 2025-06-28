@@ -11,4 +11,4 @@ from .losses import *
 from .strategies import *
 from .benchmarks import *
 from .active_learning import *
-from .experiments import *
+from .cleanup import *

@@ -1,6 +1,5 @@
 # Tests for results after training
-from typing import *
-import copy
+from typing import Any
 import os.path
 
 import pandas as pd

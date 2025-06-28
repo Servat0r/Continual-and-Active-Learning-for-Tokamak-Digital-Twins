@@ -4,7 +4,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from typing import Dict, List, Optional, TypeVar, Literal
+from typing import Dict, List, TypeVar
 from schema import Schema, And, Any, Or, Use
 from schema import Optional as SchemaOpt
 import re

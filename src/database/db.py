@@ -1174,7 +1174,7 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             logger.error(f"Database error deleting {model_class.__name__}: {e}")
             raise
     
-    def __getitem__(self, item: TStrOrm | tuple[TStrOrm, Iterable] | tuple[TStrOrm, Iterable, Dict]):
+    def __getitem__(self, item: TStrOrm | tuple[TStrOrm, Iterable] | tuple[TStrOrm, Iterable, Dict]) -> Optional[list[Dict]]:
         """
         If isinstance(item, TStrOrm): retrieves all records for specified ORM class
         Elif isinstance(item, tuple) and len(item) == 2: item[0] is ORM class and item[1] is an iterable of fields that get retrieved
@@ -1200,6 +1200,23 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
                 return self.get(model_class, conditions=None, fields=fields)
         else:
             raise ValueError(f"Invalid item for retrieving model_class: {item}")
+    
+    def __setitem__(
+        self, item: tuple[TStrOrm, int] | tuple[TStrOrm, int, Iterable[str]], value: dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """ Updates a single record by its id. Example: db["Experiment", 1, {'id', 'name', 'status'}] = {'id_strategy': 2}. """
+        input_type_condition = all([isinstance(item, tuple), len(item) >= 2, isinstance(item[1], int)])
+        if not input_type_condition:
+            raise TypeError(f"You should pass a tuple[str or model_class, integer] to accessor, not {type(item)} or {type(item[1])}")
+        if isinstance(item[0], str):
+            model_class = self.__tables_map__.get(item[0], None)
+        else:
+            model_class = item[0]
+        if model_class is None:
+            raise ValueError(f"Invalid item for retrieving model_class: {item}")
+        record_id = item[1]
+        fields = item[2] if len(item) >= 3 else None
+        return self.update_one_by_id(model_class, record_id, data=value, fields=fields)
 
 
 __all__ = ['SecureMLExperimentDB', 'DEFAULT_DB_FILE', 'DEFAULT_DB_TEST_FILE']

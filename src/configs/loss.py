@@ -16,22 +16,23 @@ def loss_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     if 'parameters' not in data:
         raise ValueError(f"\"parameters\" field not present in configuration")
     name, parameters = data['name'], data['parameters']
-    if (name == 'mse') or (name == 'MSE'):
-        return MSELoss(**parameters)
-    elif name in ['rmse', 'RMSE', 'RootMSE', 'root_mse']:
-        return RootMSELoss(**parameters)
-    elif (name == 'huber') or (name == 'Huber'):
-        return HuberLoss(**parameters)
-    elif (name == 'BCE') or (name == 'bce'):
-        return BCELoss(**parameters)
-    elif (name == 'BCEWithLogits') or (name == 'bce_with_logits'):
-        return BCEWithLogitsLoss(**parameters)
-    elif (name == 'GaussianNLL') or (name == 'gaussian_nll'):
-        return GaussianNLLLoss(**parameters)
-    elif (name == 'MSECosineSimilarity') or (name == 'mse_cosine_similarity'):
-        return MSECosineSimilarityLoss(**parameters)
-    else:
-        raise ValueError(f"Invalid loss name \"{name}\"")
+    match name.lower():
+        case 'mse':
+            return MSELoss(**parameters)
+        case 'rmse' | 'rootmse' | 'root_mse':
+            return RootMSELoss(**parameters)
+        case 'huber':
+            return HuberLoss(**parameters)
+        case 'bce':
+            return BCELoss(**parameters)
+        case 'bcewithlogits' | 'bce_with_logits':
+            return BCEWithLogitsLoss(**parameters)
+        case 'gaussiannll' | 'gaussian_nll':
+            return GaussianNLLLoss(**parameters)
+        case 'msecosinesimilarity' | 'mse_cosine_similarity':
+            return MSECosineSimilarityLoss(**parameters)
+        case _:
+            raise ValueError(f"Invalid loss name \"{name}\"")
 
 
 __all__ = ['loss_std', 'loss_handler']

@@ -4,8 +4,7 @@ from contextlib import contextmanager
 from typing import Dict, List, Optional, Any, Type, Tuple, Iterable
 from abc import ABC, abstractmethod
 
-from .utils import *
-from .orms import *
+from .orms import TOrm, Experiment
 
 
 class BaseMLExperimentDB(ABC):

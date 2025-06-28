@@ -1,8 +1,9 @@
 from collections import defaultdict
 from avalanche.evaluation.metrics import loss_metrics, timing_metrics
-from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin, GenerativeReplayPlugin
+from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin
 
-from ..utils import *
+from ..utils.misc import extract_metric_info
+from ..utils.metrics import *
 
 
 def get_metric_names_list(task):
@@ -38,11 +39,13 @@ def make_scheduler(scheduler_config, optimizer):
         scheduler_metric = scheduler_config['metric']
         scheduler_first_epoch_only = scheduler_config['first_epoch_only']
         scheduler_first_exp_only = scheduler_config['first_exp_only']
+        scheduler_reset_lr = scheduler_config['reset_lr']
         return LRSchedulerPlugin(
             scheduler_class(optimizer, **scheduler_parameters),
             metric=scheduler_metric,
             first_exp_only=scheduler_first_exp_only,
             first_epoch_only=scheduler_first_epoch_only,
+            reset_lr=scheduler_reset_lr
         )
     else:
         return None

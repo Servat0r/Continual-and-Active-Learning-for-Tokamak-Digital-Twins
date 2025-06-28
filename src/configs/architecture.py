@@ -120,8 +120,12 @@ def architecture_std(config: dict[str, Any], key: str):
     else:
         result = {
             "model_type": name,
-            "model_folder": None,
-            "parameters": parameters
+            "model_folder": data["model_folder"], # Changed from previous version (None) since it makes sense to save the folder in DB
+            "parameters": parameters,
+            "@extra": {
+                "saved": False,
+                "task": task
+            }
         }
     return result
 
@@ -130,12 +134,12 @@ def architecture_std(config: dict[str, Any], key: str):
 def architecture_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     extra = data.pop("@extra", None)
     is_saved = extra.get('saved', False) if extra else False
+    model_folder = data['model_folder']
+    task = extra['task']
+    parameters = data['parameters']
     if is_saved:
         model_class_name = data['model_type']
-        model_folder = data['model_folder']
         model_name = extra['model_name']
-        task = extra['task']
-        parameters = data['parameters']
         return saved_model_handler( # TODO FIX!
             model_folder=model_folder, model_name=model_name,
             model_class_name=model_class_name, **parameters,

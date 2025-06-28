@@ -1,9 +1,6 @@
 # Computation of derived metrics for Experiments
 from typing import Literal, Optional, Any
 import numpy as np
-from ..utils.misc import stdout_debug_print
-from ..utils.datasets import *
-from ..utils.scenarios import *
 from ..database import SecureMLExperimentDB, Experiment, Strategy
 
 # Get experiment dict and logging config

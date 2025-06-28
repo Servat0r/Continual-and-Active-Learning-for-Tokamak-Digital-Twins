@@ -1,5 +1,5 @@
 # Generic Scenarios Config
-from typing import Literal, Optional, Any
+from typing import Literal, Optional
 from dataclasses import dataclass, asdict
 from ..database import SecureMLExperimentDB, Scenario
 

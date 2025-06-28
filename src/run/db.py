@@ -1,7 +1,5 @@
 # Process config data into the database
 from typing import *
-from src.utils import *
-from src.configs import *
 from src.database import *
 
 

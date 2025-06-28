@@ -19,12 +19,14 @@ def scheduler_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
     metric = parameters.pop('metric', 'eval_loss')
     first_epoch_only = parameters.pop('first_epoch_only', False)
     first_exp_only = parameters.pop('first_exp_only', False)
+    reset_lr = parameters.pop('reset_lr', True)
     if (name == 'StepLR') or (name == 'step_lr'):
         return {
             'class': StepLR,
             'metric': metric,
             'first_epoch_only': first_epoch_only,
             'first_exp_only': first_exp_only,
+            'reset_lr': reset_lr,
             'parameters': parameters,
         }
     elif (name == 'ReduceLROnPlateau') or (name == 'reduce_lr_on_plateau'):
@@ -33,6 +35,7 @@ def scheduler_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
             'metric': metric,
             'first_epoch_only': first_epoch_only,
             'first_exp_only': first_exp_only,
+            'reset_lr': reset_lr,
             'parameters': parameters,
         }
     elif (name == 'CosineAnnealingLR') or (name == 'cosine_annealing_lr'):
@@ -41,6 +44,7 @@ def scheduler_handler(data: dict[str, Any], task_id: int = 0, **kwargs):
             'metric': metric,
             'first_epoch_only': first_epoch_only,
             'first_exp_only': first_exp_only,
+            'reset_lr': reset_lr,
             'parameters': parameters,
         }
     else:

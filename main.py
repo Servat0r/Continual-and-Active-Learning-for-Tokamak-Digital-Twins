@@ -7,22 +7,23 @@ import pandas as pd
 
 from time import sleep
 from joblib import Parallel, delayed
-from types import MappingProxyType
 
 sys.path.append(os.path.dirname(__file__))
 
-from src.utils import *
-from src.configs import *
-from src.database import *
-from src.run import *
+from src.utils.misc import stdout_debug_print, get_mean_std_metric_values
+from src.utils.datasets import load_dataset_weights, extract_dataset_weights
+from src.utils.cleanup import *
+from src.utils.logging import get_num_epochs, get_training_times, get_logging_config_from_filepath
+from src.configs import ConfigParser
+from src.database import get_db, Experiment
+from src.run import build_argparser, task_training_loop, config2db, compute_derived_metrics
 
 if int(os.getenv('IGNORE_WARNINGS', '0')):
     import warnings
     warnings.filterwarnings("ignore")
 
 
-ConfigParser.__standardizer_dict__ = MappingProxyType(ConfigParser.__standardizer_dict__)
-ConfigParser.__parsing_dict__ = MappingProxyType(ConfigParser.__parsing_dict__)
+ConfigParser.freeze_mappings()
 
 db = get_db()
 
@@ -39,6 +40,7 @@ if __name__ == '__main__':
     _cleanup_aborted = cmd_args.cleanup_aborted
     _cleanup_tests = cmd_args.cleanup_tests
     _cleanup_all = cmd_args.cleanup_all
+    cleanup_skip_authorization = cmd_args.auto_cleanup
     if (cmd_args.num_tasks <= 0) or (cmd_args.num_tasks is None):
         num_jobs = os.cpu_count() // 2
     else:
@@ -57,10 +59,10 @@ if __name__ == '__main__':
     for strategy in config_data['strategy']:
         ignore_strategy = strategy.get('ignore', False)
         if ignore_strategy:
-            debug_print(f"[red]Ignoring strategy: {strategy['name']} ... [/red]", file=STDOUT)
+            stdout_debug_print(f"Ignoring strategy: {strategy['name']} ... ", color='red')
             continue
         else:
-            debug_print(f"[red]Running strategy: {strategy['name']} ... [/red]", file=STDOUT)
+            stdout_debug_print(f"Running strategy: {strategy['name']} ... ", color='red')
         single_config_data = config_data.copy()
         single_config_data['strategy'] = strategy
 
@@ -100,7 +102,7 @@ if __name__ == '__main__':
             logging_config = get_logging_config_from_filepath(results[0]['log_folder']) # ?
             # Now add aggregated metrics to log dict
             strategy_times, strategy_total_time = get_training_times(logging_config, num_tasks=cmd_args.num_tasks)
-            strategy_epochs, _ = get_num_epochs(logging_config, num_tasks=4)
+            strategy_epochs, _ = get_num_epochs(logging_config, num_tasks=cmd_args.num_tasks)
             strategy_cumulative_times = np.cumsum(strategy_times)
             exp_log_dict['aggregated_metrics'].update({
                 "times": strategy_times.round(4).tolist(),
@@ -212,8 +214,8 @@ if __name__ == '__main__':
     print(f"Test Experiments: {test_names}")
     print(f"All Experiments: {all_names}")
     if _cleanup_aborted and (len(aborted_experiment_names) > 0):
-        cleanup_aborted_experiments(db, targets=aborted_experiment_ids)
+        cleanup_aborted_experiments(db, targets=aborted_experiment_ids, skip_authorization=cleanup_skip_authorization)
     elif _cleanup_tests and (len(test_names) > 0):
-        cleanup_tests(db, targets=test_ids)
+        cleanup_tests(db, targets=test_ids, skip_authorization=cleanup_skip_authorization)
     elif _cleanup_all and (len(all_names) > 0):
-        cleanup_all(db, targets=all_ids)
+        cleanup_all(db, targets=all_ids, skip_authorization=cleanup_skip_authorization)

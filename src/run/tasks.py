@@ -19,12 +19,11 @@ from avalanche.training.plugins import EvaluationPlugin, FromScratchTrainingPlug
 from bmdal_reg.bmdal.feature_data import TensorFeatureData
 
 from ..utils import *
-from ..configs import *
+from ..configs import ConfigParser
 from .utils import *
 from .plots import *
 from ..utils.active_learning import al_cl_strategy_converter
-from ..utils.strategies.plugins import PercentageReplayPlugin
-from ..database import *
+from ..database import get_db
 
 
 # Optional Synchronization

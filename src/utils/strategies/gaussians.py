@@ -1,6 +1,4 @@
-import torch
-from avalanche.training.supervised import Naive
-from avalanche.training.templates import SupervisedTemplate, BaseSGDTemplate
+from avalanche.training.templates import SupervisedTemplate
 
 
 class GaussianNaive(SupervisedTemplate):

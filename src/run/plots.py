@@ -30,8 +30,18 @@ def plot_training(
     log_folder: str, metric: str = 'R2Score', train_filename: str = 'training_results_epoch.csv',
     eval_filename: str = 'eval_results_epoch.csv'
 ):
-    train_df = pd.read_csv(os.path.join(log_folder, train_filename), usecols=range(7))
-    eval_df = pd.read_csv(os.path.join(log_folder, eval_filename), usecols=range(7))
+    # Auto-Determine number of columns
+    train_file_path = os.path.join(log_folder, train_filename)
+    eval_file_path = os.path.join(log_folder, eval_filename)
+    with open(train_file_path, 'r') as fp:
+        line = fp.readline()
+        train_cols_size = len(line.split(','))
+    with open(eval_file_path, 'r') as fp:
+        line = fp.readline()
+        eval_cols_size = len(line.split(','))
+    # Now load dataframes and plot
+    train_df = pd.read_csv(train_file_path, usecols=range(train_cols_size))
+    eval_df = pd.read_csv(eval_file_path, usecols=range(eval_cols_size))
     num_exps = len(train_df['training_exp'].unique())
     nrows = int(sqrt(num_exps)) # e.g. sqrt(10) = 3 + eps > 0 => We will try 3, 2 etc, and find nrows=2, ncolumns=5
     ncolumns = None

@@ -28,22 +28,26 @@ def build_argparser():
     )
     cmd_arg_parser.add_argument(
         '--plot-single-runs', action='store_true',
-        help='Allows to plot graphs for each single run.',
+        help='Allows to plot experience-disaggregated graphs for each single run.',
     )
     cmd_arg_parser.add_argument(
         '--is-test', type=int, default=0,
         help='If 1, sets this experiment as a test one.'
     )
     cmd_arg_parser.add_argument(
-        '--cleanup-aborted', type=int, default=0,
-        help='If 1, cleanup aborted experiments at the end.'
+        '--cleanup-aborted', action='store_true',
+        help='If set, cleanup aborted experiments at the end.'
     )
     cmd_arg_parser.add_argument(
-        '--cleanup-tests', type=int, default=0,
-        help='If 1, cleanup all test experiments at the end.'
+        '--cleanup-tests', action='store_true',
+        help='If set, cleanup all test experiments at the end.'
     )
     cmd_arg_parser.add_argument(
-        '--cleanup-all', type=int, default=0,
-        help='If 1, cleanup all experiments at the end (useful e.g. when performing tests).'
+        '--cleanup-all', action='store_true',
+        help='If set, cleanup all experiments at the end (useful e.g. when performing tests).'
+    )
+    cmd_arg_parser.add_argument(
+        '--auto-cleanup', action='store_true',
+        help='Skip confirmation request when performing final cleanups (if requested).'
     )
     return cmd_arg_parser

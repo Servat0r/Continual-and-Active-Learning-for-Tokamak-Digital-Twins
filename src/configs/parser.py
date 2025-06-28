@@ -2,12 +2,18 @@ import json
 import os
 from os import PathLike
 from typing import Callable, Any
+from types import MappingProxyType
 
 
 class ConfigParser:
 
     __standardizer_dict__: dict[str, Callable] = {}
     __parsing_dict__: dict[str, Callable] = {}
+
+    @staticmethod
+    def freeze_mappings():
+        ConfigParser.__standardizer_dict__ = MappingProxyType(ConfigParser.__standardizer_dict__)
+        ConfigParser.__parsing_dict__ = MappingProxyType(ConfigParser.__parsing_dict__)
 
     @property
     def standardizer_dict(self):

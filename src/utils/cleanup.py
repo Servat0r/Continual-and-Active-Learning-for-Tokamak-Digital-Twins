@@ -1,13 +1,15 @@
 # Utils for Experiments
 from typing import Literal
 import shutil
-import os
 from .logging import LoggingConfiguration
 from ..database import *
-from ..utils.misc import stdout_debug_print
+from .misc import stdout_debug_print
 
 
-def __cleanup(what: Literal['aborted', 'tests', 'all'], db: SecureMLExperimentDB, targets: Optional[list[int]] = None) -> int:
+def __cleanup(
+    what: Literal['aborted', 'tests', 'all'], db: SecureMLExperimentDB,
+    targets: Optional[list[int]] = None, skip_authorization: bool = False
+) -> int:
     stdout_debug_print(f"Cleaning up {what} experiments ...", color='red')
     if what == 'aborted':
         count, exp_dicts = db.cleanup_aborted_experiments(targets=targets)
@@ -23,7 +25,10 @@ def __cleanup(what: Literal['aborted', 'tests', 'all'], db: SecureMLExperimentDB
     if count > 0:
         for exp_dict in exp_dicts:
             logging_config = LoggingConfiguration.from_experiment(exp_dict, db)
-            proceed = input(f"Cleaning up experiment {exp_dict['name']}: proceed(y/n)? ")
+            if skip_authorization:
+                proceed = 'y'
+            else:
+                proceed = input(f"Cleaning up experiment {exp_dict['name']}: proceed(y/n)? ")
             if proceed.lower() == 'y':
                 for task_id in range(exp_dict['num_tasks']):
                     try:
@@ -47,11 +52,11 @@ def __cleanup(what: Literal['aborted', 'tests', 'all'], db: SecureMLExperimentDB
     return succ
 
 
-def cleanup_aborted_experiments(db: SecureMLExperimentDB, targets: Optional[list[int]] = None) -> int:
-    return __cleanup('aborted', db, targets)
+def cleanup_aborted_experiments(db: SecureMLExperimentDB, targets: Optional[list[int]] = None, skip_authorization: bool = False) -> int:
+    return __cleanup('aborted', db, targets, skip_authorization)
 
-def cleanup_tests(db: SecureMLExperimentDB, targets: Optional[list[int]] = None) -> int:
-    return __cleanup('tests', db, targets)
+def cleanup_tests(db: SecureMLExperimentDB, targets: Optional[list[int]] = None, skip_authorization: bool = False) -> int:
+    return __cleanup('tests', db, targets, skip_authorization)
 
-def cleanup_all(db: SecureMLExperimentDB, targets: Optional[list[int]] = None) -> int:
-    return __cleanup('all', db, targets)
+def cleanup_all(db: SecureMLExperimentDB, targets: Optional[list[int]] = None, skip_authorization: bool = False) -> int:
+    return __cleanup('all', db, targets, skip_authorization)

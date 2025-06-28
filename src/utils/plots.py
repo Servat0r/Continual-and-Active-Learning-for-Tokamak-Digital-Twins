@@ -2,7 +2,6 @@ from typing import Iterable, Optional, Any
 from dataclasses import dataclass
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 from .scenarios import *
 from .logging.configs import *
 

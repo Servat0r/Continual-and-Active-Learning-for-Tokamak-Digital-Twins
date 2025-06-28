@@ -1,9 +1,9 @@
 # Generated with Claude 4 Sonnet, with further modifies by Salvatore Correnti
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
-from typing import Dict, List, Optional, TypeVar, Literal
+from typing import Optional, TypeVar, Literal
 from typing import Any as TAny
-from schema import Schema, And, Any, Or, Use
+from schema import And, Or, Use
 import uuid
 import re
 

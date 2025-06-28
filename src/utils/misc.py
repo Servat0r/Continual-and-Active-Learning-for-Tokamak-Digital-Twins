@@ -1,10 +1,10 @@
 import os
 import sys
+import json
 import pandas as pd
 import numpy as np
 from functools import wraps
 from torch import float16, float32, float64
-from datetime import datetime
 from time import perf_counter
 from dotenv import load_dotenv
 from rich import print as dbprint
@@ -31,7 +31,9 @@ def debug_print(*objects, sep=' ', end='\n', file=None, flush=True):
         )
 
 
-def stdout_debug_print(string, color=None, sep=' ', end='\n'):
+def stdout_debug_print(string, color=None, sep=' ', end='\n', jsonstr: bool = False):
+    if jsonstr:
+        string = json.dumps(string)
     if color is not None:
         string = f"[{color}]{string}[/{color}]"
     debug_print(string, sep=sep, end=end, file=STDOUT, flush=True)
