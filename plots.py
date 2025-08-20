@@ -19,7 +19,7 @@ def cl_plots(
     ticks_fontsize: int = 10, y_range: np.ndarray = np.arange(0.70, 0.94, 0.04)
 ):
     """
-    Authomatic generation of plots between different strategies for CL experiments.
+    Automatic generation of plots between different strategies for CL experiments.
     Config file is of the form:
     {
         "strategies": [
@@ -222,7 +222,6 @@ def claea_plots_multiple_strategies(
             print(f"Considering for ({strategy}, {method}) the experiment {exp_dict['name']} with data: {plot_data[label]}")
     
     x_values = np.arange(1, num_campaigns + 1)
-    #plt.figure(figsize=(12, 12))
     for label, points in plot_data.items():
         plt.plot(x_values, points, label=label, marker='o', linestyle='-')
     plt.grid(True, alpha=0.5)
