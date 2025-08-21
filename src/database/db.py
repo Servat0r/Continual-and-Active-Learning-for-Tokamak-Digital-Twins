@@ -149,6 +149,18 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             return query
         # Get model fields for validation
         model_fields = {c.name: c for c in model_class.__table__.columns}
+        # Standardization of values
+        extracted_values = model_class.standardize_fields({
+            field_name: (condition[-1] if isinstance(condition, tuple) else condition) for field_name, condition in conditions.items()
+        })
+        # Now plug back standardized fields into original dictionary
+        for field_name, condition in conditions.items():
+            standardized_value = extracted_values[field_name]
+            if isinstance(condition, tuple):
+                conditions[field_name] = tuple(list(condition[:-1]) + [standardized_value])
+            else:
+                conditions[field_name] = standardized_value
+        print(f"CONDITIONS: {conditions}")
         for field_name, condition in conditions.items():
             if field_name not in model_fields:
                 raise SecurityError(f"Invalid field name: {field_name}")
@@ -372,7 +384,9 @@ class SecureMLExperimentDB(BaseMLExperimentDB):
             with self.get_session() as session:
                 query = session.query(model_class).options(undefer('*'))
                 query = self._build_query_conditions(query, model_class, conditions)
+                print(query.statement.compile(compile_kwargs={"literal_binds": True}))
                 record = query.first()
+                print(record)
                 #record = records[0]
                 #if hasattr(record, "parameters"):
                 #    print(record.parameters, type(record.parameters), sep='\n')

@@ -1,4 +1,5 @@
 # Generated with Claude 4 Sonnet, with further modifies by Salvatore Correnti
+from abc import abstractmethod
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, Text, ForeignKey, JSON, UniqueConstraint, Numeric, Float
 )
@@ -23,6 +24,16 @@ class SchemaORM:
     @classmethod
     def json_fields(cls) -> List[str]:
         return ['tags', 'other_metadata']
+    
+    @classmethod
+    @abstractmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        pass
 
 
 # MODEL DEFINITIONS
@@ -32,7 +43,7 @@ class General(Base, SchemaORM):
     
     _VALIDATION_SCHEMA = Schema({
         SchemaOpt('id'): positive_int(),
-        'mode': standard_string(32, 'upper'),
+        'mode': standard_string(32),
         'num_campaigns': positive_int(),
         'train_mb_size': positive_int(),
         'eval_mb_size': positive_int(),
@@ -53,8 +64,23 @@ class General(Base, SchemaORM):
     # Relationship
     experiments = relationship("Experiment", back_populates="general") # One-to-Many
 
+    @classmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        match args['mode']:
+            case 'cl' | 'CL':
+                args['mode'] = 'CL'
+            case 'claea' | 'CLAEA' | 'al(cl)' | 'AL(CL)':
+                args['mode'] = 'CLAEA'
+            case _:
+                args['mode'] = args['mode'].upper()
+        return args
+    
+    @classmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        return args
+    
     def __init__(self, **kwargs):
-        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        kwargs = self._VALIDATION_SCHEMA.validate(self.standardize_fields(kwargs))
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -63,7 +89,7 @@ class General(Base, SchemaORM):
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary with security filtering."""
-        return {
+        return self.destandardize_fields({
             'id': self.id,
             'mode': self.mode,
             'num_campaigns': self.num_campaigns,
@@ -72,7 +98,7 @@ class General(Base, SchemaORM):
             'train_epochs': self.train_epochs,
             'tags': self.tags,
             'other_metadata': self.other_metadata
-        }    
+        })
 
 
 class Scenario(Base, SchemaORM):
@@ -80,22 +106,16 @@ class Scenario(Base, SchemaORM):
     
     _VALIDATION_SCHEMA = Schema({
         SchemaOpt('id'): positive_int(),
-        SchemaOpt('simulator_type'): standard_string(128, 'lower', ['qualikiz', 'tglf']),
-        'pow_type': standard_string(128, 'lower', ['highpow', 'lowpow', 'mixed']),
-        'cluster_type': standard_string(128, 'lower', ['tau_based', 'Ip_Pin_based', 'wmhd_based', 'beta_based']),
-        'dataset_type': standard_string(128, 'lower', ['not_null', 'complete']),
-        'task': standard_string(128, 'lower', ['regression', 'classification']),
-        'input_columns': Or(
-            standard_string(256, 'lower'), # Either already a string
-            And(list, Use(lambda x: '+'.join([y.lower().strip() for y in x]))) # Or a list that gets converted to a string
-        ),
-        'output_columns': Or(
-            standard_string(256, 'lower'), # Either already a string
-            And(list, Use(lambda x: '+'.join([y.lower().strip() for y in x]))) # Or a list that gets converted to a string
-        ),
+        SchemaOpt('simulator_type'): standard_string(128, choices=['qualikiz', 'tglf']),
+        'pow_type': standard_string(128, choices=['highpow', 'lowpow', 'mixed']),
+        'cluster_type': standard_string(128, choices=['tau_based', 'Ip_Pin_based', 'wmhd_based', 'beta_based']),
+        'dataset_type': standard_string(128, choices=['not_null', 'complete']),
+        'task': standard_string(128, choices=['regression', 'classification']),
+        'input_columns': Or(standard_string(256), list), # Either string or list
+        'output_columns': Or(standard_string(256), list), # Either string or list
         'normalize_inputs': bool,
         'normalize_outputs': bool,
-        SchemaOpt('normalization_type'): standard_string(128, 'lower', ['no-normalization', 'first-exp', 'per-exp']),
+        SchemaOpt('normalization_type'): standard_string(128, choices=['no-normalization', 'first-exp', 'per-exp']),
         SchemaOpt('tags'): tags_dict(),
         SchemaOpt('other_metadata'): metadata_dict()
     })
@@ -117,8 +137,55 @@ class Scenario(Base, SchemaORM):
     # Relationship
     experiments = relationship("Experiment", back_populates="scenario")
     
+    @classmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        for field in ['simulator_type', 'cluster_type', 'dataset_type', 'task']:
+            if field in args:
+                args[field] = args[field].lower()
+        # Standardize simulator type
+        if args['simulator_type'] == 'qlk':
+            args['simulator_type'] = 'qualikiz'
+        # Standardize power type
+        if 'pow_type' in args:
+            match args['pow_type']:
+                case 'hp' | 'high' | 'high_pow':
+                    args['pow_type'] = 'highpow'
+                case 'lp' | 'low' | 'low_pow':
+                    args['pow_type'] = 'lowpow'
+                case 'mp' | 'mixed' | 'mixed_pow':
+                    args['pow_type'] = 'mixed'
+        # Standardize cluster type
+        if 'cluster_type' in args:
+            match args['cluster_type']:
+                case 'ip_pin' | 'ip_pin_based':
+                    args['cluster_type'] = 'Ip_Pin_based'
+                case 'tau' | 'tau_based':
+                    args['cluster_type'] = 'tau_based'
+                case 'wmhd' | 'wmhd_based':
+                    args['cluster_type'] = 'wmhd_based'
+                case 'beta' | 'beta_based':
+                    args['cluster_type'] = 'beta_based'
+        # Standardize input columns
+        if 'input_columns' in args:
+            args['input_columns'] = '+'.join([item.lower().strip() for item in args['input_columns']])
+        # Standardize output columns
+        if 'output_columns' in args:
+            args['output_columns'] = '+'.join([item.lower().strip() for item in args['output_columns']])
+        # Standardize normalization type
+        if 'normalization_type' in args:
+            args['normalization_type'] = args['normalization_type'].lower().replace('_', '-')
+        return args
+    
+    @classmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        if 'input_columns' in args:
+            args['input_columns'] = args['input_columns'].split('+')
+        if 'output_columns' in args:
+            args['output_columns'] = args['output_columns'].split('+')
+        return args
+    
     def __init__(self, **kwargs):
-        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        kwargs = self._VALIDATION_SCHEMA.validate(self.standardize_fields(kwargs))
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -154,7 +221,7 @@ class Scenario(Base, SchemaORM):
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
-        return {
+        return self.destandardize_fields({
             'id': self.id,
             'simulator_type': self.simulator_type,
             'pow_type': self.pow_type,
@@ -168,7 +235,7 @@ class Scenario(Base, SchemaORM):
             "normalization_type": self.normalization_type,
             'tags': self.tags,
             'other_metadata': self.other_metadata
-        }
+        })
 
 
 class Architecture(Base, SchemaORM):
@@ -193,8 +260,28 @@ class Architecture(Base, SchemaORM):
     # Relationship
     experiments = relationship("Experiment", back_populates="architecture")
     
+    @classmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        if 'model_type' in args:
+            match args['model_type']:
+                case 'mlp' | 'MLP':
+                    args['model_type'] = 'MLP'
+                case 'gaussian_mlp' | 'GaussianMLP' | 'Gaussian_MLP':
+                    args['model_type'] = 'GaussianMLP'
+                case 'convnet' | 'ConvNet':
+                    args['model_type'] = 'ConvNet'
+                case 'transformer' | 'Transformer':
+                    args['model_type'] = 'Transformer'
+                case _:
+                    args['model_type'] = args['model_type'].upper()
+        return args
+    
+    @classmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        return args
+    
     def __init__(self, **kwargs):
-        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        kwargs = self._VALIDATION_SCHEMA.validate(self.standardize_fields(kwargs))
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -202,14 +289,14 @@ class Architecture(Base, SchemaORM):
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
-        return {
+        return self.destandardize_fields({
             'id': self.id,
             'model_type': self.model_type,
             'model_folder': self.model_folder,
             'parameters': self.parameters,
             'tags': self.tags,
             'other_metadata': self.other_metadata
-        }
+        })
 
     @classmethod
     def json_fields(cls):
@@ -221,7 +308,7 @@ class Loss(Base, SchemaORM):
     
     _VALIDATION_SCHEMA = Schema({
         SchemaOpt('id'): positive_int(),
-        'name': standard_string(128, case='lower'),
+        'name': standard_string(128),
         SchemaOpt('parameters'): dict,
         SchemaOpt('tags'): tags_dict(),
         SchemaOpt('other_metadata'): metadata_dict()
@@ -236,8 +323,39 @@ class Loss(Base, SchemaORM):
     # Relationship
     experiments = relationship("Experiment", back_populates="loss")
     
+    @classmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        if 'name' in args:
+            args['name'] = args['name'].lower()
+            match args['name']:
+                case 'rmse' | 'rootmse' | 'root_mse':
+                    args['name'] = 'rmse'
+                case 'bcewithlogits' | 'bce_with_logits':
+                    args['name'] = 'bcewithlogits'
+                case 'gaussiannll' | 'gaussian_nll':
+                    args['name'] = 'gaussiannll'
+                case 'msecosinesimilarity' | 'mse_cosine_similarity':
+                    args['name'] = 'msecosinesimilarity'
+        return args
+    
+    @classmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        if 'name' in args:
+            match args['name']:
+                case 'rmse' | 'rootmse' | 'root_mse':
+                    args['name'] = 'RootMSE'
+                case 'bcewithlogits' | 'bce_with_logits':
+                    args['name'] = 'BCEWithLogits'
+                case 'gaussiannll' | 'gaussian_nll':
+                    args['name'] = 'GaussianNLL'
+                case 'msecosinesimilarity' | 'mse_cosine_similarity':
+                    args['name'] = 'MSECosineSimilarity'
+                case _:
+                    args['name'] = args['name'].upper()
+        return args
+    
     def __init__(self, **kwargs):
-        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        kwargs = self._VALIDATION_SCHEMA.validate(self.standardize_fields(kwargs))
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -245,13 +363,13 @@ class Loss(Base, SchemaORM):
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
-        return {
+        return self.destandardize_fields({
             'id': self.id,
             'name': self.name,
             'parameters': self.parameters,
             'tags': self.tags,
             'other_metadata': self.other_metadata
-        }
+        })
 
     @classmethod
     def json_fields(cls):
@@ -278,8 +396,30 @@ class Optimizer(Base, SchemaORM):
     # Relationship
     experiments = relationship("Experiment", back_populates="optimizer")
     
+    @classmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        if 'name' in args:
+            args['name'] = args['name'].upper()
+        return args
+    
+    @classmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        if 'name' in args:
+            match args['name']:
+                case 'adam' | 'ADAM':
+                    args['name'] = 'Adam'
+                case 'adamw' | 'ADAMW':
+                    args['name'] = 'AdamW'
+                case 'adagrad' | 'ADAGRAD':
+                    args['name'] = 'Adagrad'
+                case 'rmsprop' | 'RMSPROP':
+                    args['name'] = 'RMSprop'
+                case _:
+                    args['name'] = args['name'].upper()
+        return args
+    
     def __init__(self, **kwargs):
-        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        kwargs = self._VALIDATION_SCHEMA.validate(self.standardize_fields(kwargs))
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -287,13 +427,13 @@ class Optimizer(Base, SchemaORM):
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
-        return {
+        return self.destandardize_fields({
             'id': self.id,
             'name': self.name,
             'parameters': self.parameters,
             'tags': self.tags,
             'other_metadata': self.other_metadata
-        }
+        })
 
     @classmethod
     def json_fields(cls):
@@ -320,8 +460,33 @@ class Scheduler(Base, SchemaORM):
     # Relationship
     experiments = relationship("Experiment", back_populates="scheduler")
     
+    @classmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        if 'name' in args:
+            args['name'] = args['name'].lower()
+            match args['name']:
+                case 'steplr' | 'step_lr':
+                    args['name'] = 'steplr'
+                case 'reducelronplateau' | 'reduce_lr_on_plateau':
+                    args['name'] = 'reducelronplateau'
+                case 'cosineannealinglr' | 'cosine_annealing_lr':
+                    args['name'] = 'cosineannealinglr'
+        return args
+    
+    @classmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        if 'name' in args:
+            match args['name']:
+                case 'steplr':
+                    args['name'] = 'StepLR'
+                case 'reducelronplateau':
+                    args['name'] = 'ReduceLROnPlateau'
+                case 'cosineannealinglr':
+                    args['name'] = 'CosineAnnealingLR'
+        return args
+    
     def __init__(self, **kwargs):
-        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        kwargs = self._VALIDATION_SCHEMA.validate(self.standardize_fields(kwargs))
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -329,13 +494,13 @@ class Scheduler(Base, SchemaORM):
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
-        return {
+        return self.standardize_fields({
             'id': self.id,
             'name': self.name,
             'parameters': self.parameters,
             'tags': self.tags,
             'other_metadata': self.other_metadata
-        }
+        })
 
     @classmethod
     def json_fields(cls):
@@ -350,7 +515,7 @@ class EarlyStopping(Base, SchemaORM):
         SchemaOpt('patience'): positive_int(),
         SchemaOpt('metric'): standard_string(128),
         SchemaOpt('delta'): positive_float(),
-        SchemaOpt('type'): standard_string(32, 'lower', ['min', 'max']),
+        SchemaOpt('type'): standard_string(32, choices=['min', 'max']),
         SchemaOpt('restore_best_weights'): bool,
         SchemaOpt('when_above'): Or(int, float),
         SchemaOpt('when_below'): Or(int, float),
@@ -374,8 +539,16 @@ class EarlyStopping(Base, SchemaORM):
     # Relationship
     experiments = relationship("Experiment", back_populates="early_stopping")
     
+    @classmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        return args
+    
+    @classmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        return args
+    
     def __init__(self, **kwargs):
-        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        kwargs = self._VALIDATION_SCHEMA.validate(self.standardize_fields(kwargs))
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -384,7 +557,7 @@ class EarlyStopping(Base, SchemaORM):
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
-        return {
+        return self.destandardize_fields({
             'id': self.id,
             'patience': self.patience,
             'metric': self.metric,
@@ -396,7 +569,7 @@ class EarlyStopping(Base, SchemaORM):
             'min_epochs': self.min_epochs,
             'tags': self.tags,
             'other_metadata': self.other_metadata
-        }
+        })
 
 
 class Strategy(Base, SchemaORM):
@@ -421,8 +594,16 @@ class Strategy(Base, SchemaORM):
     # Relationship
     experiments = relationship("Experiment", back_populates="strategy")
     
+    @classmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        return args
+    
+    @classmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        return args
+    
     def __init__(self, **kwargs):
-        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        kwargs = self._VALIDATION_SCHEMA.validate(self.standardize_fields(kwargs))
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -430,14 +611,14 @@ class Strategy(Base, SchemaORM):
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
-        return {
+        return self.destandardize_fields({
             'id': self.id,
             'name': self.name,
             'from_scratch': self.from_scratch,
             'parameters': self.parameters,
             'tags': self.tags,
             'other_metadata': self.other_metadata
-        }
+        })
 
     @classmethod
     def json_fields(cls):
@@ -449,12 +630,12 @@ class ActiveLearning(Base, SchemaORM):
     
     _VALIDATION_SCHEMA = Schema({
         SchemaOpt('id'): positive_int(),
-        SchemaOpt('framework'): standard_string(128, 'lower', ['bmdal']),
+        SchemaOpt('framework'): standard_string(128, choices=['bmdal']),
         SchemaOpt('batch_size'): positive_int(),
         SchemaOpt('max_batch_size'): positive_int(),
         SchemaOpt('reload_initial_weights'): bool,
         SchemaOpt('standard_method'): And(standard_string(
-            128, 'lower', ["random_sketch_grad", "bald", "batchbald", "badge", "coreset", "bait", "lcmd_sketch_grad"]
+            128, choices=["random", "random_sketch_grad", "bald", "batchbald", "badge", "coreset", "bait", "lcmd", "lcmd_sketch_grad"]
         ), Use(lambda x: x[-12] if x.endswith('_sketch_grad') else x)),
         SchemaOpt('selection_method'): standard_string(128, 'lower'),
         SchemaOpt('initial_selection_method'): standard_string(128, 'lower'),
@@ -490,8 +671,35 @@ class ActiveLearning(Base, SchemaORM):
     # Relationship
     experiments = relationship("Experiment", back_populates="active_learning")
     
+    @classmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        # Framework
+        if 'framework' in args:
+            args['framework'] = args['framework'].lower()
+        # Standard Method
+        if 'standard_method' in args:
+            args['standard_method'] = args['standard_method'].lower()
+            match args['standard_method']:
+                case 'coreset' | 'core_set' | 'core-set':
+                    args['standard_method'] = 'coreset'
+                case 'batch_bald':
+                    args['standard_method'] = 'batchbald'
+                case 'lcmd_sketch_grad':
+                    args['standard_method'] = 'lcmd'
+                case 'random_sketch_grad' | 'random_sketch_ll':
+                    args['standard_method'] = 'random'
+        # Selection Method and Initial Selection Method
+        for field in ['selection_method', 'initial_selection_method']:
+            if field in args:
+                args[field] = args[field].lower()
+        return args
+    
+    @classmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        return args
+    
     def __init__(self, **kwargs):
-        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        kwargs = self._VALIDATION_SCHEMA.validate(self.standardize_fields(kwargs))
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -499,7 +707,7 @@ class ActiveLearning(Base, SchemaORM):
     
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
-        return {
+        return self.destandardize_fields({
             "id": self.id,
             "framework": self.framework,
             "batch_size": self.batch_size,
@@ -517,7 +725,7 @@ class ActiveLearning(Base, SchemaORM):
             "downsampling_factor": self.downsampling_factor,
             "tags": self.tags,
             "other_metadata": self.other_metadata,
-        }
+        })
 
 
 class Experiment(Base, SchemaORM):
@@ -538,7 +746,7 @@ class Experiment(Base, SchemaORM):
         SchemaOpt('start_time'): datetime,
         SchemaOpt('end_time'): datetime,
         'num_tasks': positive_int(),
-        SchemaOpt('status'): standard_string(32, 'lower', ['invalid', 'init', 'pending', 'running', 'aborted', 'finished']),
+        SchemaOpt('status'): standard_string(32, choices=['invalid', 'init', 'pending', 'running', 'aborted', 'finished']),
         SchemaOpt('logs'): dict,
         SchemaOpt('is_test'): bool,
         SchemaOpt('tags'): tags_dict(),
@@ -581,8 +789,16 @@ class Experiment(Base, SchemaORM):
     strategy = relationship("Strategy", back_populates="experiments")
     active_learning = relationship("ActiveLearning", back_populates="experiments")
     
+    @classmethod
+    def standardize_fields(cls, args: Dict) -> Dict:
+        return args
+    
+    @classmethod
+    def destandardize_fields(cls, args: Dict) -> Dict:
+        return args
+    
     def __init__(self, **kwargs):
-        kwargs = self._VALIDATION_SCHEMA.validate(kwargs)
+        kwargs = self._VALIDATION_SCHEMA.validate(self.standardize_fields(kwargs))
         super().__init__(**kwargs)
     
     def __repr__(self):
@@ -596,7 +812,7 @@ class Experiment(Base, SchemaORM):
         
     def to_dict(self) -> Dict:
         """Convert model to dictionary."""
-        return {
+        return self.destandardize_fields({
             'id': self.id,
             'id_general': self.id_general,
             'id_scenario': self.id_scenario,
@@ -616,7 +832,7 @@ class Experiment(Base, SchemaORM):
             'is_test': self.is_test,
             'tags': self.tags,
             'other_metadata': self.other_metadata
-        }
+        })
     
     def to_detailed_dict(self) -> Dict:
         """Convert model to dictionary with all related data."""
